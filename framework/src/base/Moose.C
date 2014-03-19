@@ -229,6 +229,7 @@
 #ifdef LIBMESH_HAVE_FPARSER
 #include "Terminator.h"
 #endif
+#include "XFEMMarkerUserObject.h"
 
 // preconditioners
 #include "PhysicsBasedPreconditioner.h"
@@ -625,6 +626,7 @@ registerObjects(Factory & factory)
 #ifdef LIBMESH_HAVE_FPARSER
   registerUserObject(Terminator);
 #endif
+  registerUserObject(XFEMMarkerUserObject);
 
   // preconditioners
   registerNamedPreconditioner(PhysicsBasedPreconditioner, "PBP");
