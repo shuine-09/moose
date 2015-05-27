@@ -817,45 +817,91 @@ CrackFrontDefinition::updateDataForCrackDirection()
   {
     _crack_plane_normal.zero();
 
-    //Get 3 nodes on crack front
-    unsigned int num_nodes(_ordered_crack_front_nodes.size());
-    if (num_nodes<3)
-    {
-      mooseError("Crack front must contain at least 3 nodes to use CurvedCrackFront option");
-    }
-    unsigned int start_id;
-    unsigned int mid_id;
-    unsigned int end_id;
+    if (_geom_definition_method == CRACK_FRONT_NODES){
+      //Get 3 nodes on crack front
+      unsigned int num_nodes(_ordered_crack_front_nodes.size());
+      if (num_nodes<3)
+      {
+        mooseError("Crack front must contain at least 3 nodes to use CurvedCrackFront option");
+      }
+      unsigned int start_id;
+      unsigned int mid_id;
+      unsigned int end_id;
+  
+      if (_closed_loop)
+      {
+        start_id = 0;
+        mid_id = (num_nodes-1)/3;
+        end_id = 2*mid_id;
+      }
+      else
+      {
+        start_id = 0;
+        mid_id = (num_nodes-1)/2;
+        end_id = num_nodes-1;
+      }
+      Node & start = _mesh.node(_ordered_crack_front_nodes[start_id]);
+      Node & mid   = _mesh.node(_ordered_crack_front_nodes[mid_id]);
+      Node & end   = _mesh.node(_ordered_crack_front_nodes[end_id]);
 
-    if (_closed_loop)
-    {
-      start_id = 0;
-      mid_id = (num_nodes-1)/3;
-      end_id = 2*mid_id;
-    }
-    else
-    {
-      start_id = 0;
-      mid_id = (num_nodes-1)/2;
-      end_id = num_nodes-1;
-    }
-    Node & start = _mesh.node(_ordered_crack_front_nodes[start_id]);
-    Node & mid   = _mesh.node(_ordered_crack_front_nodes[mid_id]);
-    Node & end   = _mesh.node(_ordered_crack_front_nodes[end_id]);
+      //Create two vectors connecting them
+      RealVectorValue v1 = mid-start;
+      RealVectorValue v2 = end-mid;
 
-    //Create two vectors connecting them
-    RealVectorValue v1 = mid-start;
-    RealVectorValue v2 = end-mid;
+      //Take cross product to get normal
+      _crack_plane_normal = v1.cross(v2);
+      _crack_plane_normal = _crack_plane_normal.unit();
 
-    //Take cross product to get normal
-    _crack_plane_normal = v1.cross(v2);
-    _crack_plane_normal = _crack_plane_normal.unit();
+      //Make sure they're not collinear
+      RealVectorValue zero_vec(0.0);
+      if (_crack_plane_normal.absolute_fuzzy_equals(zero_vec, _tol))
+      {
+        mooseError("Nodes on crack front are too close to being collinear");
+      }
+    }else{
+      
+      unsigned int num_points(_crack_front_points.size()); 
 
-    //Make sure they're not collinear
-    RealVectorValue zero_vec(0.0);
-    if (_crack_plane_normal.absolute_fuzzy_equals(zero_vec, _tol))
-    {
-      mooseError("Nodes on crack front are too close to being collinear");
+      unsigned int start_id;
+      unsigned int mid_id;
+      unsigned int end_id;
+  
+      _closed_loop = true; // test for penny crack
+      if (_closed_loop)
+      {    
+        start_id = 0; 
+        mid_id = (num_points-1)/3;
+        end_id = 2*mid_id;
+      }    
+      else 
+      {    
+        start_id = 0; 
+        mid_id = (num_points-1)/2;
+        end_id = num_points-1;
+      }    
+
+      Point start = _crack_front_points[start_id];
+      Point mid   = _crack_front_points[mid_id];
+      Point end   = _crack_front_points[end_id];
+
+      std::cout << "start point = " << start << std::endl;
+      std::cout << "mid   point = " << mid   << std::endl;
+      std::cout << "end   point = " << end   << std::endl;
+
+      //Create two vectors connecting them
+      RealVectorValue v1 = mid-start;
+      RealVectorValue v2 = end-mid;
+
+      //Take cross product to get normal
+      _crack_plane_normal = v1.cross(v2);
+      _crack_plane_normal = _crack_plane_normal.unit();
+
+      //Make sure they're not collinear
+      RealVectorValue zero_vec(0.0);
+      if (_crack_plane_normal.absolute_fuzzy_equals(zero_vec, _tol))
+      {    
+        mooseError("Nodes on crack front are too close to being collinear");
+      }   
     }
   }
 }
