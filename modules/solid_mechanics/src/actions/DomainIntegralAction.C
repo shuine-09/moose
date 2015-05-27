@@ -220,7 +220,8 @@ DomainIntegralAction::act()
   {
     const std::string ak_type_name("DomainIntegralQFunction");
     InputParameters params = _factory.getValidParams(ak_type_name);
-    params.set<MultiMooseEnum>("execute_on") = "initial";
+    //params.set<MultiMooseEnum>("execute_on") = "initial";
+    params.set<MultiMooseEnum>("execute_on") = "timestep_end";
     params.set<UserObjectName>("crack_front_definition") = uo_name;
     params.set<bool>("use_displaced_mesh") = _use_displaced_mesh;
 
