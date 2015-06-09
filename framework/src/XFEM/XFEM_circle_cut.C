@@ -23,7 +23,7 @@ XFEM_circle_cut::XFEM_circle_cut(std::vector<Real> circle_nodes):
   
   Real R1 = std::sqrt(ray1.size_sq());
   Real R2 = std::sqrt(ray2.size_sq());
-  if( std::abs(R1 - R2) < 1e-16 ) 
+  if( std::abs(R1 - R2) > 1e-10 ) 
     mooseError("this method only works for a circular cut\n");
  
    _radius = 0.5*(R1 + R2);
