@@ -6,8 +6,6 @@
 /****************************************************************/
 #include "HeatConduction.h"
 
-#include "XFEM.h"
-
 template<>
 InputParameters validParams<HeatConductionKernel>()
 {
@@ -28,9 +26,7 @@ HeatConductionKernel::HeatConductionKernel(const std::string & name, InputParame
   Diffusion(name, parameters),
   _dim(_subproblem.mesh().dimension()),
   _diffusion_coefficient(getMaterialProperty<Real>(getParam<std::string>("diffusion_coefficient_name"))),
-  _diffusion_coefficient_dT(hasMaterialProperty<Real>(getParam<std::string>("diffusion_coefficient_dT_name")) ? &getMaterialProperty<Real>(getParam<std::string>("diffusion_coefficient_dT_name")) : NULL),
-  _has_xfem_volfrac(isCoupled("xfem_volfrac")),
-  _xfem_volfrac(_has_xfem_volfrac ? coupledValue("xfem_volfrac") : _zero)
+  _diffusion_coefficient_dT(hasMaterialProperty<Real>(getParam<std::string>("diffusion_coefficient_dT_name")) ? &getMaterialProperty<Real>(getParam<std::string>("diffusion_coefficient_dT_name")) : NULL)
 {
 }
 
