@@ -1,11 +1,39 @@
+[Problem]
+  XFEM_cuts = '0.55   0.399   0.55   0.601   0.0000e+00   1.0000e+00'
+[]
+
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 10
-  ny = 10
+  nx = 5
+  ny = 5
+  xmin = 0.0;
+  xmax = 1.0;
+  ymin = 0.0;
+  ymax = 1.0;
   nz = 0
   zmax = 0
   elem_type = QUAD4
+[]
+
+[AuxVariables]
+  [./xfem_volfrac]
+    order = CONSTANT
+    family = MONOMIAL
+  [../]
+[]
+
+[CutPlanes]
+  order = CONSTANT
+  family = MONOMIAL
+[]
+
+[AuxKernels]
+  [./xfem_volfrac]
+    type = XFEMVolFracAux
+    variable = xfem_volfrac
+    execute_on = timestep_begin
+  [../]
 []
 
 [Variables]
@@ -62,13 +90,13 @@
 [Adaptivity]
   steps = 1
   marker = box
-  max_h_level = 2
-  initial_steps = 2
+  max_h_level = 1
+  initial_steps = 1
   [./Markers]
     [./box]
-      bottom_left = '0.3 0.3 0'
+      bottom_left = '0.2 0.2 0'
       inside = refine
-      top_right = '0.6 0.6 0'
+      top_right = '0.8 0.8 0'
       outside = do_nothing
       type = BoxMarker
     [../]

@@ -80,14 +80,6 @@
     order = CONSTANT
     family = MONOMIAL
   [../]
-  [./dummy_old]
-    order = CONSTANT
-    family = MONOMIAL
-  [../]
-  [./dummy]
-    order = CONSTANT
-    family = MONOMIAL
-  [../]
 []
 
 [SolidMechanics]
@@ -167,16 +159,6 @@
     variable = plastic_strain_mag
     quantity = PlasticStrainMag
   [../]
-#  [./dummy_old]
-#    type = MaterialRealAux
-#    variable = dummy_old
-#    property = thermal_conductivity
-#  [../]
-  [./dummy]
-    type = MaterialRealAux
-    variable = dummy
-    property = thermal_conductivity
-  [../]
 []
 
 [Functions]
@@ -235,11 +217,24 @@
     block = 0
     density = 1.0
   [../]
-  [./stateful]
-    type = StatefulTest
-    block = 0
+[]
+
+[Adaptivity]
+  steps = 1
+  marker = box
+  max_h_level = 2
+  initial_steps = 2
+  [./Markers]
+    [./box]
+      bottom_left = '0.3 0.3 0'
+      inside = refine
+      top_right = '0.6 0.6 0'
+      outside = do_nothing
+      type = BoxMarker
+    [../]
   [../]
 []
+
 
 [Executioner]
   type = Transient

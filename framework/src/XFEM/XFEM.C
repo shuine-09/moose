@@ -147,11 +147,11 @@ XFEM::update(Real time)
     _mesh->update_parallel_id_counts();
     MeshCommunication().make_elems_parallel_consistent(*_mesh);
     MeshCommunication().make_nodes_parallel_consistent(*_mesh);
-//    _mesh->find_neighbors();
+    //_mesh->find_neighbors();
 //    _mesh->contract();
     _mesh->allow_renumbering(false);
     _mesh->skip_partitioning(true);
-    _mesh->prepare_for_use();
+    _mesh->prepare_for_use(false,false); 
 //    _mesh->prepare_for_use(true,true); //doing this preserves the numbering, but generates warning
 
     if (_mesh2)
@@ -242,6 +242,9 @@ void XFEM::build_efa_mesh()
   for ( elem_it = _mesh->elements_begin(); elem_it != elem_end; ++elem_it)
   {
     Elem *elem = *elem_it;
+    //WJ
+    if(!elem->active())
+      continue;
     std::vector<unsigned int> quad;
     for (unsigned int i = 0; i < elem->n_nodes(); ++i)
       quad.push_back(elem->node(i));
@@ -260,6 +263,8 @@ void XFEM::build_efa_mesh()
   for ( elem_it = _mesh->elements_begin(); elem_it != elem_end; ++elem_it)
   {
     Elem *elem = *elem_it;
+    if(!elem->active()) //WJ
+      continue;
     std::map<const Elem*, XFEMCutElem*>::iterator cemit = _cut_elem_map.find(elem);
     if (cemit != _cut_elem_map.end())
     {
@@ -304,6 +309,9 @@ XFEM::mark_cut_edges_by_geometry(Real time)
   for ( ; elem_it != elem_end; ++elem_it)
   {
     const Elem *elem = *elem_it;
+    //WJ
+    if(!elem->active())
+      continue;
     std::vector<cutEdge> elemCutEdges;
     std::vector<cutEdge> fragCutEdges;
     std::vector<std::vector<Point> > frag_edges;
@@ -510,6 +518,9 @@ XFEM::mark_cut_faces_by_geometry(Real time)
   for ( ; elem_it != elem_end; ++elem_it)
   {
     const Elem *elem = *elem_it;
+    //WJ
+    if(!elem->active())
+      continue;
     std::vector<cutFace> elemCutFaces;
     std::vector<cutFace> fragCutFaces;
     std::vector<std::vector<Point> > frag_faces;
@@ -600,7 +611,7 @@ XFEM::cut_mesh_with_efa()
 
   _efa_mesh.updatePhysicalLinksAndFragments();
   // DEBUG
-//  _efa_mesh.printMesh();
+//  _efa_mesh.printMesh(/);
 //  std::cout<<"BWS before updateTopology"<<std::endl;
 
   _efa_mesh.updateTopology();
@@ -654,6 +665,11 @@ XFEM::cut_mesh_with_efa()
 //  }
 
   //Add new elements
+
+  std::map<unsigned int, Elem *> replaced_elems; // store the replaced parent(xfem) elements
+  std::map<unsigned int, Elem*>::iterator it;
+  std::vector<Elem *> new_add_elems; // store the new added child(xfem) elements
+
   const std::vector<EFAelement*> NewElements = _efa_mesh.getChildElements();
   for (unsigned int i = 0; i < NewElements.size(); ++i)
   {
@@ -662,6 +678,7 @@ XFEM::cut_mesh_with_efa()
 
     Elem *parent_elem = _mesh->elem(parent_id);
     Elem *libmesh_elem = Elem::build(parent_elem->type()).release();
+
 
     Elem *parent_elem2 = NULL;
     Elem *libmesh_elem2 = NULL;
@@ -687,7 +704,7 @@ XFEM::cut_mesh_with_efa()
       Node *parent_node = parent_elem->get_node(j);
       std::vector<boundary_id_type> parent_node_boundary_ids = _mesh->boundary_info->boundary_ids(parent_node);
       _mesh->boundary_info->add_node(libmesh_node, parent_node_boundary_ids);
-
+   
       if (_mesh2)
       {
         std::map<unsigned int, Node*>::iterator nit2 = efa_id_to_new_node2.find(node_id);
@@ -707,15 +724,42 @@ XFEM::cut_mesh_with_efa()
 
     libmesh_elem->set_p_level(parent_elem->p_level());
     libmesh_elem->set_p_refinement_flag(parent_elem->p_refinement_flag());
+    
+    for(unsigned i = 0; i < parent_elem->n_neighbors(); i++){
+      libmesh_elem->set_neighbor(i,parent_elem->neighbor(i));
+    }
+    libmesh_elem->set_parent(parent_elem->parent());
+   
     _mesh->add_elem(libmesh_elem);
     libmesh_elem->set_n_systems(parent_elem->n_systems());
     libmesh_elem->subdomain_id() = parent_elem->subdomain_id();
     libmesh_elem->processor_id() = parent_elem->processor_id();
 
+    it = replaced_elems.find(parent_id); // WJ: if this parent element has been replaced
+    new_add_elems.push_back(libmesh_elem);  // WJ:  added the child element
+    //WJ: replace the parent's child as it it might deleted later
+     if(it == replaced_elems.end())
+      replaced_elems.insert (std::pair<unsigned int, Elem*>(parent_id,libmesh_elem));
+
+    if (parent_elem->parent()!=NULL){
+      for(unsigned i = 0; i < parent_elem->parent()->n_children();i++){
+      unsigned child_id = parent_elem->parent()->child(i)->id();
+      it = replaced_elems.find(child_id);
+        if(it!=replaced_elems.end()){
+          parent_elem->parent()->replace_child(it->second,i);
+        }
+      }
+    }
+  
+    // libmesh_elem->set_n_systems(parent_elem->n_systems());
+   // libmesh_elem->subdomain_id() = parent_elem->subdomain_id();
+   // libmesh_elem->processor_id() = parent_elem->processor_id();
+
     //TODO: The 0 here is the thread ID.  Need to sort out how to do this correctly
     //TODO: Also need to copy surface and neighbor material data
     if (parent_elem->processor_id() == _mesh->processor_id())
       _material_data[0]->copy(*libmesh_elem, *parent_elem, 0);
+
 
     std::cout<<"XFEM added elem "<<libmesh_elem->id()+1<<std::endl;
 
@@ -747,6 +791,7 @@ XFEM::cut_mesh_with_efa()
     {
       libmesh_elem2->set_p_level(parent_elem2->p_level());
       libmesh_elem2->set_p_refinement_flag(parent_elem2->p_refinement_flag());
+    
       _mesh2->add_elem(libmesh_elem2);
       libmesh_elem2->set_n_systems(parent_elem2->n_systems());
       libmesh_elem2->subdomain_id() = parent_elem2->subdomain_id();
@@ -754,10 +799,19 @@ XFEM::cut_mesh_with_efa()
     }
 
     unsigned int n_sides = parent_elem->n_sides();
+
+    it = replaced_elems.find(parent_id); // as we replace the parent element with new libmesh element(child), we need to use it for boundary update
+
     for (unsigned int side=0; side<n_sides; ++side)
     {
-      std::vector<boundary_id_type> parent_elem_boundary_ids = _mesh->boundary_info->boundary_ids(parent_elem, side);
-      _mesh->boundary_info->add_side(libmesh_elem, side, parent_elem_boundary_ids);
+      if(it->second==NULL){
+        std::vector<boundary_id_type> parent_elem_boundary_ids = _mesh->boundary_info->boundary_ids(parent_elem, side);  
+        _mesh->boundary_info->add_side(parent_elem, side, parent_elem_boundary_ids);
+     }
+      else{ 
+        std::vector<boundary_id_type> parent_elem_boundary_ids = _mesh->boundary_info->boundary_ids(it->second, side);
+        _mesh->boundary_info->add_side(it->second, side, parent_elem_boundary_ids);
+      }
     }
     if (_mesh2)
     {
@@ -771,9 +825,15 @@ XFEM::cut_mesh_with_efa()
 
     unsigned int n_edges = parent_elem->n_edges();
     for (unsigned int edge=0; edge<n_edges; ++edge)
-    {
-      std::vector<boundary_id_type> parent_elem_boundary_ids = _mesh->boundary_info->edge_boundary_ids(parent_elem, edge);
-      _mesh->boundary_info->add_edge(libmesh_elem, edge, parent_elem_boundary_ids);
+    { 
+      if(it->second==NULL){
+        std::vector<boundary_id_type> parent_elem_boundary_ids = _mesh->boundary_info->edge_boundary_ids(parent_elem, edge);
+        _mesh->boundary_info->add_edge(parent_elem, edge, parent_elem_boundary_ids);
+      }
+      else{
+        std::vector<boundary_id_type> parent_elem_boundary_ids = _mesh->boundary_info->edge_boundary_ids(it->second, edge);
+        _mesh->boundary_info->add_edge(it->second, edge, parent_elem_boundary_ids);
+      }
     }
     if (_mesh2)
     {
@@ -784,9 +844,26 @@ XFEM::cut_mesh_with_efa()
         _mesh2->boundary_info->add_edge(libmesh_elem2, edge, parent_elem_boundary_ids);
       }
     }
-
     mesh_changed = true;
   } // i
+
+  
+  //TODO: mesh_2 has not been corrected 
+
+  //need to update the neighor of new added element as some neighbors might be deleted later
+  for(unsigned l = 0; l < new_add_elems.size();l++){
+    Elem* lib_elem = new_add_elems[l];
+    unsigned int parent_id = NewElements[l]->parent()->id();  
+    for(unsigned i = 0; i < lib_elem->n_neighbors(); i++){
+      Elem* neigh_elem = lib_elem->neighbor(i);
+      for(unsigned j = 0; j < neigh_elem->n_neighbors(); j++){
+        unsigned neighbor_id = neigh_elem->neighbor(j)->id();
+        it = replaced_elems.find(parent_id);
+        if(neighbor_id==parent_id)
+          neigh_elem->set_neighbor(j,it->second);
+      }
+    }
+  }
 
   //delete elements
   const std::vector<EFAelement*> DeleteElements = _efa_mesh.getParentElements();
@@ -802,10 +879,11 @@ XFEM::cut_mesh_with_efa()
       _cut_elem_map.erase(cemit);
     }
 
-    elem_to_delete->nullify_neighbors();
+    //elem_to_delete->nullify_neighbors(); //WJ: not sure?
     _mesh->boundary_info->remove(elem_to_delete);
     _mesh->delete_elem(elem_to_delete);
     std::cout<<"XFEM deleted elem "<<elem_to_delete->id()+1<<std::endl;
+    
     mesh_changed = true;
 
     if (_mesh2)
@@ -836,6 +914,19 @@ XFEM::cut_mesh_with_efa()
       _crack_tip_elems.insert(crack_tip_elem);
     }
   }
+
+  const unsigned int n_levels = MeshTools::n_levels(*_mesh);
+  for (unsigned int level = 1; level < n_levels; ++level)
+    {
+      MeshBase::element_iterator end = _mesh->level_elements_end(level);
+      for (MeshBase::element_iterator el = _mesh->level_elements_begin(level);
+           el != end; ++el)
+        {
+          Elem* current_elem = *el;
+          std::cout << "current_elem id(" << current_elem->id() << ") is active? " << current_elem->active() << std::endl;
+        }
+    }
+ 
 
   //store virtual nodes
   //store cut edge info
