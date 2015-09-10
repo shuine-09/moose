@@ -57,7 +57,8 @@ Kernel::computeResidual()
   precalculateResidual();
   for (_i = 0; _i < _test.size(); _i++)
     for (_qp = 0; _qp < _qrule->n_points(); _qp++)
-      _local_re(_i) += _JxW[_qp] * _coord[_qp] * computeQpResidual() * _xfem_weights[_qp];
+      //_local_re(_i) += _JxW[_qp] * _coord[_qp] * computeQpResidual() * _xfem_weights[_qp];
+       _local_re(_i) += _JxW[_qp] * _coord[_qp] * computeQpResidual();
 
   re += _local_re;
 
@@ -80,7 +81,8 @@ Kernel::computeJacobian()
   for (_i = 0; _i < _test.size(); _i++)
     for (_j = 0; _j < _phi.size(); _j++)
       for (_qp = 0; _qp < _qrule->n_points(); _qp++)
-        _local_ke(_i, _j) += _JxW[_qp] * _coord[_qp] * computeQpJacobian() * _xfem_weights[_qp];
+        //_local_ke(_i, _j) += _JxW[_qp] * _coord[_qp] * computeQpJacobian() * _xfem_weights[_qp];
+         _local_ke(_i, _j) += _JxW[_qp] * _coord[_qp] * computeQpJacobian();
 
   ke += _local_ke;
 
@@ -111,7 +113,8 @@ Kernel::computeOffDiagJacobian(unsigned int jvar)
       for (_j = 0; _j < _phi.size(); _j++)
         for (_qp = 0; _qp < _qrule->n_points(); _qp++)
         {
-          ke(_i, _j) += _JxW[_qp] * _coord[_qp] * computeQpOffDiagJacobian(jvar) * _xfem_weights[_qp];
+          //ke(_i, _j) += _JxW[_qp] * _coord[_qp] * computeQpOffDiagJacobian(jvar) * _xfem_weights[_qp];
+          ke(_i, _j) += _JxW[_qp] * _coord[_qp] * computeQpOffDiagJacobian(jvar);
         }
   }
 }
@@ -126,6 +129,7 @@ Kernel::computeOffDiagJacobianScalar(unsigned int jvar)
   for (_i = 0; _i < _test.size(); _i++)
     for (_j = 0; _j < jv.order(); _j++)
       for (_qp = 0; _qp < _qrule->n_points(); _qp++)
+        //ke(_i, _j) += _JxW[_qp] * _coord[_qp] * computeQpOffDiagJacobian(jvar) * _xfem_weights[_qp];
         ke(_i, _j) += _JxW[_qp] * _coord[_qp] * computeQpOffDiagJacobian(jvar) * _xfem_weights[_qp];
 }
 

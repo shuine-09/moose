@@ -326,6 +326,8 @@ Assembly::invalidateCache()
 
   for (; it!=end; ++it)
     it->second->_invalidated = true;
+
+  std::cout << "validate Cashe" << std::endl;
 }
 
 void
@@ -1507,3 +1509,20 @@ Assembly::setCachedNodalBCJacobianEntries(SparseMatrix<Number> & jacobian)
                  _cached_nodal_bc_cols[i],
                  _cached_nodal_bc_vals[i]);
 }
+
+void
+Assembly::updateXFEMWeights(std::vector<Real> & xfem_weights, const Elem * elem)
+{
+  _current_xfem_weights.resize(xfem_weights.size());
+  for(unsigned i = 0; i < xfem_weights.size(); i++)
+    _current_xfem_weights[i] = xfem_weights[i];
+  
+  if(!_xfem_weights_have_been_updated[elem->id()] && _current_JxW.size()!=0){ 
+      mooseAssert(_current_xfem_weights.size()==_current_JxW.size(),"wrong number of entries in xfem_weights"); 
+      for(unsigned i = 0; i < _current_xfem_weights.size(); i++){ 
+        _current_JxW[i] = _current_JxW[i] * _current_xfem_weights[i]; 
+      } 
+      //std::cout << "xfem weights is updated" << std::endl; 
+     // _xfem_weights_have_been_updated = true; 
+   }
+} 

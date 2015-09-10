@@ -131,7 +131,7 @@
 []
 
 [Materials]
-  active = 'crysp'
+  active = 'elastic'
   [./crysp]
     type = FiniteStrainCrystalPlasticity
     block = 0
