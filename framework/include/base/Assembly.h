@@ -30,8 +30,6 @@
 #include "libmesh/elem.h"
 #include "libmesh/node.h"
 
-//#include "XFEM.h"
-
 // MOOSE Forward Declares
 class MooseMesh;
 class ArbitraryQuadrature;
@@ -453,7 +451,11 @@ public:
   /**
   * Set  XFEM integration weights
   */
-  void updateXFEMWeights(std::vector<Real> & xfem_weights, const Elem* elem);
+  void setXFEMWeights(std::vector<Real> & xfem_weights, const Elem* elem);
+
+  void updateXFEMWeights(const Elem* elem);
+
+  void reinitXFEMWeights();
 
 protected:
   /**
@@ -526,7 +528,7 @@ protected:
   /// The current list of transformed jacobian weights
   MooseArray<Real> _current_JxW;
   /// The XFEM integration weights
-  MooseArray<Real> _current_xfem_weights;
+  std::map<dof_id_type, MooseArray<Real> > _xfem_weights_map;
   /// XFEM weights update flag
   std::map<dof_id_type,bool> _xfem_weights_have_been_updated;
   /// The coordinate system
