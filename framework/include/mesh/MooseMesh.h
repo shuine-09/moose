@@ -224,6 +224,7 @@ public:
    * MooseMesh also know when it has changed.
    */
   void meshChanged();
+  void meshChanged_xfem();
 
   /**
   * Declares a callback function that is executed at the conclusion

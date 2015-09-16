@@ -151,7 +151,7 @@ XFEM::update(Real time)
 //    _mesh->contract();
     _mesh->allow_renumbering(false);
     _mesh->skip_partitioning(true);
-    _mesh->prepare_for_use(false,false); 
+    _mesh->prepare_for_use(true,true); 
 //    _mesh->prepare_for_use(true,true); //doing this preserves the numbering, but generates warning
 
     if (_mesh2)
@@ -188,18 +188,20 @@ void XFEM::initSolution(NonlinearSystem & nl, AuxiliarySystem & aux)
     {
       Node* new_node = getNodeFromUniqueID(nit->first);
       Node* parent_node = getNodeFromUniqueID(nit->second);
-//      std::cout<<"BWS new node : "<<new_node->id() << " parent node: "<<parent_node->id()<<std::endl;
+      std::cout<<"BWS new node : "<<new_node->id() << " parent node: "<<parent_node->id()<<std::endl;
       Point *new_point = new Point(*new_node);
       Point *parent_point = new Point(*parent_node);
       if (*new_point != *parent_point)
         mooseError("Points don't match");
+      std::cout << "nl.number() = " << nl.number() << std::endl;
+      std::cout << "nl_vars[ivar]->number() = " << nl_vars[ivar]->number() << std::endl;
       unsigned int new_node_dof = new_node->dof_number(nl.number(), nl_vars[ivar]->number(),0);
       unsigned int parent_node_dof = parent_node->dof_number(nl.number(), nl_vars[ivar]->number(),0);
-//      std::cout<<"BWS setting soln : "<<new_node_dof<<" "<<parent_node_dof<<" "<<current_solution(parent_node_dof)<<std::endl;
+      std::cout<<"BWS setting soln : "<<new_node_dof<<" "<<parent_node_dof<<" "<<current_solution(parent_node_dof)<<std::endl;
       if (parent_node->processor_id() == _mesh->processor_id())
       {
         current_solution.set(new_node_dof, current_solution(parent_node_dof));
-//      std::cout<<"BWS setting old soln : "<<new_node_dof<<" "<<parent_node_dof<<" "<<old_solution(parent_node_dof)<<std::endl;
+      std::cout<<"BWS setting old soln : "<<new_node_dof<<" "<<parent_node_dof<<" "<<old_solution(parent_node_dof)<<std::endl;
         old_solution.set(new_node_dof, old_solution(parent_node_dof));
       }
     }
@@ -611,13 +613,13 @@ XFEM::cut_mesh_with_efa()
 
   _efa_mesh.updatePhysicalLinksAndFragments();
   // DEBUG
-//  _efa_mesh.printMesh(/);
-//  std::cout<<"BWS before updateTopology"<<std::endl;
+  _efa_mesh.printMesh();
+  std::cout<<"BWS before updateTopology"<<std::endl;
 
   _efa_mesh.updateTopology();
   // DEBUG
-//  _efa_mesh.printMesh();
-//  std::cout<<"BWS cut done"<<std::endl;
+  _efa_mesh.printMesh();
+  std::cout<<"BWS cut done"<<std::endl;
 
   //Add new nodes
   const std::vector<EFAnode*> NewNodes = _efa_mesh.getNewNodes();
@@ -627,7 +629,7 @@ XFEM::cut_mesh_with_efa()
     unsigned int parent_id = NewNodes[i]->parent()->id();
 
     Node *parent_node = _mesh->node_ptr(parent_id);
-//    std::cout<<"BWS n_nodes: "<<_mesh->n_nodes()<<std::endl;
+    std::cout<<"BWS n_nodes: "<<_mesh->n_nodes()<<std::endl;
     Point *new_point = new Point(*parent_node);
     Node *new_node = Node::build(*new_point,_mesh->n_nodes()).release();
     new_node->processor_id() = parent_node->processor_id();
@@ -655,14 +657,14 @@ XFEM::cut_mesh_with_efa()
     }
   }
 
-//  std::cout<<"BWS _new_node_to_parent_node:"<<std::endl;
-//  for (std::map<Node*, Node*>::iterator nit = _new_node_to_parent_node.begin();
-//       nit != _new_node_to_parent_node.end(); ++nit)
-//  {
-//    Node * new_node = nit->first;
-//    Node * parent_node = nit->second;
-//    std::cout<<"BWS new node : "<<new_node->id() << " parent node: "<<parent_node->id()<<std::endl;
-//  }
+  //std::cout<<"BWS _new_node_to_parent_node:"<<std::endl;
+  //for (std::map<Node*, Node*>::iterator nit = _new_node_to_parent_node.begin();
+  //     nit != _new_node_to_parent_node.end(); ++nit)
+  // {
+  //  Node * new_node = nit->first;
+  //  Node * parent_node = nit->second;
+  //  std::cout<<"BWS new node : "<<new_node->id() << " parent node: "<<parent_node->id()<<std::endl;
+  //}
 
   //Add new elements
 
@@ -713,8 +715,7 @@ XFEM::cut_mesh_with_efa()
         else
           libmesh_node = _mesh2->node_ptr(node_id);
 
-        libmesh_elem2->set_node(j) = libmesh_node;
-
+        libmesh_elem2->set_node(j) = libmesh_node; 
         parent_node = parent_elem2->get_node(j);
         parent_node_boundary_ids.clear();
         parent_node_boundary_ids = _mesh2->boundary_info->boundary_ids(parent_node);
@@ -736,6 +737,11 @@ XFEM::cut_mesh_with_efa()
     libmesh_elem->processor_id() = parent_elem->processor_id();
 
     it = replaced_elems.find(parent_id); // WJ: if this parent element has been replaced
+    if(it!=replaced_elems.end()){
+      libmesh_elem->set_sibling(it->second);
+      it->second->set_sibling(libmesh_elem);
+    }
+
     new_add_elems.push_back(libmesh_elem);  // WJ:  added the child element
     //WJ: replace the parent's child as it it might deleted later
      if(it == replaced_elems.end())
@@ -853,17 +859,18 @@ XFEM::cut_mesh_with_efa()
   //need to update the neighor of new added element as some neighbors might be deleted later
   for(unsigned l = 0; l < new_add_elems.size();l++){
     Elem* lib_elem = new_add_elems[l];
-    unsigned int parent_id = NewElements[l]->parent()->id();  
-    for(unsigned i = 0; i < lib_elem->n_neighbors(); i++){
-      Elem* neigh_elem = lib_elem->neighbor(i);
-      for(unsigned j = 0; j < neigh_elem->n_neighbors(); j++){
-        unsigned neighbor_id = neigh_elem->neighbor(j)->id();
-        it = replaced_elems.find(parent_id);
-        if(neighbor_id==parent_id)
-          neigh_elem->set_neighbor(j,it->second);
+      for(unsigned i = 0; i < lib_elem->n_neighbors(); i++){
+        Elem* neigh_elem = lib_elem->neighbor(i);
+        it = replaced_elems.find(neigh_elem->id());
+        if(it!=replaced_elems.end())
+          lib_elem->set_neighbor(i,it->second);
+        for(unsigned j = 0; j < neigh_elem->n_neighbors(); j++){
+            it = replaced_elems.find(neigh_elem->neighbor(j)->id());
+            if(it!=replaced_elems.end())
+              neigh_elem->set_neighbor(j,it->second);
+        }  
       }
     }
-  }
 
   //delete elements
   const std::vector<EFAelement*> DeleteElements = _efa_mesh.getParentElements();
@@ -916,14 +923,18 @@ XFEM::cut_mesh_with_efa()
   }
 
   const unsigned int n_levels = MeshTools::n_levels(*_mesh);
-  for (unsigned int level = 1; level < n_levels; ++level)
+  for (unsigned int level = 0; level < n_levels; ++level)
     {
       MeshBase::element_iterator end = _mesh->level_elements_end(level);
       for (MeshBase::element_iterator el = _mesh->level_elements_begin(level);
            el != end; ++el)
         {
           Elem* current_elem = *el;
-          std::cout << "current_elem id(" << current_elem->id() << ") is active? " << current_elem->active() << std::endl;
+          std::cout << "elem id = " << current_elem->id() << std::endl;
+          for(unsigned i = 0; i < current_elem->n_neighbors(); i++){
+            if(current_elem->neighbor(i)!=NULL)
+              std::cout << "==> neighbour( " << i << ") id = " << current_elem->neighbor(i)->id() << std::endl;
+          }
         }
     }
  

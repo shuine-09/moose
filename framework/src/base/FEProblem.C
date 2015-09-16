@@ -3651,6 +3651,8 @@ void
 FEProblem::adaptMesh()
 {
   unsigned int cycles_per_step = _adaptivity.getCyclesPerStep();
+  std::cout << "cycles_per_step = " << cycles_per_step << std::endl;
+  cycles_per_step = 0; //WJ
   for (unsigned int i = 0; i < cycles_per_step; ++i)
   {
     _console << "Adaptivity step " << i+1 << " of " << cycles_per_step << '\n';
@@ -3663,15 +3665,77 @@ bool
 FEProblem::xfemUpdateMesh()
 {
   bool updated = _xfem.update(_time);
+
   if (updated)
   {
-    meshChanged();
+    meshChanged_xfem();
     _xfem.initSolution(_nl, _aux);
     restoreSolutions();
   }
   return updated;
 }
 #endif //LIBMESH_ENABLE_AMR
+
+void
+FEProblem::meshChanged_xfem()
+{
+  if (_material_props.hasStatefulProperties() || _bnd_material_props.hasStatefulProperties())
+    _mesh.cacheChangedLists(); // Currently only used with adaptivity and stateful material properties
+
+  // Clear these out because they corresponded to the old mesh
+  _ghosted_elems.clear();
+
+  ghostGhostedBoundaries();
+
+  // mesh changed
+  _eq.reinit_xfem();
+
+  _mesh.meshChanged();
+
+  // Since the Mesh changed, update the PointLocator object used by DiracKernels.
+  _dirac_kernel_info.updatePointLocator(_mesh);
+
+  unsigned int n_threads = libMesh::n_threads();
+
+  for (unsigned int i = 0; i < n_threads; ++i)
+    _assembly[i]->invalidateCache();
+
+  // Need to redo ghosting
+  _geometric_search_data.reinit();
+
+  if (_displaced_problem != NULL)
+  {
+    _displaced_problem->meshChanged();
+    _displaced_mesh->updateActiveSemiLocalNodeRange(_ghosted_elems);
+  }
+
+  _mesh.updateActiveSemiLocalNodeRange(_ghosted_elems);
+
+  reinitBecauseOfGhostingOrNewGeomObjects();
+ 
+  // We need to create new storage for the new elements and copy stateful properties from the old elements.
+  if (_has_initialized_stateful && (_material_props.hasStatefulProperties() || _bnd_material_props.hasStatefulProperties()))
+  {
+    {
+      ProjectMaterialProperties pmp(true, *this, _nl, _material_data, _bnd_material_data, _material_props, _bnd_material_props, _materials, _assembly);
+      Threads::parallel_reduce(*_mesh.refinedElementRange(), pmp);
+    }
+
+    {
+      ProjectMaterialProperties pmp(false, *this, _nl, _material_data, _bnd_material_data, _material_props, _bnd_material_props, _materials, _assembly);
+      Threads::parallel_reduce(*_mesh.coarsenedElementRange(), pmp);
+    }
+
+  }
+  _has_jacobian = false;                    // we have to recompute jacobian when mesh changed
+
+  for (std::vector<MeshChangedInterface *>::iterator it = _notify_when_mesh_changes.begin();
+       it != _notify_when_mesh_changes.end();
+       ++it)
+    (*it)->meshChanged(); 
+}
+
+
 
 void
 FEProblem::meshChanged()

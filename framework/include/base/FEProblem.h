@@ -786,6 +786,8 @@ public:
 #endif //LIBMESH_ENABLE_AMR
   virtual void meshChanged();
 
+  virtual void meshChanged_xfem();
+
   /**
    * Register an object that derives from MeshChangedInterface
    * to be notified when the mesh changes.
