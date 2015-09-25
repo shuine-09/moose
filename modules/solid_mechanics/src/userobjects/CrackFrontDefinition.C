@@ -107,9 +107,6 @@ CrackFrontDefinition::CrackFrontDefinition(const InputParameters & parameters) :
   if (isParamValid("intersecting_boundary"))
   {
     _intersecting_boundary_names = getParam<std::vector<BoundaryName> >("intersecting_boundary");
-    //WJ
-    //if (_geom_definition_method == CRACK_FRONT_POINTS)
-    //  mooseError("The use of 'intersecting_boundary' together with 'crack_front_points' is not yet supported");
   }
 
   MooseEnum end_direction_method_moose_enum = getParam<MooseEnum>("crack_end_direction_method");
@@ -1348,7 +1345,7 @@ CrackFrontDefinition::isPointWithIndexOnIntersectingBoundary(const unsigned int 
   else
   {
     //TODO: Implement for CRACK_FRONT_POINTS
-    //WJ: the first and last point is assumed to be on the boundary
+    //the first and last point is assumed to be on the boundary
     unsigned int num_crack_front_points = getNumCrackFrontPoints();
     if(point_index==0 || point_index==num_crack_front_points-1)
       is_on_boundary = true;
