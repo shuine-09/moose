@@ -738,8 +738,13 @@ FiniteStrainCrystalPlasticity::solveStress()
   {
     dpk2 = - jac.invSymm() * resid; // Calculate stress increment
     _pk2_tmp = _pk2_tmp + dpk2; // Update stress
+<<<<<<< HEAD
     calc_resid_jacob(resid,jac);
     internalVariableUpdateNRiteration(); //update _fp_prev_inv
+=======
+    calcResidual(resid);
+    internalVariableUpdateNRiteration(); //update _fe_prev_inv
+>>>>>>> made changes according to comments
 
     if (_err_tol)
     {

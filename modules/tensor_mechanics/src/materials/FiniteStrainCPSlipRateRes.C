@@ -315,7 +315,6 @@ FiniteStrainCPSlipRateRes::lineSearchUpdateSlipRate(const Real rnorm_prev, const
     }
 
     while ((rnorm/rnorm0) > _lsrch_tol && count < _lsrch_max_iter){
-
       for (unsigned int i = 0; i < update.size(); ++i)
         _slip_rate(i) += step * update(i);
 
