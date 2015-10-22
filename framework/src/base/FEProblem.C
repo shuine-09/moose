@@ -669,7 +669,7 @@ FEProblem::get_xfem_weights(const Elem * elem, THREAD_ID tid)
     undisplaced_elem = elem;
 
   std::string xfem_qrule = _xfem.get_xfem_qrule();
-  
+
   _xfem_JxW[elem->id()].resize((_assembly[tid]->qRule())->n_points(), 1.0);
 
   for (unsigned qp = 0; qp < (_assembly[tid]->qRule())->n_points(); qp++)
@@ -690,7 +690,7 @@ FEProblem::get_xfem_weights(const Elem * elem, THREAD_ID tid)
 
 void
 FEProblem::prepare(const Elem * elem, THREAD_ID tid)
-{ 
+{
   _assembly[tid]->reinit(elem);
 
   if (elem->is_semilocal(_mesh.processor_id()) && _xfem_JxW[elem->id()].size() == 0){

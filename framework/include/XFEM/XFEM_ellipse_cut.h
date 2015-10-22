@@ -33,6 +33,6 @@ private:
   bool intersect_with_edge(Point p1, Point p2, Point &pint);
   bool isInsideCutPlane(Point p);
 };
-  
+
 #endif
 

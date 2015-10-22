@@ -814,7 +814,7 @@ CrackFrontDefinition::updateDataForCrackDirection()
   if (_direction_method == CURVED_CRACK_FRONT)
   {
     _crack_plane_normal.zero();
- 
+
     // Determine if crack front points are closed loop
     if(_geom_definition_method == CRACK_FRONT_POINTS){
       Real average_adjacent_points_lengths = 0;
@@ -840,7 +840,7 @@ CrackFrontDefinition::updateDataForCrackDirection()
       unsigned int start_id;
       unsigned int mid_id;
       unsigned int end_id;
-  
+
       if (_closed_loop)
       {
         start_id = 0;
@@ -872,25 +872,25 @@ CrackFrontDefinition::updateDataForCrackDirection()
         mooseError("Nodes on crack front are too close to being collinear");
       }
     }else{
-      
-      unsigned int num_points(_crack_front_points.size()); 
+
+      unsigned int num_points(_crack_front_points.size());
 
       unsigned int start_id;
       unsigned int mid_id;
       unsigned int end_id;
-      
+
       if (_closed_loop)
-      {    
-        start_id = 0; 
+      {
+        start_id = 0;
         mid_id = (num_points-1)/3;
         end_id = 2*mid_id;
-      }    
-      else 
-      {    
-        start_id = 0; 
+      }
+      else
+      {
+        start_id = 0;
         mid_id = (num_points-1)/2;
         end_id = num_points-1;
-      }    
+      }
 
       Point start = _crack_front_points[start_id];
       Point mid   = _crack_front_points[mid_id];
@@ -907,9 +907,9 @@ CrackFrontDefinition::updateDataForCrackDirection()
       //Make sure they're not collinear
       RealVectorValue zero_vec(0.0);
       if (_crack_plane_normal.absolute_fuzzy_equals(zero_vec, _tol))
-      {    
+      {
         mooseError("Nodes on crack front are too close to being collinear");
-      }   
+      }
     }
   }
 }
@@ -1162,7 +1162,7 @@ CrackFrontDefinition::calculateRThetaToCrackFront(const Point qp, const unsigned
 
     //Determine if p is above or below the crack plane
     Real y_local = p_rot(1) - closest_point(1);
- 
+
     //Determine if p is in front of or behind the crack front
     RealVectorValue p2(p_rot);
     p2(1) = 0;
@@ -1198,12 +1198,12 @@ CrackFrontDefinition::calculateRThetaToCrackFront(const Point qp, const unsigned
 
       else if (x_local >= 0 && y_local < 0)
         theta = -theta_quadrant1;
-    }  
+    }
     else if (r == 0)
       theta = 0;
     else
       mooseError("Invalid distance r in CrackFrontDefinition::calculateRThetaToCrackFront");
- 
+
   }else{
     unsigned int num_nodes(_ordered_crack_front_nodes.size());
     Point p = qp;
@@ -1269,7 +1269,7 @@ CrackFrontDefinition::calculateRThetaToCrackFront(const Point qp, const unsigned
 
     //Determine if p is above or below the crack plane
     Real y_local = p_rot(1) - closest_node(1);
- 
+
     //Determine if p is in front of or behind the crack front
     RealVectorValue p2(p_rot);
     p2(1) = 0;
@@ -1305,12 +1305,12 @@ CrackFrontDefinition::calculateRThetaToCrackFront(const Point qp, const unsigned
 
       else if (x_local >= 0 && y_local < 0)
         theta = -theta_quadrant1;
-    }  
+    }
     else if (r == 0)
       theta = 0;
     else
       mooseError("Invalid distance r in CrackFrontDefinition::calculateRThetaToCrackFront");
-  }  
+  }
 }
 
 bool

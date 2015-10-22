@@ -40,4 +40,4 @@ protected:
   bool _xfem_cut_plane;
 };
 
-#endif 
+#endif

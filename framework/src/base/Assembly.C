@@ -416,7 +416,7 @@ Assembly::reinitFE(const Elem * elem)
   }
 
   if (do_caching)
-    efesd->_invalidated = false; 
+    efesd->_invalidated = false;
 
   updateXFEMWeights(elem);
 }
@@ -1516,12 +1516,12 @@ void
 Assembly::updateXFEMWeights(const Elem *elem)
 {
  if((_xfem_weights_map.find(elem->id()) != _xfem_weights_map.end())){
-    mooseAssert(_xfem_weights_map[elem->id()].size()==_current_JxW.size(),"wrong number of entries in xfem_weights"); 
-      for(unsigned i = 0; i < _xfem_weights_map[elem->id()].size(); i++){ 
-        _current_JxW[i] = _current_JxW[i] * _xfem_weights_map[elem->id()][i]; 
+    mooseAssert(_xfem_weights_map[elem->id()].size()==_current_JxW.size(),"wrong number of entries in xfem_weights");
+      for(unsigned i = 0; i < _xfem_weights_map[elem->id()].size(); i++){
+        _current_JxW[i] = _current_JxW[i] * _xfem_weights_map[elem->id()][i];
       }
       _xfem_weights_have_been_updated[elem->id()] = true;
-   } 
+   }
 }
 
 void
@@ -1530,12 +1530,12 @@ Assembly::setXFEMWeights(std::vector<Real> & xfem_weights, const Elem * elem)
   _xfem_weights_map[elem->id()].resize(xfem_weights.size());
 
   for(unsigned i = 0; i < xfem_weights.size(); i++)
-    _xfem_weights_map[elem->id()][i] = xfem_weights[i]; 
+    _xfem_weights_map[elem->id()][i] = xfem_weights[i];
 }
 
 void
 Assembly::reinitXFEMWeights()
-{ 
+{
   std::map<dof_id_type, bool >::iterator
   it  = _xfem_weights_have_been_updated.begin(),
   end = _xfem_weights_have_been_updated.end();

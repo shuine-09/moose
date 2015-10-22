@@ -138,7 +138,7 @@ XFEMMarkerUserObject::finalize()
   _communicator.set_union(_marked_elems);
   _communicator.set_union(_marked_frags);
   _communicator.set_union(_marked_elem_sides);
- 
+
   _xfem->clearStateMarkedElems();
   std::map<unsigned int, RealVectorValue>::iterator mit;
   for (mit = _marked_elems.begin(); mit != _marked_elems.end(); ++mit)

@@ -187,9 +187,9 @@ void static stdQuadr2D(unsigned int nen, unsigned int iord, std::vector<std::vec
       const Real b[n_wts] = {0., 0.}; // not used
       const unsigned int permutation_ids[n_wts] = {3, 3};
 
-      std::vector<Point> points; 
+      std::vector<Point> points;
       std::vector<Real> weights;
-      dunavant_rule2(wts, a, b, permutation_ids, n_wts, points, weights); // 6 total points 
+      dunavant_rule2(wts, a, b, permutation_ids, n_wts, points, weights); // 6 total points
 
       sg2.resize(6);
       for (unsigned int i = 0; i < 6; ++i)

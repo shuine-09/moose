@@ -36,11 +36,11 @@ XFEM_ellipse_cut::XFEM_ellipse_cut(std::vector<Real> ellipse_nodes):
   Point ray2 = _vertices[1] - _center;
 
    if( std::abs(ray1*ray2) > 1e-6 )
-     mooseError("this method only works a elliptic cut, users should provide two points at the long and short axis\n"); 
+     mooseError("this method only works a elliptic cut, users should provide two points at the long and short axis\n");
 
   _normal = ray1.cross(ray2);
   normalize(_normal);
-  
+
   Real R1 = std::sqrt(ray1.size_sq());
   Real R2 = std::sqrt(ray2.size_sq());
 
@@ -55,7 +55,7 @@ XFEM_ellipse_cut::XFEM_ellipse_cut(std::vector<Real> ellipse_nodes):
         _long_axis  = R2;
         _short_axis = R1;
    }
-   
+
   normalize(_unit_vec1);
   normalize(_unit_vec2);
 
@@ -129,7 +129,7 @@ bool XFEM_ellipse_cut::cut_elem_by_geometry(const Elem* elem, std::vector<cutFac
        cutFaces.push_back(mycut);
      }
 
-   }  // i, loop over faces; 
+   }  // i, loop over faces;
 
 
    return cut_elem;
@@ -171,9 +171,9 @@ bool XFEM_ellipse_cut::isInsideCutPlane(Point p){
     if( std::abs(ray*_normal) < 1e-6 ){
        double xloc = ray*_unit_vec1;
        double yloc = ray*_unit_vec2;
-       
+
        if(std::sqrt( xloc*xloc/(_long_axis*_long_axis) + yloc*yloc/(_short_axis*_short_axis) ) < 1)
-	 return true; 
+	 return true;
     }
     return false;
 }

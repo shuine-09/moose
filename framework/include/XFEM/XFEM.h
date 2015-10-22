@@ -107,6 +107,8 @@ public:
   bool is_elem_cut(const Elem* elem) const;
   void get_frag_faces(const Elem* elem, std::vector<std::vector<Point> > &frag_faces,
                       bool displaced_mesh = false) const;
+  void store_crack_tip_origin_and_direction();
+  void correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, EFAedge * orig_edge, Point normal, Point crack_tip_origin, Point crack_tip_direction, Real & distance_keep, unsigned int & edge_id_keep);
 
   /**
    * Set and get xfem cut data and type
@@ -133,7 +135,7 @@ private:
    */
   std::vector<Real> _XFEM_cut_data;
   std::string _XFEM_cut_type;
- 
+
   std::string _XFEM_qrule;
 
   /**
@@ -145,6 +147,8 @@ private:
 
   std::map<const Elem*, XFEMCutElem*> _cut_elem_map;
   std::set<const Elem*> _crack_tip_elems;
+
+  std::map<const Elem*, std::vector<Point> > _elem_crack_origin_direction_map;
 
   std::map<const Elem*, RealVectorValue> _state_marked_elems;
   std::set<const Elem*> _state_marked_frags;
