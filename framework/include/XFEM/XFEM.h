@@ -81,7 +81,7 @@ public:
   void build_efa_mesh();
   bool mark_cut_edges(Real time);
   bool mark_cut_edges_by_geometry(Real time);
-  bool mark_cut_edges_by_state();
+  bool mark_cut_edges_by_state(Real time);
   bool mark_cut_faces_by_geometry(Real time);
   bool mark_cut_faces_by_state();
   bool init_crack_intersect_edge(Point cut_origin, RealVectorValue cut_normal,
@@ -108,7 +108,7 @@ public:
   void get_frag_faces(const Elem* elem, std::vector<std::vector<Point> > &frag_faces,
                       bool displaced_mesh = false) const;
   void store_crack_tip_origin_and_direction();
-  void correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, EFAedge * orig_edge, Point normal, Point crack_tip_origin, Point crack_tip_direction, Real & distance_keep, unsigned int & edge_id_keep);
+  void correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, EFAedge * orig_edge, Point normal, Point crack_tip_origin, Point crack_tip_direction, Real & distance_keep, unsigned int & edge_id_keep, Point & normal_keep);
 
   /**
    * Set and get xfem cut data and type
@@ -119,6 +119,8 @@ public:
   void set_xfem_cut_type(std::string & cut_type);
   std::string & get_xfem_qrule();
   void set_xfem_qrule(std::string & xfem_qrule);
+  void set_crack_growth_method(bool use_crack_growth_increment, Real crack_growth_increment);
+ 
 
 private:
 
@@ -137,6 +139,9 @@ private:
   std::string _XFEM_cut_type;
 
   std::string _XFEM_qrule;
+
+  bool _use_crack_growth_increment;
+  Real _crack_growth_increment;
 
   /**
    * Reference to the mesh.

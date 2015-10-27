@@ -41,7 +41,9 @@ InputParameters validParams<XFEMAction>()
   params.addParam<std::vector<Real> >("cut_scale","X,Y scale factors for XFEM geometric cuts");
   params.addParam<std::vector<Real> >("cut_translate","X,Y translations for XFEM geometric cuts");
   params.addParam<std::string>("qrule", "volfrac", "XFEM quadrature rule to use");
-  params.addParam<bool>("cut_plane",false,"Output the XFEM cut plane and volume fraction");
+  params.addParam<bool>("output_cut_plane",false,"Output the XFEM cut plane and volume fraction");
+  params.addParam<bool>("use_crack_growth_increment", false, "Use fixed crack growth increment");
+  params.addParam<Real>("crack_growth_increment", 0.1, "Crack growth increment");
   return params;
 }
 
@@ -49,12 +51,14 @@ XFEMAction::XFEMAction(InputParameters params) :
     Action(params),
     _xfem_cut_type(getParam<std::string>("cut_type")),
     _xfem_qrule(getParam<std::string>("qrule")),
-    _xfem_cut_plane(false)
+    _xfem_cut_plane(false),
+    _xfem_use_crack_growth_increment(getParam<bool>("use_crack_growth_increment")),
+    _xfem_crack_growth_increment(getParam<Real>("crack_growth_increment"))
 {
    _order = "CONSTANT";
    _family = "MONOMIAL";
-   if (isParamValid("cut_plane"))
-     _xfem_cut_plane = getParam<bool>("cut_plane");
+   if (isParamValid("output_cut_plane"))
+     _xfem_cut_plane = getParam<bool>("output_cut_plane");
 }
 
 void
@@ -68,6 +72,8 @@ XFEMAction::act()
     _xfem_cut_data = getParam<std::vector<Real> >("cut_data");
 
     xfem->set_xfem_qrule(_xfem_qrule);
+
+    xfem->set_crack_growth_method(_xfem_use_crack_growth_increment, _xfem_crack_growth_increment);
 
     if (_xfem_cut_type == "line_segment_2d")
     {
