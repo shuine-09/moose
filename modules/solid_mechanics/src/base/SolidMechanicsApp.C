@@ -32,6 +32,7 @@
 #include "JIntegral.h"
 #include "CrackFrontData.h"
 #include "CrackFrontDefinition.h"
+#include "XFEMJIntegral.h"
 #include "InteractionIntegral.h"
 #include "InteractionIntegralAuxFields.h"
 #include "MixedModeEquivalentK.h"
@@ -172,6 +173,7 @@ SolidMechanicsApp::registerObjects(Factory & factory)
   registerUserObject(CavityPressureUserObject);
   registerUserObject(CrackFrontDefinition);
 
+  registerUserObject(XFEMJIntegral);
   registerUserObject(XFEMMaterialTensorMarkerUserObject);
 }
 
