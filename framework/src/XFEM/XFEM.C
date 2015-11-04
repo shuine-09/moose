@@ -79,6 +79,63 @@ XFEM::addGeometricCut(XFEM_geometric_cut* geometric_cut)
 }
 
 void
+XFEM::clear_crack_propagation_direction()
+{
+  _crack_propagation_direction_map.clear();
+}
+
+unsigned int
+XFEM::num_crack_tips()
+{
+  return _elem_crack_origin_direction_map.size();
+}
+
+void
+XFEM::update_crack_propagation_direction(const Elem* elem, Point direction)
+{
+  std::map<const Elem*, Point>::iterator mit;
+  mit = _crack_propagation_direction_map.find(elem);
+  if (mit != _crack_propagation_direction_map.end())
+  {
+    libMesh::err << " ERROR: element "<<elem->id()<<" already marked for crack growth direction."<<std::endl;
+  }
+  _crack_propagation_direction_map[elem] = direction;
+}
+
+void
+XFEM::get_crack_tip_origin(std::map<unsigned int, const Elem* > & elem_id_crack_tip, std::vector<Point> & crack_front_points)
+{
+  elem_id_crack_tip.clear();
+  crack_front_points.clear();
+  crack_front_points.resize(_elem_crack_origin_direction_map.size());
+
+  std::map<const Elem*, std::vector<Point> >::iterator mit1 = _elem_crack_origin_direction_map.begin();
+  unsigned int crack_tip_index = 0;
+  // This map is used to sort the order in _elem_crack_origin_direction_map according to elem id
+  std::map<unsigned int, const Elem*> elem_id_map;
+  
+  for (mit1 = _elem_crack_origin_direction_map.begin(); mit1 != _elem_crack_origin_direction_map.end(); mit1++)
+  {
+    unsigned int elem_id = (mit1->first)->id();
+    elem_id_map[elem_id] = mit1->first;
+  }
+
+  std::map<unsigned int, const Elem*> ::iterator mit2 = elem_id_map.begin();
+  
+  for (; mit2 != elem_id_map.end(); mit2++)
+  {
+    const Elem* elem = mit2->second;
+    mit1 = _elem_crack_origin_direction_map.find(elem);
+    if (mit1 != _elem_crack_origin_direction_map.end())
+    {
+      elem_id_crack_tip[crack_tip_index] = mit1->first;
+      crack_front_points[crack_tip_index] = (mit1->second)[0]; // [0] stores origin coordinates and [1] stores direction
+      crack_tip_index++;
+    }
+  }
+}
+
+void
 XFEM::addStateMarkedElem(unsigned int elem_id, RealVectorValue normal)
 {
   Elem *elem = _mesh->elem(elem_id);
@@ -165,7 +222,6 @@ XFEM::store_crack_tip_origin_and_direction()
       _elem_crack_origin_direction_map.insert(std::pair<const Elem*, std::vector<Point> >(elem,tip_data));
     }
   }
-
 }
 
 bool
@@ -207,7 +263,9 @@ XFEM::update(Real time)
 //      _mesh2->prepare_for_use(true,true);
     }
   }
+
   clearStateMarkedElems();
+  clear_crack_propagation_direction(); 
 
   return mesh_changed;
 }
@@ -521,12 +579,12 @@ bool
 XFEM::mark_cut_edges_by_state(Real time)
 {
   bool marked_edges = false;
-
+  std::cout << "XFEM: MARK CUT EDGES" << std::endl;
   std::map<const Elem*, RealVectorValue>::iterator pmeit;
   for (pmeit = _state_marked_elems.begin(); pmeit != _state_marked_elems.end(); ++pmeit)
   {
     const Elem *elem = pmeit->first;
-    RealVectorValue &normal = pmeit->second;
+    RealVectorValue normal = pmeit->second;
     EFAelement * EFAelem = _efa_mesh.getElemByID(elem->id());
     EFAelement2D * CEMElem = dynamic_cast<EFAelement2D*>(EFAelem);
 
@@ -576,6 +634,10 @@ XFEM::mark_cut_edges_by_state(Real time)
       if (ecodm != _elem_crack_origin_direction_map.end()){
         crack_tip_origin = (ecodm->second)[0];
         crack_tip_direction = (ecodm->second)[1];
+        Point direction = _crack_propagation_direction_map[elem];
+        std::cout << "XFEM: direction = " << direction << std::endl;
+        normal(0) = -direction(1);
+        normal(1) = direction(0);
       }
       else{
         mooseError("element " << elem->id() << " cannot find its crack tip origin and direction.");
@@ -1123,10 +1185,6 @@ XFEM::cut_mesh_with_efa()
       _crack_tip_elems.insert(crack_tip_elem);
    }
   }
-
-
-
-
   //store virtual nodes
   //store cut edge info
   return mesh_changed;
