@@ -111,13 +111,22 @@ XFEM::get_crack_tip_origin(std::map<unsigned int, const Elem* > & elem_id_crack_
 
   std::map<const Elem*, std::vector<Point> >::iterator mit1 = _elem_crack_origin_direction_map.begin();
   unsigned int crack_tip_index = 0;
-  // This map is used to sort the order in _elem_crack_origin_direction_map according to elem id
+  // This map is used to sort the order in _elem_crack_origin_direction_map such that every process has same order
   std::map<unsigned int, const Elem*> elem_id_map;
-  
+ 
+  int m = -1;
   for (mit1 = _elem_crack_origin_direction_map.begin(); mit1 != _elem_crack_origin_direction_map.end(); mit1++)
   {
-    unsigned int elem_id = (mit1->first)->id();
-    elem_id_map[elem_id] = mit1->first;
+    unsigned int elem_id = mit1->first->id();
+    if (elem_id > 999999)
+    {
+      elem_id_map[m] = mit1->first;
+      m--;
+    }
+    else
+    {
+      elem_id_map[elem_id] = mit1->first;
+    }
   }
 
   std::map<unsigned int, const Elem*> ::iterator mit2 = elem_id_map.begin();
@@ -198,7 +207,7 @@ XFEM::store_crack_tip_origin_and_direction()
     if (_mesh->mesh_dimension() == 2){
       EFAelement2D * CEMElem = dynamic_cast<EFAelement2D*>(*sit);
       EFAnode *tip_node = CEMElem->get_tip_embedded();
-      unsigned int cts_id = CEMElem->get_crack_tip_split_element_id(); //WJ
+      unsigned int cts_id = CEMElem->get_crack_tip_split_element_id();
 
       Point origin(0,0,0);
       Point direction(0,0,0);
@@ -242,6 +251,12 @@ XFEM::update(Real time)
 
   if (mesh_changed)
   {
+    build_efa_mesh();
+    store_crack_tip_origin_and_direction();
+  }
+
+  if (mesh_changed)
+  {
     _mesh->update_parallel_id_counts();
     MeshCommunication().make_elems_parallel_consistent(*_mesh);
     MeshCommunication().make_nodes_parallel_consistent(*_mesh);
@@ -263,7 +278,7 @@ XFEM::update(Real time)
 //      _mesh2->prepare_for_use(true,true);
     }
   }
-
+  
   clearStateMarkedElems();
   clear_crack_propagation_direction(); 
 
@@ -374,6 +389,8 @@ void XFEM::build_efa_mesh()
   //Correction: no need to use neighbor info now
   _efa_mesh.updateEdgeNeighbors();
   _efa_mesh.initCrackTipTopology();
+  
+  //store_crack_tip_origin_and_direction();
 }
 
 bool
@@ -579,7 +596,6 @@ bool
 XFEM::mark_cut_edges_by_state(Real time)
 {
   bool marked_edges = false;
-  std::cout << "XFEM: MARK CUT EDGES" << std::endl;
   std::map<const Elem*, RealVectorValue>::iterator pmeit;
   for (pmeit = _state_marked_elems.begin(); pmeit != _state_marked_elems.end(); ++pmeit)
   {
@@ -635,9 +651,16 @@ XFEM::mark_cut_edges_by_state(Real time)
         crack_tip_origin = (ecodm->second)[0];
         crack_tip_direction = (ecodm->second)[1];
         Point direction = _crack_propagation_direction_map[elem];
-        std::cout << "XFEM: direction = " << direction << std::endl;
-        normal(0) = -direction(1);
-        normal(1) = direction(0);
+        std::map<const Elem*, Point>::iterator mit;
+        
+        if (crack_tip_direction*direction < 0)
+          direction *= -1.0;
+        
+        if (direction.size_sq() > 1.0e-10)
+        {
+          normal(0) = -direction(1);
+          normal(1) = direction(0);
+        }
       }
       else{
         mooseError("element " << elem->id() << " cannot find its crack tip origin and direction.");
@@ -1002,8 +1025,11 @@ XFEM::cut_mesh_with_efa()
 //    std::cout<<"BWS new node : "<<new_node->id() << " parent node: "<<parent_node->id()<<std::endl;
 //  }
 
+
   //Add new elements
   const std::vector<EFAelement*> NewElements = _efa_mesh.getChildElements();
+  
+
   for (unsigned int i = 0; i < NewElements.size(); ++i)
   {
     unsigned int parent_id = NewElements[i]->parent()->id();
@@ -1065,6 +1091,15 @@ XFEM::cut_mesh_with_efa()
     //TODO: Also need to copy surface and neighbor material data
     if (parent_elem->processor_id() == _mesh->processor_id())
       _material_data[0]->copy(*libmesh_elem, *parent_elem, 0);
+
+    // The crack tip origin map is stored before cut, thus the elem should be updated with new element.
+    std::map<const Elem*, std::vector<Point> >::iterator mit = _elem_crack_origin_direction_map.find(parent_elem);
+    if (mit != _elem_crack_origin_direction_map.end())
+    { 
+      std::vector<Point> crack_data = _elem_crack_origin_direction_map[parent_elem];
+      _elem_crack_origin_direction_map.erase(mit);
+      _elem_crack_origin_direction_map[libmesh_elem] = crack_data;
+    }
 
     std::cout<<"XFEM added elem "<<libmesh_elem->id()+1<<std::endl;
 

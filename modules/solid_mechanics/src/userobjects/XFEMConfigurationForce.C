@@ -25,7 +25,6 @@ XFEMConfigurationForce::XFEMConfigurationForce(const InputParameters & parameter
     _qp(0),
     _mesh(_subproblem.mesh())
 {
-
   FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
   if (fe_problem == NULL)
     mooseError("Problem casting _subproblem to FEProblem in XFEMMarkerUserObject");
@@ -42,7 +41,7 @@ XFEMConfigurationForce::XFEMConfigurationForce(const InputParameters & parameter
 
 void
 XFEMConfigurationForce::initialize()
-{ 
+{
   _crack_front_points.clear();
   _elem_id_crack_tip.clear();
   _integral_values.clear();
@@ -55,12 +54,6 @@ XFEMConfigurationForce::initialize()
     _integral_values[i] = 0.0;
 
   _xfem->get_crack_tip_origin(_elem_id_crack_tip, _crack_front_points);
-  std::cout << "number of crack front points = " << _num_crack_front_points << std::endl;
-
-  for (unsigned int i = 0; i < _num_crack_front_points; i ++)
-  {
-    std::cout << "crack front points[" << i << "] = " << _crack_front_points[i] << std::endl;
-  }
 }
 
 std::vector<Real>
@@ -96,21 +89,35 @@ XFEMConfigurationForce::calcQValue(Point & node, Point & crack_front)
 {
   Point dist_to_crack_front_vector = node - crack_front;
   Real dist_to_crack_front = std::pow(dist_to_crack_front_vector.size_sq(),0.5);
-  Real q = 1.0;
-  //if ( dist_to_crack_front > _radius_inner &&
-  //     dist_to_crack_front < _radius_outer){
-  //  q = (_radius_outer - dist_to_crack_front) /
-  //    (_radius_outer - _radius_inner);
-  //}
-  //else if ( dist_to_crack_front >= _radius_outer)
-  //  q = 0.0;
-
+  Real q = 0.0;
   if(dist_to_crack_front > _radius_outer)
     q = -1.0;
   else
     q = 1.0;
   
   return q;
+}
+
+bool
+XFEMConfigurationForce::isIntersect(Point & crack_front)
+{
+  bool is_intersect = false;
+  unsigned int n_nodes = _current_elem->n_nodes();
+  Real pi, pj;
+  for (unsigned int i = 0; i < n_nodes; i++)
+  { 
+    pi = calcQValue(*(_current_elem->get_node(i)), crack_front);
+    for (unsigned int j = i; j < n_nodes; j++)
+    { 
+      pj = calcQValue(*(_current_elem->get_node(j)), crack_front);
+      if (pi*pj < 0.0)
+      {
+        is_intersect = true;
+        return is_intersect;
+      }
+    } 
+  }
+  return is_intersect;
 }
 
 std::vector<Real>
@@ -129,30 +136,14 @@ XFEMConfigurationForce::computeQpIntegrals(const std::vector<std::vector<Real> >
 
     Point crack_front = _crack_front_points[i];
 
-    // calculate Q function at finite element node
-    /*
-    for (unsigned int i = 0; i < n_nodes; i++)
-    {
-      Real q = calcQValue(*(_current_elem->get_node(i)), crack_front);
-      q_nodes[i] = q;
-    }
-
-    // calcuate the Q function and its gradient at quadrature point
-    for (unsigned int i = 0; i < n_nodes; i++)
-    {
-      grad_of_scalar_q(0) += q_nodes[i] * dN_shape_func[i][_qp](0);
-      grad_of_scalar_q(1) += q_nodes[i] * dN_shape_func[i][_qp](1);
-      grad_of_scalar_q(2) += q_nodes[i] * dN_shape_func[i][_qp](2);
-    }
-  
-    ColumnMajorMatrix Jvec = _Eshelby_tensor[_qp]*grad_of_scalar_q;
-
-    QpIntegrals[i*3]   = Jvec(0,0);
-    QpIntegrals[i*3+1] = Jvec(1,0);
-    QpIntegrals[i*3+2] = Jvec(2,0);
-  */
     ColumnMajorMatrix Jvec(3,1);
     Jvec.zero();
+
+    bool is_intersect = isIntersect(crack_front);
+
+    if (!is_intersect)
+      continue;
+
     for (unsigned int i = 0; i < n_nodes; i++)
     {
       Real q = calcQValue(*(_current_elem->get_node(i)), crack_front);
@@ -193,19 +184,17 @@ XFEMConfigurationForce::threadJoin(const UserObject & y)
 void 
 XFEMConfigurationForce::finalize()
 {
-  //_communicator.set_union(_elem_id_crack_tip);
-
   _xfem->clear_crack_propagation_direction();
   gatherSum(_integral_values);
 
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
   {
     Point direction(_integral_values[i*3], _integral_values[i*3+1], _integral_values[i*3+2]);
-    std::cout << "direction = " << direction << std::endl;
-    direction /= pow(direction.size_sq(),0.5);
+    if (direction.size_sq() > 1.0e-20)
+      direction /= pow(direction.size_sq(),0.5);
     direction *= -1.0; // crack propagations in the direction of the inverse of the crack-driving force
     _xfem->update_crack_propagation_direction(_elem_id_crack_tip[i], direction);
-    std::cout << "crack front index (" << i << ") : configuration force  = " << direction << std::endl; 
+    //std::cout << "crack front index (" << i << ") : configuration force  = " << direction << std::endl; 
   } 
 }
 

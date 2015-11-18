@@ -12,11 +12,12 @@
 /*            See COPYRIGHT for full restrictions               */
 /****************************************************************/
 
-#ifndef XFEMCONFIGURATIONFORCE_H
-#define XFEMCONFIGURATIONFORCE_H
+#ifndef XFEMMEANSTRESS_H
+#define XFEMMEANSTRESS_H
 
 #include "ElementUserObject.h"
 #include "libmesh/string_to_enum.h"
+#include "MaterialTensorCalculator.h"
 
 // libMesh
 #include "libmesh/point.h"
@@ -25,7 +26,7 @@
 
 class XFEM;
 
-class XFEMConfigurationForce : public ElementUserObject
+class XFEMMeanStress : public ElementUserObject
 {
 public:
 
@@ -33,9 +34,9 @@ public:
    * Factory constructor, takes parameters so that all derived classes can be built using the same
    * constructor.
    */
-  XFEMConfigurationForce(const InputParameters & parameters);
+  XFEMMeanStress(const InputParameters & parameters);
 
-  virtual ~XFEMConfigurationForce() {}
+  virtual ~XFEMMeanStress() {}
 
   virtual void initialize();
   virtual void execute();
@@ -43,26 +44,22 @@ public:
   virtual void finalize();
 
 protected:
-  virtual std::vector<Real> computeIntegrals();
-  virtual std::vector<Real> computeQpIntegrals(const std::vector<std::vector<Real> > & N_shape_func, const std::vector<std::vector<RealGradient> > & dN_shape_func);
-  Real calcQValue(Point & node, Point & crack_front);  
-  bool isIntersect(Point & crack_front);
+  virtual std::vector<Real> getStressTensor();
   unsigned int _crack_front_point_index;
-  const MaterialProperty<ColumnMajorMatrix> & _Eshelby_tensor;
 
 private:
-  unsigned int _qp;
-  std::vector<Real> _integral_values;
-  Real _radius_inner;
-  Real _radius_outer;
-  MooseMesh & _mesh;
+  MaterialTensorCalculator _material_tensor_calculator;
+  const MaterialProperty<SymmTensor> & _tensor;
+  std::vector<Real> _stress_tensor;
+  Real _radius;
   XFEM *_xfem;
   std::map<unsigned int, const Elem* > _elem_id_crack_tip;
   std::vector<Point> _crack_front_points;
   unsigned int _num_crack_front_points;
+  FEProblem *_fe_problem;
 };
 
 template<>
-InputParameters validParams<XFEMConfigurationForce>();
+InputParameters validParams<XFEMMeanStress>();
 
-#endif //XFEMCONFIGURATIONFORCE_H
+#endif //XFEMMEANSTRESS_H
