@@ -23,11 +23,15 @@ InputParameters validParams<XFEMMaterialTensorMarkerUserObject>()
   params.addRequiredParam<Real>("threshold", "The threshold for crack growth.");
   params.addRequiredParam<bool>("average", "Should the tensor quantity be averaged over the quadruature points?");
   params.addParam<Real>("random_range",0.0,"Range of a uniform random distribution for the threshold");
+  params.addParam<bool>("use_weibull", false,"Use weibull distribution to initiate crack?");
+  params.addCoupledVar("weibull","Weibull aux variable");
   return params;
 }
 
 XFEMMaterialTensorMarkerUserObject::XFEMMaterialTensorMarkerUserObject(const InputParameters & parameters):
   XFEMMarkerUserObject(parameters),
+  _use_weibull(getParam<bool>("use_weibull")),
+  _weibull(_use_weibull? coupledValue("weibull") : _zero),
   _material_tensor_calculator(parameters),
   _tensor(getMaterialProperty<SymmTensor>(getParam<std::string>("tensor"))),
   _threshold(getParam<Real>("threshold")),
@@ -45,6 +49,12 @@ XFEMMaterialTensorMarkerUserObject::doesElementCrack(RealVectorValue &direction)
 
   Real rnd_mult = (1.0 - _random_range/2.0) + _random_range*getRandomReal();
 
+  Real perturbed_threshold = 0.0;
+  if (_use_weibull) //use weibull 
+    perturbed_threshold = _weibull[0];
+  else
+    perturbed_threshold = _threshold * rnd_mult;
+
   if (_average)
   {
     SymmTensor average_tensor;
@@ -54,7 +64,7 @@ XFEMMaterialTensorMarkerUserObject::doesElementCrack(RealVectorValue &direction)
     }
     average_tensor *= 1.0/(Real)numqp;
     Real tensor_quantity = _material_tensor_calculator.getTensorQuantity(average_tensor,&_q_point[0],direction);
-    if (tensor_quantity > _threshold*rnd_mult)
+    if(tensor_quantity > perturbed_threshold)
       does_it_crack = true;
   }
   else
@@ -80,7 +90,7 @@ XFEMMaterialTensorMarkerUserObject::doesElementCrack(RealVectorValue &direction)
         max_index = qp;
       }
     }
-    if (max_quantity > _threshold*rnd_mult)
+    if (max_quantity > perturbed_threshold)
     {
       does_it_crack = true;
       direction = directions[max_index];

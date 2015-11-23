@@ -16,6 +16,8 @@ public:
   virtual ~XFEMMaterialTensorMarkerUserObject(){}
 
 protected:
+  bool _use_weibull;
+  VariableValue & _weibull;
   MaterialTensorCalculator _material_tensor_calculator;
   const MaterialProperty<SymmTensor> & _tensor;
   Real _threshold;
