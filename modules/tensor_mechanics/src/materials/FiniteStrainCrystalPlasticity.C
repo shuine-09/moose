@@ -879,7 +879,8 @@ FiniteStrainCrystalPlasticity::calcResidual( RankTwoTensor &resid )
 
   // Calculate Schmid tensor and resolved shear stresses
   for (unsigned int i = 0; i < _nss; ++i)
-    _tau(i) = ce_pk2.doubleContraction(_s0[i]);
+    //_tau(i) = ce_pk2.doubleContraction(_s0[i]);
+    _tau(i) = _pk2_tmp.doubleContraction(_s0[i]);
 
   getSlipIncrements(); // Calculate dslip,dslipdtau
 

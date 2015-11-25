@@ -40,6 +40,13 @@
   [../]
 []
 
+[UserObjects]
+  [./mat_prop_test]
+    type = CrystalPlasticitySlipRateBase
+    execute_on = timestep_end
+  [../]
+[]
+
 [Functions]
   [./tdisp]
     type = ParsedFunction

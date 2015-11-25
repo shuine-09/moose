@@ -31,6 +31,7 @@
 #include "FiniteStrainCrystalPlasticity.h"
 #include "FiniteStrainCPSlipRateRes.h"
 #include "FiniteStrainCPDislocation.h"
+#include "FiniteStrainUObasedCP.h"
 #include "ComputeMultiPlasticityStress.h"
 #include "CosseratLinearElasticMaterial.h"
 #include "ElementPropertyReadFileTest.h"
@@ -87,6 +88,12 @@
 
 #include "Pressure.h"
 
+#include "CrystalPlasticitySlipRateGSS.h"
+#include "CrystalPlasticitySlipResistanceGSS.h"
+#include "CrystalPlasticityStateVariableGSS.h"
+#include "CrystalPlasticityStateVariableEvolutionRate.h"
+#include "CrystalPlasticityStateVariableEvolutionRateComponentGSS.h"
+
 template<>
 InputParameters validParams<TensorMechanicsApp>()
 {
@@ -141,6 +148,7 @@ TensorMechanicsApp::registerObjects(Factory & factory)
   registerMaterial(FiniteStrainCrystalPlasticity);
   registerMaterial(FiniteStrainCPSlipRateRes);
   registerMaterial(FiniteStrainCPDislocation);
+  registerMaterial(FiniteStrainUObasedCP);
   registerMaterial(ComputeMultiPlasticityStress);
   registerMaterial(CosseratLinearElasticMaterial);
   registerMaterial(ElementPropertyReadFileTest);
@@ -185,6 +193,12 @@ TensorMechanicsApp::registerObjects(Factory & factory)
   registerUserObject(FlowRateModel);
   registerUserObject(RambergOsgoodHardening);
   registerUserObject(EulerAngleFileReader);
+
+  registerUserObject(CrystalPlasticitySlipRateGSS);
+  registerUserObject(CrystalPlasticitySlipResistanceGSS);
+  registerUserObject(CrystalPlasticityStateVariableGSS);
+  registerUserObject(CrystalPlasticityStateVariableEvolutionRate);
+  registerUserObject(CrystalPlasticityStateVariableEvolutionRateComponentGSS);
 
   registerAux(RankTwoAux);
   registerAux(RankFourAux);
