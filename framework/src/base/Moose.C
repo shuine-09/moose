@@ -56,9 +56,11 @@
 #include "CoupledTimeDerivative.h"
 #include "MassLumpedTimeDerivative.h"
 #include "Diffusion.h"
+#include "LinearStommelMunk.h"
 #include "AnisotropicDiffusion.h"
 #include "CoupledForce.h"
 #include "UserForcingFunction.h"
+#include "LSMForcingFunction.h"
 #include "BodyForce.h"
 #include "Reaction.h"
 #include "MassEigenKernel.h"
@@ -117,6 +119,7 @@
 // DG
 #include "DGDiffusion.h"
 #include "DGFunctionDiffusionDirichletBC.h"
+#include "DGLinearStommelMunk.h"
 
 // ics
 #include "ConstantIC.h"
@@ -249,6 +252,11 @@
 // dampers
 #include "ConstantDamper.h"
 #include "MaxIncrement.h"
+
+// DG
+#include "DGDiffusion.h"
+#include "DGFunctionDiffusionDirichletBC.h"
+#include "LSMDirichletBC.h"
 
 // Constraints
 #include "TiedValueConstraint.h"
@@ -463,9 +471,11 @@ registerObjects(Factory & factory)
   registerKernel(CoupledTimeDerivative);
   registerKernel(MassLumpedTimeDerivative);
   registerKernel(Diffusion);
+  registerKernel(LinearStommelMunk);
   registerKernel(AnisotropicDiffusion);
   registerKernel(CoupledForce);
   registerKernel(UserForcingFunction);
+  registerKernel(LSMForcingFunction);
   registerKernel(BodyForce);
   registerKernel(Reaction);
   registerKernel(MassEigenKernel);
@@ -652,8 +662,9 @@ registerObjects(Factory & factory)
   registerDamper(MaxIncrement);
   // DG
   registerDGKernel(DGDiffusion);
+  registerDGKernel(DGLinearStommelMunk);
   registerBoundaryCondition(DGFunctionDiffusionDirichletBC);
-
+  registerBoundaryCondition(LSMDirichletBC);
   // Constraints
   registerConstraint(TiedValueConstraint);
   registerConstraint(CoupledTiedValueConstraint);
