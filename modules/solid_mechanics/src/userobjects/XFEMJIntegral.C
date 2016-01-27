@@ -60,6 +60,8 @@ XFEMJIntegral::XFEMJIntegral(const InputParameters & parameters):
 void
 XFEMJIntegral::initialize()
 {
+  _J_thermal_term_vec = hasMaterialProperty<RealVectorValue>("J_thermal_term_vec") ? &getMaterialProperty<RealVectorValue>("J_thermal_term_vec") : NULL;
+
   _treat_as_2d = _crack_front_definition->treatAs2D();
 
   if (_treat_as_2d)
@@ -184,6 +186,7 @@ XFEMJIntegral::computeQpIntegrals(const std::vector<std::vector<Real> > & N_shap
       grad_of_scalar_q(2) += q_nodes[i] * dN_shape_func[i][_qp](2);
       scalar_q += q_nodes[i] * N_shape_func[i][_qp];
     }
+
 
     ColumnMajorMatrix grad_of_vector_q;
     const RealVectorValue& crack_direction = _crack_front_definition->getCrackDirection(_crack_front_point_index);

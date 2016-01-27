@@ -110,8 +110,11 @@ public:
   void store_crack_tip_origin_and_direction();
   void correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, EFAedge * orig_edge, Point normal, Point crack_tip_origin, Point crack_tip_direction, Real & distance_keep, unsigned int & edge_id_keep, Point & normal_keep);
   void get_crack_tip_origin(std::map<unsigned int, const Elem*> & elem_id_crack_tip, std::vector<Point> &  crack_front_points);
+  void get_crack_tip_origin_and_direction(std::map<unsigned int, const Elem*> & elem_id_crack_tip, std::vector<Point> &  crack_front_points, std::vector<Point> & crack_directions);
   void update_crack_propagation_direction(const Elem* elem, Point direction);
   void clear_crack_propagation_direction();
+  void update_doesElemCrackEnergyReleaseRate(const Elem* elem, bool does_elem_crack);
+  void clear_doesElemCrackEnergyReleaseRate();
   unsigned int num_crack_tips();
   /**
    * Set and get xfem cut data and type
@@ -158,6 +161,8 @@ private:
   std::map<const Elem*, std::vector<Point> > _elem_crack_origin_direction_map;
  
   std::map<const Elem*, Point> _crack_propagation_direction_map;
+
+  std::map<const Elem*, bool> _doesElemCrack_EnergyReleaseRate_map;
 
   std::map<const Elem*, RealVectorValue> _state_marked_elems;
   std::set<const Elem*> _state_marked_frags;

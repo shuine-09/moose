@@ -54,7 +54,6 @@ XFEMMeanDirection::initialize()
     _directions[i] = 0.0;
 
   _xfem->get_crack_tip_origin(_elem_id_crack_tip, _crack_front_points);
-
 }
 
 std::vector<Real>
@@ -87,7 +86,7 @@ XFEMMeanDirection::getDirection()
       Point dist_to_crack_front_vector = _q_point[qp] - crack_front;
       Real dist = std::pow(dist_to_crack_front_vector.size_sq(),0.5);
       if (dist < _radius && flag > 0.5)
-      {
+      { 
         average_tensor += _tensor[qp];
         average_dist += dist;
         count_numqp++;

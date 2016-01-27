@@ -8,13 +8,13 @@
 //
 #include "XFEMConfigurationForce.h"
 #include "libmesh/fe_interface.h"
+#include "DisplacedProblem.h"
 
 template<>
 InputParameters validParams<XFEMConfigurationForce>()
 {
   InputParameters params = validParams<ElementUserObject>();
-  params.addParam<Real>("radius_inner", "Inner radius for volume integral domain");
-  params.addParam<Real>("radius_outer", "Outer radius for volume integral domain");
+  params.addParam<Real>("radius", "Radius for volume integral domain");
   params.set<bool>("use_displaced_mesh") = false;
   return params;
 }
@@ -22,26 +22,28 @@ InputParameters validParams<XFEMConfigurationForce>()
 XFEMConfigurationForce::XFEMConfigurationForce(const InputParameters & parameters):
     ElementUserObject(parameters),
     _Eshelby_tensor(getMaterialProperty<ColumnMajorMatrix>("Eshelby_tensor")),
+    _J_thermal_term_vec(hasMaterialProperty<RealVectorValue>("J_thermal_term_vec")?
+                        &getMaterialProperty<RealVectorValue>("J_thermal_term_vec"):
+                        NULL),
     _qp(0),
     _mesh(_subproblem.mesh())
 {
-  FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
-  if (fe_problem == NULL)
+  _fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
+  if (_fe_problem == NULL)
     mooseError("Problem casting _subproblem to FEProblem in XFEMMarkerUserObject");
-  _xfem = fe_problem->get_xfem();
+  _xfem = _fe_problem->get_xfem();
 
-  if (isParamValid("radius_inner") && isParamValid("radius_outer"))
-  {
-    _radius_inner = getParam<Real>("radius_inner");
-    _radius_outer = getParam<Real>("radius_outer");
-  }
+  if (isParamValid("radius"))
+    _radius = getParam<Real>("radius");
   else
-    mooseError("DomainIntegral error: must set radius_inner and radius_outer.");
+    mooseError("DomainIntegral error: must set radius.");
 }
 
 void
 XFEMConfigurationForce::initialize()
 {
+  _J_thermal_term_vec = hasMaterialProperty<RealVectorValue>("J_thermal_term_vec") ? &getMaterialProperty<RealVectorValue>("J_thermal_term_vec"):NULL;
+ 
   _crack_front_points.clear();
   _elem_id_crack_tip.clear();
   _integral_values.clear();
@@ -54,6 +56,9 @@ XFEMConfigurationForce::initialize()
     _integral_values[i] = 0.0;
 
   _xfem->get_crack_tip_origin(_elem_id_crack_tip, _crack_front_points);
+
+  for (unsigned int i = 0; i <  _crack_front_points.size(); i++)
+    std::cout << "CONFIGURATIONFORCE: crack_front_points " << _crack_front_points[i] << std::endl; 
 }
 
 std::vector<Real>
@@ -90,13 +95,32 @@ XFEMConfigurationForce::calcQValue(Point & node, Point & crack_front)
   Point dist_to_crack_front_vector = node - crack_front;
   Real dist_to_crack_front = std::pow(dist_to_crack_front_vector.size_sq(),0.5);
   Real q = 0.0;
-  if(dist_to_crack_front > _radius_outer)
+  if(dist_to_crack_front > _radius)
     q = -1.0;
   else
     q = 1.0;
   
   return q;
 }
+
+bool
+XFEMConfigurationForce::isWithin(Point & crack_front)
+{
+  bool is_within = false;
+  unsigned int n_nodes = _current_elem->n_nodes();
+  Real pi;
+  for (unsigned int i = 0; i < n_nodes; i++)
+  { 
+    pi = calcQValue(*(_current_elem->get_node(i)), crack_front);
+    if (pi > 0.0)
+    {
+      is_within = true;
+      return is_within;
+    }
+  }
+  return is_within;
+}
+
 
 bool
 XFEMConfigurationForce::isIntersect(Point & crack_front)
@@ -127,7 +151,6 @@ XFEMConfigurationForce::computeQpIntegrals(const std::vector<std::vector<Real> >
   for (unsigned int i = 0; i < _num_crack_front_points*3; i++)
     QpIntegrals[i] = 0.0;
 
-
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
   {
     unsigned int n_nodes = _current_elem->n_nodes();
@@ -139,13 +162,26 @@ XFEMConfigurationForce::computeQpIntegrals(const std::vector<std::vector<Real> >
     ColumnMajorMatrix Jvec(3,1);
     Jvec.zero();
 
-    bool is_intersect = isIntersect(crack_front);
+    //Contour approach
+    //if ( ! isIntersect(crack_front))
+    //  continue;
 
-    if (!is_intersect)
+    //Domain approach
+    if (!isWithin(crack_front))
       continue;
+
+   // const Elem * undisplaced_elem  = NULL;
+   // if(_fe_problem->getDisplacedProblem() != NULL)
+   //   undisplaced_elem = _fe_problem->getDisplacedProblem()->refMesh().elem(_current_elem->id());
+   // else
+   //   undisplaced_elem = _current_elem;
 
     for (unsigned int i = 0; i < n_nodes; i++)
     {
+      //Real flag = _xfem->flag_qp_inside(undisplaced_elem, *(_current_elem->get_node(i))); //inside (flag = 1) or ouside (flag = 0) real domain
+      //if ( flag < 0.5)
+      //  continue;
+
       Real q = calcQValue(*(_current_elem->get_node(i)), crack_front);
       RealVectorValue grad_of_N(0.0,0.0,0.0);
       if (q > 0.0)
@@ -154,6 +190,13 @@ XFEMConfigurationForce::computeQpIntegrals(const std::vector<std::vector<Real> >
         grad_of_N(1) = dN_shape_func[i][_qp](1);
         grad_of_N(2) = dN_shape_func[i][_qp](2);
         Jvec += _Eshelby_tensor[_qp]*grad_of_N;
+        //Thermal component
+        if (_J_thermal_term_vec)
+        {
+          Jvec(0,0) -= (*_J_thermal_term_vec)[_qp](0) * N_shape_func[i][_qp];
+          Jvec(1,0) -= (*_J_thermal_term_vec)[_qp](1) * N_shape_func[i][_qp];
+          Jvec(2,0) -= (*_J_thermal_term_vec)[_qp](2) * N_shape_func[i][_qp];
+        }
       }
     }
 
@@ -190,11 +233,12 @@ XFEMConfigurationForce::finalize()
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
   {
     Point direction(_integral_values[i*3], _integral_values[i*3+1], _integral_values[i*3+2]);
+    std::cout << "direction = " << direction << std::endl;
     if (direction.size_sq() > 1.0e-20)
       direction /= pow(direction.size_sq(),0.5);
     direction *= -1.0; // crack propagations in the direction of the inverse of the crack-driving force
     _xfem->update_crack_propagation_direction(_elem_id_crack_tip[i], direction);
-    //std::cout << "crack front index (" << i << ") : configuration force  = " << direction << std::endl; 
+    std::cout << "crack front index (" << i << ") : configuration force  = " << direction << std::endl; 
   } 
 }
 

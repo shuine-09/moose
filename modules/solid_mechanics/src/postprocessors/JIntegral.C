@@ -7,7 +7,6 @@
 //  This post processor calculates the J-Integral
 //
 #include "JIntegral.h"
-#include "libmesh/fe_interface.h"
 
 template<>
 InputParameters validParams<JIntegral>()
@@ -70,60 +69,9 @@ JIntegral::initialSetup()
 Real
 JIntegral::computeQpIntegral()
 {
-  
-  FEType fe_type(Utility::string_to_enum<Order>("first"),Utility::string_to_enum<FEFamily>("lagrange"));
-
-  const unsigned int dim = _current_elem->dim();
-
-  UniquePtr<FEBase> fe (FEBase::build(dim, fe_type));
-
-  //QBase * qrule = _assembly.qRule();
-
-  fe->attach_quadrature_rule (_qrule);
-  
-  // The values of the shape functions at the quadrature points
-  const std::vector<std::vector<Real> > & phi = fe->get_phi();
-
-  const std::vector<std::vector<RealGradient> > & dphi = fe->get_dphi();
- 
-  fe->reinit (_current_elem);
-
-
-  unsigned int n_nodes = _current_elem->n_nodes();
-
-  std::vector<Real> q_nodes(n_nodes,0.0);
-  Real grad_q_x = 0.0;
-  Real grad_q_y = 0.0;
-
-  for (unsigned i = 0; i < n_nodes; i++)
-  {
-    Point crack_front(0.5,1.0,0.0);
-    Point dist_to_crack_front_vector = *(_current_elem->get_node(i)) - crack_front;
-    Real dist_to_crack_front = std::pow(dist_to_crack_front_vector.size_sq(),0.5);
-    Real q = 1.0;
-    if ( dist_to_crack_front > 0.2 &&
-         dist_to_crack_front < 0.3){
-      q = (0.3 - dist_to_crack_front) /
-        (0.3 - 0.2);
-      //std::cout << "Point " << *(_current_elem->get_node(i)) << " is within the ring " << std::endl;
-    }
-    else if ( dist_to_crack_front >= 0.3)
-      q = 0.0;
-    q_nodes[i] = q;
-  }
-
-  for (unsigned i = 0; i < n_nodes; i++)
-  {
-    grad_q_x += q_nodes[i] * dphi[i][_qp](0);
-    grad_q_y += q_nodes[i] * dphi[i][_qp](1);
-  }
-
-  //_grad_of_scalar_q[_qp](0) = grad_q_x;
-  //_grad_of_scalar_q[_qp](1) = grad_q_y;
-
-
   ColumnMajorMatrix grad_of_vector_q;
   const RealVectorValue& crack_direction = _crack_front_definition->getCrackDirection(_crack_front_point_index);
+
   grad_of_vector_q(0,0) = crack_direction(0)*_grad_of_scalar_q[_qp](0);
   grad_of_vector_q(0,1) = crack_direction(0)*_grad_of_scalar_q[_qp](1);
   grad_of_vector_q(0,2) = crack_direction(0)*_grad_of_scalar_q[_qp](2);
@@ -150,7 +98,7 @@ JIntegral::computeQpIntegral()
     q_avg_seg = (_crack_front_definition->getCrackFrontForwardSegmentLength(_crack_front_point_index) +
                  _crack_front_definition->getCrackFrontBackwardSegmentLength(_crack_front_point_index)) / 2.0;
   }
-
+  
   Real etot = -eq + eq_thermal;
 
   return etot/q_avg_seg;

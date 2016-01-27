@@ -9,13 +9,6 @@
 
 #include "ElementIntegralPostprocessor.h"
 #include "CrackFrontDefinition.h"
-#include "libmesh/string_to_enum.h"
-
-// libMesh
-#include "libmesh/point.h"
-#include "libmesh/vector_value.h"
-#include "libmesh/elem.h"
-
 
 //Forward Declarations
 class JIntegral;

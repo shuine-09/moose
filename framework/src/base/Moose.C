@@ -82,6 +82,7 @@
 // auxkernels
 #include "ConstantAux.h"
 #include "FunctionAux.h"
+#include "HeatTestAux.h"
 #include "NearestNodeDistanceAux.h"
 #include "NearestNodeValueAux.h"
 #include "PenetrationAux.h"
@@ -482,6 +483,7 @@ registerObjects(Factory & factory)
   // aux kernels
   registerAux(ConstantAux);
   registerAux(FunctionAux);
+  registerAux(HeatTestAux);
   registerAux(NearestNodeDistanceAux);
   registerAux(NearestNodeValueAux);
   registerAux(PenetrationAux);
