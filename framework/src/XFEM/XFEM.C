@@ -1490,6 +1490,21 @@ XFEM::get_frag_faces(const Elem* elem, std::vector<std::vector<Point> > &frag_fa
 }
 
 void
+XFEM::get_intersection_info(const Elem* elem, unsigned int plane_id, Point & normal, std::vector<Point> & intersectionPoints, bool displaced_mesh) const
+{
+  std::map<const Elem*, XFEMCutElem*>::const_iterator it;
+  it = _cut_elem_map.find(elem);
+  if (it != _cut_elem_map.end())
+  {
+    const XFEMCutElem *xfce = it->second;
+    if (displaced_mesh)
+      xfce->getIntersectionInfo(plane_id, normal, intersectionPoints, _mesh2);
+    else
+      xfce->getIntersectionInfo(plane_id, normal, intersectionPoints);
+  }
+}
+
+void
 XFEM::get_frag_edges(const Elem* elem, EFAelement2D* CEMElem, std::vector<std::vector<Point> > &frag_edges) const
 {
   // N.B. CEMElem here has global EFAnode
@@ -1526,6 +1541,16 @@ XFEM::get_frag_faces(const Elem* elem, EFAelement3D* CEMElem, std::vector<std::v
       frag_faces.push_back(p_line);
     } // i
   }
+}
+
+void 
+XFEM::getCuttedElements(std::vector<const Elem *> & cutted_elems) const
+{
+  cutted_elems.clear();
+  std::map<const Elem*, XFEMCutElem*>::const_iterator it = _cut_elem_map.begin();
+  for (; it != _cut_elem_map.end(); it++)
+    if (_crack_tip_elems.find(it->first) == _crack_tip_elems.end())
+      cutted_elems.push_back(it->first);
 }
 
 std::vector<Real>&

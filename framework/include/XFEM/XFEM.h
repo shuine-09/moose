@@ -107,6 +107,7 @@ public:
   bool is_elem_cut(const Elem* elem) const;
   void get_frag_faces(const Elem* elem, std::vector<std::vector<Point> > &frag_faces,
                       bool displaced_mesh = false) const;
+  void get_intersection_info(const Elem* elem, unsigned int plane_id, Point & normal, std::vector<Point> & intersectionPoints, bool displaced_mesh = false) const;
   void store_crack_tip_origin_and_direction();
   void correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, EFAedge * orig_edge, Point normal, Point crack_tip_origin, Point crack_tip_direction, Real & distance_keep, unsigned int & edge_id_keep, Point & normal_keep);
   void get_crack_tip_origin(std::map<unsigned int, const Elem*> & elem_id_crack_tip, std::vector<Point> &  crack_front_points);
@@ -116,6 +117,9 @@ public:
   void update_doesElemCrackEnergyReleaseRate(const Elem* elem, bool does_elem_crack);
   void clear_doesElemCrackEnergyReleaseRate();
   unsigned int num_crack_tips();
+
+  void getCuttedElements(std::vector<const Elem *> & cutted_elems) const;
+  
   /**
    * Set and get xfem cut data and type
    */

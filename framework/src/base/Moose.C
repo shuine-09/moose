@@ -112,6 +112,7 @@
 
 // dirac kernels
 #include "ConstantPointSource.h"
+#include "XFEMSurfacePressure.h"
 
 // DG kernels
 #include "DGDiffusion.h"
@@ -479,6 +480,7 @@ registerObjects(Factory & factory)
 
   // dirac kernels
   registerDiracKernel(ConstantPointSource);
+  registerDiracKernel(XFEMSurfacePressure);
 
   // aux kernels
   registerAux(ConstantAux);

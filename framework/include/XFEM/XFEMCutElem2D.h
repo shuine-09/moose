@@ -41,6 +41,7 @@ public:
   virtual void get_frag_faces(std::vector<std::vector<Point> > &frag_faces, MeshBase* displaced_mesh=NULL) const;
   virtual const EFAelement * get_efa_elem() const;
   virtual unsigned int num_cut_planes() const;
+  virtual void getIntersectionInfo(unsigned int plane_id, Point & normal, std::vector<Point> & intersectionPoints, MeshBase* displaced_mesh=NULL) const;
 
 private:
 

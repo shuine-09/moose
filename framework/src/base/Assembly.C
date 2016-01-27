@@ -1515,13 +1515,16 @@ Assembly::setCachedNodalBCJacobianEntries(SparseMatrix<Number> & jacobian)
 void
 Assembly::updateXFEMWeights(const Elem *elem)
 {
- if((_xfem_weights_map.find(elem->id()) != _xfem_weights_map.end())){
+  if (_current_qrule == _current_qrule_arbitrary) //DiracKernel
+    return;
+
+  if((_xfem_weights_map.find(elem->id()) != _xfem_weights_map.end())){
     mooseAssert(_xfem_weights_map[elem->id()].size()==_current_JxW.size(),"wrong number of entries in xfem_weights");
-      for(unsigned i = 0; i < _xfem_weights_map[elem->id()].size(); i++){
-        _current_JxW[i] = _current_JxW[i] * _xfem_weights_map[elem->id()][i];
-      }
-      _xfem_weights_have_been_updated[elem->id()] = true;
-   }
+    for(unsigned i = 0; i < _xfem_weights_map[elem->id()].size(); i++){
+      _current_JxW[i] = _current_JxW[i] * _xfem_weights_map[elem->id()][i];
+    }
+    _xfem_weights_have_been_updated[elem->id()] = true;
+  }
 }
 
 void
