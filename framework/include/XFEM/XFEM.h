@@ -56,7 +56,7 @@ public:
    * Constructor
    */
   explicit
-  XFEM(std::vector<MooseSharedPointer<MaterialData> > & material_data, MeshBase* mesh, MeshBase* mesh2=NULL);
+  XFEM(std::vector<MooseSharedPointer<MaterialData> > & material_data, std::vector<MooseSharedPointer<MaterialData> > & bnd_material_data, MeshBase* mesh, MeshBase* mesh2=NULL);
 
 
   /**
@@ -131,6 +131,8 @@ public:
   void set_xfem_qrule(std::string & xfem_qrule);
   void set_crack_growth_method(bool use_crack_growth_increment, Real crack_growth_increment);
 
+  void set_boundary_material_data_side_id(const Elem* elem, unsigned int side);
+
 private:
 
   void get_frag_edges(const Elem* elem, EFAelement2D* CEMElem,
@@ -140,6 +142,7 @@ private:
 
 private:
   std::vector<MooseSharedPointer<MaterialData> > & _material_data;
+  std::vector<MooseSharedPointer<MaterialData> > & _bnd_material_data;
 
   /**
    * XFEM cut type and data
@@ -158,6 +161,8 @@ private:
   MeshBase* _mesh;
   MeshBase* _mesh2;
   std::vector<XFEM_geometric_cut *> _geometric_cuts;
+
+  std::map<const Elem*, std::vector<bool> > _elem_boundary_material_data;
 
   std::map<const Elem*, XFEMCutElem*> _cut_elem_map;
   std::set<const Elem*> _crack_tip_elems;

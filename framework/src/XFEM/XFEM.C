@@ -44,8 +44,9 @@
 #endif // DEBUG
 
 // XFEM mesh modification methods
-XFEM::XFEM (std::vector<MooseSharedPointer<MaterialData> > & material_data, MeshBase* m, MeshBase* m2) :
+XFEM::XFEM (std::vector<MooseSharedPointer<MaterialData> > & material_data, std::vector<MooseSharedPointer<MaterialData> > & bnd_material_data, MeshBase* m, MeshBase* m2) :
   _material_data(material_data),
+  _bnd_material_data(bnd_material_data),
   _mesh(m),
   _mesh2(m2)
 {
@@ -229,6 +230,7 @@ XFEM::update(Real time)
   {
     build_efa_mesh();
     store_crack_tip_origin_and_direction();
+    _elem_boundary_material_data.clear();
   }
 
   if (mesh_changed)
@@ -1054,6 +1056,16 @@ XFEM::cut_mesh_with_efa()
     if (parent_elem->processor_id() == _mesh->processor_id())
       _material_data[0]->copy(*libmesh_elem, *parent_elem, 0);
 
+
+    if (_elem_boundary_material_data.find(parent_elem) != _elem_boundary_material_data.end())
+    {
+      for (unsigned int side=0; side < parent_elem->n_sides(); ++side)
+      {
+        if (parent_elem->processor_id() == _mesh->processor_id() && _elem_boundary_material_data[parent_elem][side])
+          _bnd_material_data[0]->copy(*libmesh_elem, *parent_elem, side);
+      }
+    }
+
     // The crack tip origin map is stored before cut, thus the elem should be updated with new element.
     std::map<const Elem*, std::vector<Point> >::iterator mit = _elem_crack_origin_direction_map.find(parent_elem);
     if (mit != _elem_crack_origin_direction_map.end())
@@ -1440,4 +1452,15 @@ XFEM::set_crack_growth_method(bool use_crack_growth_increment, Real crack_growth
 {
   _use_crack_growth_increment = use_crack_growth_increment;
   _crack_growth_increment = crack_growth_increment;
+}
+
+void 
+XFEM::set_boundary_material_data_side_id(const Elem* elem, unsigned int side)
+{
+  if (_elem_boundary_material_data.find(elem) == _elem_boundary_material_data.end())
+    _elem_boundary_material_data[elem].resize(elem->n_sides());
+    for (unsigned int i = 0; i < elem->n_sides(); ++i)
+      _elem_boundary_material_data[elem][i] = false;
+
+  _elem_boundary_material_data[elem][side] = true;
 }

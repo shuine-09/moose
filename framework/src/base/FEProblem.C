@@ -74,11 +74,11 @@
 #include "Control.h"
 #include "ScalarInitialCondition.h"
 #include "InternalSideIndicator.h"
-#include "XFEM_geometric_cut.h"
-#include "XFEM_geometric_cut_2d.h"
-#include "XFEM_square_cut.h"
-#include "XFEM_circle_cut.h"
-#include "XFEM_ellipse_cut.h"
+//#include "XFEM_geometric_cut.h"
+//#include "XFEM_geometric_cut_2d.h"
+//#include "XFEM_square_cut.h"
+//#include "XFEM_circle_cut.h"
+//#include "XFEM_ellipse_cut.h"
 
 #include "libmesh/exodusII_io.h"
 #include "libmesh/quadrature.h"
@@ -128,7 +128,7 @@ FEProblem::FEProblem(const InputParameters & parameters) :
 #ifdef LIBMESH_ENABLE_AMR
     _adaptivity(*this),
 #endif
-    _xfem(_material_data, &_mesh.getMesh()),
+    _xfem(_material_data, _bnd_material_data, &_mesh.getMesh()),
     _is_use_xfem(false),
     _displaced_mesh(NULL),
     _geometric_search_data(*this, _mesh),
@@ -1768,6 +1768,8 @@ FEProblem::reinitMaterialsFace(SubdomainID blk_id, THREAD_ID tid, bool swap_stat
       _bnd_material_data[tid]->swap(*elem, side);
 
     _bnd_material_data[tid]->reinit(_face_materials.getActiveBlockObjects(blk_id, tid));
+
+    _xfem.set_boundary_material_data_side_id(elem, side); //tell XFEM which boundary side should copy the boundary material data;
   }
 }
 
