@@ -159,8 +159,7 @@ void
 XFEMCutElem2D::getIntersectionInfo(unsigned int plane_id, Point & normal, std::vector<Point> & intersectionPoints, MeshBase* displaced_mesh) const
 {
   intersectionPoints.resize(2); // 2D: the intersection line is straight and can be represented by two ending points.(may have issues with double cuts case!)
-
-  Point orig(0.0,0.0,0.0);
+  
   std::vector<std::vector<EFAnode*> > cut_line_nodes;
   for (unsigned int i = 0; i < _efa_elem2d.get_fragment(0)->num_edges(); ++i)
   {

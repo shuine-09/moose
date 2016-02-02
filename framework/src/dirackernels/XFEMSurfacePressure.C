@@ -7,6 +7,7 @@
 #include "XFEMSurfacePressure.h"
 #include "Function.h"
 #include "XFEM.h"
+#include "XFEMMiscFuncs.h"
 
 template<>
 InputParameters validParams<XFEMSurfacePressure>()
@@ -33,8 +34,11 @@ XFEMSurfacePressure::XFEMSurfacePressure(const InputParameters & parameters) :
 }
 
 void
-XFEMSurfacePressure::qRuleOnLine(Point & p1, Point & p2, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts)
+XFEMSurfacePressure::qRuleOnLine(std::vector<Point> & intersection_points, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts)
 {
+  Point p1 = intersection_points[0];
+  Point p2 = intersection_points[1];
+
   //number of quadrature points
   unsigned int num_qpoints = 2;
 
@@ -45,11 +49,55 @@ XFEMSurfacePressure::qRuleOnLine(Point & p1, Point & p2, std::vector<Point> & qu
   quad_wts.resize(num_qpoints);
   quad_pts.resize(num_qpoints);
 
-  quad_wts[0] = 1.0;
-  quad_wts[1] = 1.0;
+  Real integ_jacobian =  pow((p1 -  p2).size_sq(), 0.5) * 0.5;
+
+  quad_wts[0] = 1.0 * integ_jacobian;
+  quad_wts[1] = 1.0 * integ_jacobian;
 
   quad_pts[0] = (1.0 - xi0) / 2.0 * p1 + (1.0 + xi0) / 2.0 * p2;
   quad_pts[1] = (1.0 - xi1) / 2.0 * p1 + (1.0 + xi1) / 2.0 * p2;
+}
+
+void 
+XFEMSurfacePressure::qRuleOnSurface(std::vector<Point> & intersection_points, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts)
+{
+  unsigned nnd_pe = intersection_points.size();
+  Point xcrd(0.0, 0.0, 0.0);
+  for (unsigned int i = 0; i < intersection_points.size(); ++i)
+    xcrd += intersection_points[i];
+  xcrd *= (1.0/intersection_points.size());
+  
+  quad_pts.resize(nnd_pe);
+  quad_wts.resize(nnd_pe);
+
+  Real jac = 0.0;
+
+  for (unsigned int j = 0; j < nnd_pe; ++j) // loop all sub-trigs
+  {
+    std::vector<std::vector<Real> > shape(3, std::vector<Real>(3,0.0));
+    std::vector<Point> subtrig_points(3, Point(0.0,0.0,0.0)); // sub-trig nodal coords
+
+    int jplus1(j < nnd_pe-1 ? j+1 : 0);
+    subtrig_points[0] = xcrd;
+    subtrig_points[1] = intersection_points[j];
+    subtrig_points[2] = intersection_points[jplus1];
+
+    std::vector<std::vector<Real> > sg2;
+    stdQuadr2D(3, 1, sg2); // get sg2
+    for (unsigned int l = 0; l < sg2.size(); ++l) // loop all int pts on a sub-trig
+    {
+      shapeFunc2D(3, sg2[l], subtrig_points, shape, jac, true); // Get shape
+      std::vector<Real> tsg_line(3,0.0);
+      for (unsigned int k = 0; k < 3; ++k) // loop sub-trig nodes
+      {
+        tsg_line[0] += shape[k][2] * subtrig_points[k](0);
+        tsg_line[1] += shape[k][2] * subtrig_points[k](1);
+        tsg_line[2] += shape[k][2] * subtrig_points[k](2);
+      }
+      quad_pts[j + l] = Point(tsg_line[0], tsg_line[1], tsg_line[2]);
+      quad_wts[j + l] = sg2[l][3] * jac;
+    }
+  }
 }
 
 void
@@ -60,34 +108,34 @@ XFEMSurfacePressure::addPoints()
 
   _elem_to_point_to_normal.clear();
   _elem_to_point_to_quadrature_weights.clear();
-  _elem_to_point_to_integration_jacobian.clear();
+
+  std::vector<Point> quad_pts;
+  std::vector<Real> quad_wts;
 
   for (unsigned int i = 0; i < cutted_elems.size(); i++)
   {
     const Elem * elem = cutted_elems[i];
 
+    quad_pts.clear();
+    quad_wts.clear();
+
     std::vector<Point> intersectionPoints;
     Point normal(0.0, 0.0, 0.0);
     _xfem->get_intersection_info(elem, 0, normal, intersectionPoints);
 
-    std::vector<Point> quad_pts;
-    std::vector<Real> quad_wts;
+    if (intersectionPoints.size() == 2)
+      qRuleOnLine(intersectionPoints, quad_pts, quad_wts);
+    else
+      qRuleOnSurface(intersectionPoints, quad_pts, quad_wts);
 
-    qRuleOnLine(intersectionPoints[0], intersectionPoints[1], quad_pts, quad_wts);
-    
-    Real integ_jacobian = pow((intersectionPoints[1] -  intersectionPoints[0]).size_sq(), 0.5) * 0.5;
+    for (unsigned int j = 0; j < quad_pts.size(); ++j)
+    {
+      _elem_to_point_to_normal[elem][quad_pts[j]] = -1.0 * normal;
 
-    _elem_to_point_to_normal[elem][quad_pts[0]] = -1.0 * normal;
-    _elem_to_point_to_normal[elem][quad_pts[1]] = -1.0 * normal;
+      _elem_to_point_to_quadrature_weights[elem][quad_pts[j]] = quad_wts[j];
 
-    _elem_to_point_to_quadrature_weights[elem][quad_pts[0]] = quad_wts[0];
-    _elem_to_point_to_quadrature_weights[elem][quad_pts[1]] = quad_wts[1];
-
-    _elem_to_point_to_integration_jacobian[elem][quad_pts[0]] = integ_jacobian;
-    _elem_to_point_to_integration_jacobian[elem][quad_pts[1]] = integ_jacobian;
-
-    addPoint(elem, quad_pts[0]);
-    addPoint(elem, quad_pts[1]);
+      addPoint(elem, quad_pts[j]);
+    }
   }
 }
 
@@ -101,10 +149,10 @@ XFEMSurfacePressure::computeQpResidual()
  
   Point normal = _elem_to_point_to_normal[_current_elem][_current_point];
   Real quad_wts = _elem_to_point_to_quadrature_weights[_current_elem][_current_point];
-  Real integ_jac = _elem_to_point_to_integration_jacobian[_current_elem][_current_point];
 
-  factor *= quad_wts * integ_jac;
+  factor *= quad_wts;
+
+  //std::cout << "factor = " << factor << ", normal = " << normal << std::endl;
 
   return -1.0 * factor * (normal(_component) * _test[_i][_qp]);
-
 }

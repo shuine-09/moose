@@ -287,8 +287,12 @@ void static shapeFunc2D(unsigned int nen, std::vector<Real> &ss, std::vector<Poi
   }
   else if (nen == 3) // triangle element
   {
+    Point x13 = xl[2] - xl[0];
+    Point x23 = xl[2] - xl[1];
+    Point cross_prod = x13.cross(x23);
+    xsj = pow(cross_prod.size_sq(),0.5);
     // x1*(y2 - y3) + x2*(y3 - y1) + x3*(y1 - y2)
-    xsj  = xl[0](0)*(xl[1](1)-xl[2](1)) + xl[1](0)*(xl[2](1)-xl[0](1)) + xl[2](0)*(xl[0](1)-xl[1](1));
+    //xsj  = xl[0](0)*(xl[1](1)-xl[2](1)) + xl[1](0)*(xl[2](1)-xl[0](1)) + xl[2](0)*(xl[0](1)-xl[1](1));
     Real xsjr = 1.0;
     if (xsj != 0.0)
         xsjr = 1.0/xsj;
@@ -317,6 +321,8 @@ void static shapeFunc2D(unsigned int nen, std::vector<Real> &ss, std::vector<Poi
   }
   else
     mooseError("ShapeFunc2D only works for linear quads and trigs!");
+
+  xsj = std::abs(xsj);
 }
 
 double static inline r8vec_norm(int n, double a[])

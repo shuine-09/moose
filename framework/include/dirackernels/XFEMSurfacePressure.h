@@ -22,14 +22,14 @@ public:
   virtual Real computeQpResidual();
 
 protected:
-  void qRuleOnLine(Point & p1, Point & p2, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts);
+  void qRuleOnLine(std::vector<Point> & intersection_points, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts);
+  void qRuleOnSurface(std::vector<Point> & intersection_points, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts);
   const int _component;
   const Real _factor;  
   Function * const _function;
 
   std::map<const Elem*, std::map<Point, Point> > _elem_to_point_to_normal;
   std::map<const Elem*, std::map<Point, Real> > _elem_to_point_to_quadrature_weights;
-  std::map<const Elem*, std::map<Point, Real> > _elem_to_point_to_integration_jacobian;
 
 private:
   XFEM *_xfem;

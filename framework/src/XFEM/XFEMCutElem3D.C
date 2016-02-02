@@ -194,7 +194,32 @@ XFEMCutElem3D::get_crack_tip_origin_and_direction(unsigned tip_id, Point & origi
 void
 XFEMCutElem3D::getIntersectionInfo(unsigned int plane_id, Point & normal, std::vector<Point> & intersectionPoints, MeshBase* displaced_mesh) const
 {
-  //TODO: not implemented for 3D
+  intersectionPoints.clear();
+  std::vector<std::vector<EFAnode*> > cut_plane_nodes;
+  for (unsigned int i = 0; i < _efa_elem3d.get_fragment(0)->num_faces(); ++i)
+  {
+    if (_efa_elem3d.get_fragment(0)->is_face_interior(i))
+    {
+      EFAface* face = _efa_elem3d.get_fragment(0)->get_face(i);
+      std::vector<EFAnode*> node_line;
+      for (unsigned int j = 0; j < face->num_nodes(); ++j)
+        node_line.push_back(face->get_node(j));
+      cut_plane_nodes.push_back(node_line);
+    }
+  } // i
+  if (cut_plane_nodes.size() == 0)
+  {
+    libMesh::err << " ERROR: no cut plane found in this element"<<std::endl;
+    exit(1);
+  }
+  if (plane_id < cut_plane_nodes.size()) // valid plane_id
+  {
+    intersectionPoints.resize(cut_plane_nodes[plane_id].size());
+    for (unsigned int i = 0; i < cut_plane_nodes[plane_id].size(); ++i)
+      intersectionPoints[i] = get_node_coords(cut_plane_nodes[plane_id][i], displaced_mesh);
+  }
+
+  normal = get_normal(plane_id, displaced_mesh);
 }
 
 void
