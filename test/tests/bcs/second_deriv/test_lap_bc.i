@@ -29,8 +29,6 @@
 []
 
 [BCs]
-  active = 'right left'
-
   [./left]
     type = DirichletBC
     variable = u
@@ -50,8 +48,11 @@
 
   solve_type = 'NEWTON'
 
+  # Force 2x2 quadrature on QUAD9 just to cut down the number of values
+  # there are to look at.
   [./Quadrature]
-    order = second
+    type = GAUSS
+    order = SECOND
   [../]
 
   petsc_options_iname = '-pc_type'

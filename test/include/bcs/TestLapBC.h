@@ -40,6 +40,13 @@ protected:
   const VariablePhiSecond & _second_phi;
   const VariableTestSecond & _second_test;
   VariableSecond & _second_u;
+
+  // Debugging: Get and print the nodal solution values
+  // VariableValue & _nodal_soln;
+
+  // Second derivative quantities as obtained by calling secondTest()
+  // in the initialization list.
+  const VariableTestSecond & _second_test_from_interface;
 };
 
 #endif //TESTLAPBC_H
