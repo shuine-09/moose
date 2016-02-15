@@ -57,7 +57,7 @@
 
   petsc_options_iname = '-pc_type'
   petsc_options_value = 'lu'
-  petsc_options = '-snes_check_jacobian -sens_check_jacobian_view'
+  petsc_options = '-snes_check_jacobian -snes_check_jacobian_view'
 []
 
 [Outputs]

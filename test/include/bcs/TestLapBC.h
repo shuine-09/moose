@@ -37,6 +37,12 @@ public:
 protected:
   virtual Real computeQpResidual();
   virtual Real computeQpJacobian();
+
+  // Calling second() using the MooseVariableInterface seems to be
+  // important, because it sets the _need_second flag, which causes
+  // other things to be recomputed...
+  VariableSecond & _second_u_from_interface;
+
   const VariablePhiSecond & _second_phi;
   const VariableTestSecond & _second_test;
   VariableSecond & _second_u;

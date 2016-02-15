@@ -31,6 +31,7 @@ InputParameters validParams<TestLapBC>()
 
 TestLapBC::TestLapBC(const InputParameters & parameters) :
     IntegratedBC(parameters),
+    _second_u_from_interface(second()),
     _second_phi(_assembly.secondPhiFace()),
     _second_test(_var.secondPhiFace()),
     _second_u(_is_implicit ?_var.secondSln() : _var.secondSlnOld()),
@@ -56,6 +57,13 @@ TestLapBC::computeQpResidual()
   // In this test, _second_u is basically always zero, as the true solution is u==const.
   if (_second_u[_qp].norm() > 1.e-6)
     Moose::out << "_second_u[" << _qp << "]=" << _second_u[_qp] << std::endl;
+
+  // Print the diff between the result of getting _second_u in two
+  // different ways if it is large enough.  I don't currently see any
+  // printouts from these, so this seems to be working...
+  Real diff_second = (_second_u_from_interface[_qp] - _second_u[_qp]).norm();
+  if (diff_second > 1.e-6)
+    Moose::out << "diff_second[" << _qp << "]=" << diff_second << std::endl;
 
   // Second derivatives of the test function.
   // Moose::out << "_second_test[" << _i << "][" << _qp << "]=" << _second_test[_i][_qp] << std::endl;
@@ -152,11 +160,11 @@ TestLapBC::computeQpJacobian()
   // Compare test function second derivatives obtained from _var with
   // those obtained through the interface. -- OK, these values are
   // definitely different, and this is probably a bug!
-//  {
-//    Real normdiff = (_second_test[_i][_qp] - _second_test_from_interface[_i][_qp]).norm();
-//    if (normdiff > 1.e-12)
-//      Moose::out << "test_xx - test_interface_xx = " << normdiff << std::endl;
-//  }
+ {
+   Real normdiff = (_second_test[_i][_qp] - _second_test_from_interface[_i][_qp]).norm();
+   if (normdiff > 1.e-12)
+     Moose::out << "test_xx - test_interface_xx = " << normdiff << std::endl;
+ }
 
   // What if we used _second_test again.  Does that make the Jacobian
   // tester work?  No, it does not seem to make any difference...
