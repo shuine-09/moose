@@ -160,17 +160,22 @@ TestLapBC::computeQpJacobian()
   // Compare test function second derivatives obtained from _var with
   // those obtained through the interface. -- OK, these values are
   // definitely different, and this is probably a bug!
- {
-   Real normdiff = (_second_test[_i][_qp] - _second_test_from_interface[_i][_qp]).norm();
-   if (normdiff > 1.e-12)
-     Moose::out << "test_xx - test_interface_xx = " << normdiff << std::endl;
- }
+//  {
+//    Real normdiff = (_second_test[_i][_qp] - _second_test_from_interface[_i][_qp]).norm();
+//    if (normdiff > 1.e-12)
+//      Moose::out << "test_xx - test_interface_xx = " << normdiff << std::endl;
+//  }
 
   // What if we used _second_test again.  Does that make the Jacobian
   // tester work?  No, it does not seem to make any difference...
   // r += _second_test[_j][_qp].tr() * _test[_i][_qp];
 
-  // What we want to use:
+  // What if we used _second_test_from_interface instead?  This actually gives a different
+  // result that is still not correct, but at least it's different, which is consistent
+  // with using different shape function values.
+  // r += _second_test_from_interface[_j][_qp].tr() * _test[_i][_qp];
+
+  // What I think we want to use:
   r += _second_phi[_j][_qp].tr() * _test[_i][_qp];
 
   return r;
