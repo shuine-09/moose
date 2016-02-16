@@ -19,6 +19,8 @@
 #include "XFEMCutElem3D.h"
 #include "AuxiliarySystem.h"
 #include "NonlinearSystem.h"
+#include <iostream>
+#include <fstream>
 
 enum XFEM_CUTPLANE_QUANTITY
 {
@@ -178,6 +180,8 @@ private:
   std::map<unique_id_type, unique_id_type> _new_node_to_parent_node;
 
   ElementFragmentAlgorithm _efa_mesh;
+
+  std::ofstream crack_tip_location_file;
 };
 
 #endif // XFEM_H

@@ -49,6 +49,7 @@ XFEM::XFEM (std::vector<MaterialData *> & material_data, MeshBase* m, MeshBase* 
   _mesh(m),
   _mesh2(m2)
 {
+  crack_tip_location_file.open("crack_tip_location.txt");  
 }
 
 XFEM::~XFEM ()
@@ -59,6 +60,7 @@ XFEM::~XFEM ()
     _geometric_cuts[i] = NULL;
   }
   _geometric_cuts.clear();
+  crack_tip_location_file.close();
 }
 
 void
@@ -735,7 +737,9 @@ XFEM::mark_cut_edges_by_state(Real time)
         crack_tip_direction = (ecodm->second)[1];
         Point direction = _crack_propagation_direction_map[elem]; 
         std::map<const Elem*, Point>::iterator mit;
-        
+       
+        crack_tip_location_file << crack_tip_origin(0) << " " << crack_tip_origin(1) << std::endl;
+
         if (crack_tip_direction*direction < 0.0)
         { 
          //direction *= -1.0;
