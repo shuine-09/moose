@@ -65,7 +65,9 @@ TestLapBC::computeQpResidual()
   if (diff_second > 1.e-6)
     Moose::out << "diff_second[" << _qp << "]=" << diff_second << std::endl;
 
-  // Second derivatives of the test function.
+  // Second derivatives of the test function.  These values match what
+  // is being computed during Assembly::reinitFEFace(), unlike the values you get
+  // by initializing a variable by calling secondTest().
   // Moose::out << "_second_test[" << _i << "][" << _qp << "]=" << _second_test[_i][_qp] << std::endl;
 
   // Are "_second_test" and "_second_phi" the same thing? (One comes
@@ -137,7 +139,23 @@ TestLapBC::computeQpResidual()
   //   Moose::out << (*current_soln)(i) << " ";
   // Moose::out << std::endl;
 
+  // For this simple example, the second derivative is identically 0,
+  // so we should be able to get roughly the same result (including
+  // incorrect Jacobians) just by returning 0.  We can simulate this
+  // by simply commenting out the next line:
+  // return 0: 0.51484 = ||J - Jfd||/||J||
+  //           3.82971 = ||J - Jfd||
+  // return _second_u.tr(): 0.580818 = ||J - Jfd||/||J||
+  //                        4.32049  = ||J - Jfd||
+  // They are slightly different, but probably not different enough
+  // for the _second_u values to make a difference?
+
+  // Verify that the problem is not with _test[_i]
+  // r += 1.0 * _test[_i][_qp];
+
+  // What we actually want to return for the residual.
   r += _second_u[_qp].tr() * _test[_i][_qp];
+
   return r;
 }
 
@@ -159,7 +177,9 @@ TestLapBC::computeQpJacobian()
 
   // Compare test function second derivatives obtained from _var with
   // those obtained through the interface. -- OK, these values are
-  // definitely different, and this is probably a bug!
+  // definitely different, and this is probably a bug!  But it's not the only bug, because
+  // we aren't even using _second_test_from_interface and there are still issues
+  // with the Jacobian.
 //  {
 //    Real normdiff = (_second_test[_i][_qp] - _second_test_from_interface[_i][_qp]).norm();
 //    if (normdiff > 1.e-12)
@@ -174,6 +194,15 @@ TestLapBC::computeQpJacobian()
   // result that is still not correct, but at least it's different, which is consistent
   // with using different shape function values.
   // r += _second_test_from_interface[_j][_qp].tr() * _test[_i][_qp];
+
+  // Verify that the problem is not with _test[_i] (this works fine).
+  // r += 0.;
+
+  // Since we believe this example to have a zero second derivative,
+  // it should also "work" to simply return 0 for the Jacobian.
+  // Unfortunately, it does not work, so irrespective of what
+  // _second_phi actually is, it appears that _second_u may be wrong?
+  // r += 0.;
 
   // What I think we want to use:
   r += _second_phi[_j][_qp].tr() * _test[_i][_qp];
