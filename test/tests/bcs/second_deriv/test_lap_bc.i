@@ -26,17 +26,63 @@
     type = Diffusion
     variable = u
   [../]
+  [./ffn]
+    type = UserForcingFunction
+    variable = u
+    function = force_fn
+  [../]
 []
 
+[Functions]
+  [./left_bc_func]
+    type = ParsedFunction
+    value = '1+y*y'
+  [../]
+  [./right_bc_func]
+    type = ParsedFunction
+    value = '1+y*y'
+  [../]
+  [./top_bc_func]
+    type = ParsedFunction
+    value = '1+x*x'
+  [../]
+  [./bottom_bc_func]
+    type = ParsedFunction
+    value = '1+x*x'
+  [../]
+  [./force_fn]
+    type = ParsedFunction
+    value = -4
+  [../]
+[] 
+
 [BCs]
+  active = 'left top bottom right_test'
   [./left]
-    type = DirichletBC
+    type = FunctionDirichletBC
     variable = u
     boundary = left
-    value = 1
+    function = left_bc_func
   [../]
-
   [./right]
+    type = FunctionDirichletBC
+    variable = u
+    boundary = right
+    function = right_bc_func
+  [../]
+  [./bottom]
+    type = FunctionDirichletBC
+    variable = u
+    boundary = bottom
+    function = bottom_bc_func
+  [../]
+  [./top]
+    type = FunctionDirichletBC
+    variable = u
+    boundary = top
+    function = top_bc_func
+  [../]
+  [./right_test]
     type = TestLapBC
     variable = u
     boundary = right

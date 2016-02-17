@@ -55,15 +55,18 @@ TestLapBC::computeQpResidual()
   // Moose::out << "_q_point[" << _qp << "]=" << _q_point[_qp] << std::endl;
 
   // In this test, _second_u is basically always zero, as the true solution is u==const.
-  if (_second_u[_qp].norm() > 1.e-6)
-    Moose::out << "_second_u[" << _qp << "]=" << _second_u[_qp] << std::endl;
+  // WJ: I cannot compile it as norm() is not defined in my libmesh? 
+  //if (_second_u[_qp].norm() > 1.e-6)
+  //  Moose::out << "_second_u[" << _qp << "]=" << _second_u[_qp] << std::endl;
 
   // Print the diff between the result of getting _second_u in two
   // different ways if it is large enough.  I don't currently see any
   // printouts from these, so this seems to be working...
-  Real diff_second = (_second_u_from_interface[_qp] - _second_u[_qp]).norm();
-  if (diff_second > 1.e-6)
-    Moose::out << "diff_second[" << _qp << "]=" << diff_second << std::endl;
+  
+  // WJ: I cannot compile it as norm() is not defined in my libmesh? 
+  //Real diff_second = (_second_u_from_interface[_qp] - _second_u[_qp]).norm();
+  //if (diff_second > 1.e-6)
+  //  Moose::out << "diff_second[" << _qp << "]=" << diff_second << std::endl;
 
   // Second derivatives of the test function.  These values match what
   // is being computed during Assembly::reinitFEFace(), unlike the values you get
@@ -154,8 +157,8 @@ TestLapBC::computeQpResidual()
   // r += 1.0 * _test[_i][_qp];
 
   // What we actually want to return for the residual.
-  r += _second_u[_qp].tr() * _test[_i][_qp];
-
+  //r += _second_u[_qp].tr() * _test[_i][_qp];
+    r += 10 * (_second_u[_qp].tr() - 2) * _test[_i][_qp]; // 10 is the penalty parameter which penalize the \Lap U = 2 on the boundary.
   return r;
 }
 
@@ -170,9 +173,9 @@ TestLapBC::computeQpJacobian()
   // appears to be safe to access _second_phi from the
   // computeQpJacobian() routine...  These two arrays appear to be identical.
   {
-    Real normdiff = (_second_test[_i][_qp] - _second_phi[_i][_qp]).norm();
-    if (normdiff > 1.e-12)
-      Moose::out << "phi_xx - test_xx = " << normdiff << std::endl;
+    //Real normdiff = (_second_test[_i][_qp] - _second_phi[_i][_qp]).norm();
+    //if (normdiff > 1.e-12)
+    //  Moose::out << "phi_xx - test_xx = " << normdiff << std::endl;
   }
 
   // Compare test function second derivatives obtained from _var with
@@ -205,7 +208,7 @@ TestLapBC::computeQpJacobian()
   // r += 0.;
 
   // What I think we want to use:
-  r += _second_phi[_j][_qp].tr() * _test[_i][_qp];
-
+  //r += _second_phi[_j][_qp].tr() * _test[_i][_qp];
+  r += 10 * _second_phi[_j][_qp].tr() * _test[_i][_qp]; // 10 is the penalty parameter which penalize the \Lap U = 2 on the boundary.
   return r;
 }
