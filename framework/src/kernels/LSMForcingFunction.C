@@ -53,6 +53,6 @@ LSMForcingFunction::f()
 Real
 LSMForcingFunction::computeQpResidual()
 {
-  return -_test[_i][_qp] * f();
+  return _test[_i][_qp] * f();
 }
 

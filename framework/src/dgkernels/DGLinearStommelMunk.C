@@ -21,11 +21,13 @@ template<>
 InputParameters validParams<DGLinearStommelMunk>()
 {
   InputParameters params = validParams<DGKernel>();
+  params.addParam<Real>("eta", 100, "The stablization parameter in DG kernel");
   return params;
 }
 
 DGLinearStommelMunk::DGLinearStommelMunk(const InputParameters & parameters) :
     DGKernel(parameters),
+    _eta(getParam<Real>("eta")),
     _second_phi(secondPhiFace()),
     _second_test(secondTestFace()),
     _second_u(second()),
@@ -35,7 +37,6 @@ DGLinearStommelMunk::DGLinearStommelMunk(const InputParameters & parameters) :
 {
   _eps_s = 0.05;
   _eps_m = 6.0e-5;
-  _eta = 1;
 }
 
 Real

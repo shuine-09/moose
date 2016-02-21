@@ -12,28 +12,30 @@
 /*            See COPYRIGHT for full restrictions               */
 /****************************************************************/
 
-#ifndef DGLINEARSTOMMELMUNK_H
-#define DGLINEARSTOMMELMUNK_H
+#ifndef DGCAHNHILLIARD_H
+#define DGCAHNHILLIARD_H
 
 #include "DGKernel.h"
 
 //Forward Declarations
-class DGLinearStommelMunk;
+class DGCAHNHILLIARD;
 
 template<>
-InputParameters validParams<DGLinearStommelMunk>();
+InputParameters validParams<DGCAHNHILLIARD>();
 
 /**
- * DG kernel for linear stommel munk
+ * DG kernel for cahn hilliard
  */
-class DGLinearStommelMunk : public DGKernel
+class DGCahnHilliard : public DGKernel
 {
 public:
-  DGLinearStommelMunk(const InputParameters & parameters);
+  DGCahnHilliard(const InputParameters & parameters);
 
 protected:
-  Real _eps_m;
-  Real _eps_s;
+  const MaterialProperty<Real> & _kappa;
+    /// Mobility
+  const MaterialProperty<Real> & _M;
+
   Real _eta;
 
   const VariablePhiSecond & _second_phi;
@@ -42,7 +44,7 @@ protected:
   const VariablePhiSecond & _second_phi_neighbor;
   const VariableTestSecond & _second_test_neighbor;
   const VariableSecond & _second_u_neighbor;
-
+   
   virtual Real computeQpResidual(Moose::DGResidualType type);
   virtual Real computeQpJacobian(Moose::DGJacobianType type);
 

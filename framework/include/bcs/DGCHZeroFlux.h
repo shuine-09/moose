@@ -12,40 +12,38 @@
 /*            See COPYRIGHT for full restrictions               */
 /****************************************************************/
 
-#ifndef DGLINEARSTOMMELMUNK_H
-#define DGLINEARSTOMMELMUNK_H
+#ifndef DGCHZEROFLUX_H
+#define DGCHZEROFLUX_H
 
-#include "DGKernel.h"
+#include "IntegratedBC.h"
 
 //Forward Declarations
-class DGLinearStommelMunk;
+class DGCHZeroFlux;
 
 template<>
-InputParameters validParams<DGLinearStommelMunk>();
+InputParameters validParams<DGCHZeroFlux>();
 
-/**
- * DG kernel for linear stommel munk
- */
-class DGLinearStommelMunk : public DGKernel
+class DGCHZeroFlux : public IntegratedBC
 {
 public:
-  DGLinearStommelMunk(const InputParameters & parameters);
+
+  /**
+   * Factory constructor, takes parameters so that all derived classes can be built using the same
+   * constructor.
+   */
+  DGCHZeroFlux(const InputParameters & parameters);
+
+  virtual ~DGCHZeroFlux() {}
 
 protected:
-  Real _eps_m;
-  Real _eps_s;
-  Real _eta;
-
+  virtual Real computeQpResidual();
+  virtual Real computeQpJacobian();
   const VariablePhiSecond & _second_phi;
   const VariableTestSecond & _second_test;
-  const VariableSecond & _second_u;
-  const VariablePhiSecond & _second_phi_neighbor;
-  const VariableTestSecond & _second_test_neighbor;
-  const VariableSecond & _second_u_neighbor;
+  VariableSecond & _second_u;
 
-  virtual Real computeQpResidual(Moose::DGResidualType type);
-  virtual Real computeQpJacobian(Moose::DGJacobianType type);
-
+private:
+  Real _alpha;
 };
 
-#endif
+#endif //DGCHZEROFLUX_H
