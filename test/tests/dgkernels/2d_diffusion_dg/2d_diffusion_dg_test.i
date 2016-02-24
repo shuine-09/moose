@@ -1,8 +1,8 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 2
-  ny = 2
+  nx = 7
+  ny = 7
 #  xmin = -1
 #  xmax = 1
 #  ymin = -1
@@ -108,14 +108,33 @@
   [../]
 []
 
+[Adaptivity]
+  steps = 1
+  max_h_level = 1
+  initial_steps = 1
+  initial_marker = initial_box
+  [./Markers]
+    [./initial_box]
+      type = BoxMarker
+      bottom_left = '0.1 0.1 0'
+      top_right = '0.8 0.8 0'
+      inside = refine
+      outside = dont_mark
+    [../]
+  [../]
+[]
+
+
 [Executioner]
   type = Steady
 
   # Preconditioned JFNK (default)
-  solve_type = 'PJFNK'
+  solve_type = 'NEWTON'
 #  petsc_options = '-snes_mf'
 #  petsc_options_iname = '-pc_type -pc_hypre_type'
 #  petsc_options_value = 'hypre    boomeramg'
+
+  petsc_options = '-snes_check_jacobian -sens_check_jacobian_view'
 
 #  petsc_options = '-snes_mf'
 #  max_r_steps = 2

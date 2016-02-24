@@ -1,8 +1,8 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 30
-  ny = 10
+  nx = 9
+  ny = 3
   xmin = 0
   xmax = 3
   ymin = 0
@@ -15,20 +15,6 @@
   [./u]
     order = SECOND
     family = LAGRANGE
-  [../]
-[]
-
-[Functions]
-  active = 'forcing_fn'
-
-  [./forcing_fn]
-    type = ParsedFunction
-#    function = -4.0+(x*x)+(y*y)
-#    function = x
-#    function = (x*x)-2.0
-#    value = 2*pow(e,-x-(y*y))*(1-2*y*y)
-     value = '-0.2-2*x*x -10*sin(pi*y)'
-#    function = (x*x*x)-6.0*x
   [../]
 []
 
@@ -54,7 +40,7 @@
 []
 
 [BCs]
-  active = 'zero zero_flux'
+  active = 'zero'
 
   [./zero]
     type = DirichletBC
@@ -69,14 +55,28 @@
     boundary = '0 1 2 3'
     alpha = 1
   [../]
-
 []
-
 
 [Preconditioning]
   [./SMP]
     type = SMP
     full = true
+  [../]
+[]
+
+[Adaptivity]
+  steps = 1
+  max_h_level = 1
+  initial_steps = 1
+  initial_marker = initial_box
+  [./Markers]
+    [./initial_box]
+      type = BoxMarker
+      bottom_left = '1 0.1 0'
+      top_right = '2 0.8 0'
+      inside = refine
+      outside = dont_mark
+    [../]
   [../]
 []
 
@@ -102,6 +102,7 @@
    l_tol = 1e-5
 
 #  nl_rel_tol = 1e-12
+
 
    [./Quadrature]
      order = second

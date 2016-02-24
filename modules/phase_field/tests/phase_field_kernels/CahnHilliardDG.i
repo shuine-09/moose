@@ -6,13 +6,29 @@
 #
 
 [Mesh]
-  type = GeneratedMesh
-  dim = 2
-  nx = 64
-  ny = 64
-  xmax = 50
-  ymax = 50
-  elem_type = TRI6
+#  type = GeneratedMesh
+#  dim = 2
+#  nx = 100
+#  ny = 100
+#  xmax = 50
+#  ymax = 50
+#  elem_type = QUAD9
+  file = square.e
+[]
+
+[MeshModifiers]
+  [./trans]
+    type = Transform
+    transform = TRANSLATE
+    vector_value = '0.5 0.5 0'
+  [../]
+  [./scale]
+    type = Transform
+    transform = SCALE
+    vector_value = '50 50 1'
+    depends_on = trans
+  [../]
+
 []
 
 [Variables]
@@ -70,16 +86,16 @@
   [./consts]
     type = GenericConstantMaterial
     prop_names  = 'M kappa_c'
-    prop_values = '1 0.5'
-    block = 0
+    prop_values = '1 5'
+    block = 1
   [../]
   [./free_energy]
     type = DerivativeParsedMaterial
-    block = 0
+    block = 1
     f_name = F
     args = 'cv'
-#    function = '(1-cv)^2 * (1+cv)^2'
-    function = 'cv^4/12 - cv^2/2'
+    function = '(1-cv)^2 * (1+cv)^2'
+#    function = 'cv^4/12 - cv^2/2'
   [../]
 []
 
@@ -88,7 +104,7 @@
   [./zero_flux]
     type = DGCHZeroFlux
     variable = cv
-    boundary = '0 1 2 3'
+    boundary = '1 2 3 4'
     alpha = 100
   [../]
 []
@@ -123,6 +139,7 @@
 
   start_time = 0.0
   num_steps = 1500
+ 
   [./TimeStepper]
     type = IterationAdaptiveDT
     cutback_factor = .75
@@ -130,12 +147,12 @@
     growth_factor = 1.2
     optimal_iterations = 8
   [../]
-  [./Adaptivity]
-    refine_fraction = 0.9
-    coarsen_fraction = 0.0
-    max_h_level = 2
-    initial_adaptivity = 2
-  [../]
+#  [./Adaptivity]
+#    refine_fraction = 0.9
+#    coarsen_fraction = 0.0
+#    max_h_level = 2
+#    initial_adaptivity = 2
+#  [../]
 
 []
 
