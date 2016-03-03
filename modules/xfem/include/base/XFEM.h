@@ -145,6 +145,9 @@ public:
                                        unsigned int plane_id, 
                                        Point & normal, std::vector<Point> & intersectionPoints, 
                                        bool displaced_mesh = false) const;
+  virtual void getXFEMqRuleOnLine(std::vector<Point> & intersection_points, 
+                                  std::vector<Point> & quad_pts, 
+                                  std::vector<Real> & quad_wts);
 
 private:
 
