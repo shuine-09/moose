@@ -135,12 +135,12 @@ protected:
   /** 
    * This is the virtual that derived classes should override for computing the residual on neighboring element. 
    */ 
-  virtual Real computeQpResidual(Moose::DGResidualType type);
+  virtual Real computeQpResidual(Moose::DGResidualType type) = 0;
 
   /**
    * This is the virtual that derived classes should override for computing the Jacobian on neighboring element.
    */
-  virtual Real computeQpJacobian(Moose::DGJacobianType type);
+  virtual Real computeQpJacobian(Moose::DGJacobianType type) = 0;
 };
 
 #endif /* XFEMELEMENTCONSTRAINT_H_ */

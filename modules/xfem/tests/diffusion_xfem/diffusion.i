@@ -6,8 +6,8 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 5
-  ny = 6
+  nx = 3
+  ny = 3
   xmin = 0.0
   xmax = 1.0
   ymin = 0.0
@@ -16,7 +16,7 @@
 []
 
 [XFEM]
-  cut_data = '0.3 1.0 0.3 0.0 0 0'
+  cut_data = '0.5 1.0 0.5 0.0 0 0'
   qrule = volfrac
   output_cut_plane = true
 []
@@ -46,6 +46,8 @@
     type = XFEMEqualValueConstraint
     variable = u
     xfem_interface_id = 1
+    jump = 0
+    jump_flux = 1
   [../]
 []
 
