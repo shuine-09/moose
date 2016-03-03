@@ -52,11 +52,11 @@ XFEMElementConstraint::XFEMElementConstraint(const InputParameters & parameters)
     _u(_var.sln()), 
     _grad_u(_var.gradSln()), 
 
-    _phi(_assembly.phiFace()), 
-    _grad_phi(_assembly.gradPhiFace()), 
+    _phi(_assembly.phi()), 
+    _grad_phi(_assembly.gradPhi()), 
 
-    _test(_var.phiFace()), 
-    _grad_test(_var.gradPhiFace()), 
+    _test(_var.phi()), 
+    _grad_test(_var.gradPhi()), 
 
     _normals(_var.normals()), 
 
@@ -97,15 +97,6 @@ XFEMElementConstraint::computeElemNeighResidual(Moose::DGResidualType type)
   const VariableTestValue & test_space = is_elem ? _test : _test_neighbor;
   DenseVector<Number> & re = is_elem ? _assembly.residualBlock(_var.number()) :
                                        _assembly.residualBlockNeighbor(_var.number());
-  /*
-  for (unsigned int i = 0; i < _var.dofIndices().size(); i++)
-    std::cout << "dof index = " << _var.dofIndices()[i] << ", ";
-  std::cout << std::endl;
-
-  for (unsigned int i = 0; i < _var.dofIndicesNeighbor().size(); i++)
-    std::cout << "neighbor dof index = " << _var.dofIndicesNeighbor()[i] << ", ";
-  std::cout << std::endl;
-  */
   for (_qp=0; _qp < _xfem_quad_pts.size(); _qp++)
       for (_i=0; _i< test_space.size(); _i++)
         re(_i) += _xfem_quad_wts[_qp] * computeQpResidual(type);
@@ -114,10 +105,7 @@ XFEMElementConstraint::computeElemNeighResidual(Moose::DGResidualType type)
 void
 XFEMElementConstraint::computeResidual()
 {
-  //std::cout << "current elem id = " << _current_elem->id() << std::endl;
-  //std::cout << "neighbor elem id = " << _neighbor_elem->id() << std::endl;
-
-  // Compute the residual for this element
+ // Compute the residual for this element
   computeElemNeighResidual(Moose::Element);
 
   // Compute the residual for the neighbor
@@ -158,14 +146,3 @@ XFEMElementConstraint::computeJacobian()
   computeElemNeighJacobian(Moose::NeighborNeighbor);
 }
 
-Real 
-XFEMElementConstraint::computeQpResidual(Moose::DGResidualType type)
-{
-  return 0.0;
-}
-
-Real 
-XFEMElementConstraint::computeQpJacobian(Moose::DGJacobianType type)
-{
-  return 0.0;
-}

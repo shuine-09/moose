@@ -34,6 +34,10 @@ public:
 protected:
   virtual Real computeQpResidual(Moose::DGResidualType type);
   virtual Real computeQpJacobian(Moose::DGJacobianType type);
+
+  Real _alpha;
+  Real _jump;
+  Real _jump_flux;
 };
 
 #endif /* XFEMEQUALVALUECONSTRAINT_H_ */
