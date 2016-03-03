@@ -1208,12 +1208,13 @@ NonlinearSystem::constraintResiduals(NumericVector<Number> & residual, bool disp
       for (unsigned int ie = 0; ie < elem_pairs.size(); ++ie)
       {
         //cutted element itself and its overlapping element
+
         const Elem * elem = elem_pairs[ie].first; 
         const Elem * overlap_elem = elem_pairs[ie].second;
 
         std::vector<Point> intersectionPoints;
         Point normal(0.0, 0.0, 0.0);
-        xfem->getXFEMIntersectionInfo(elem_pairs[ie].first, 0, normal, intersectionPoints);
+        xfem->getXFEMIntersectionInfo(elem, 0, normal, intersectionPoints);
         
         std::vector<Point> quadrature_pts;
         std::vector<Real> quadrature_wts;
@@ -1227,28 +1228,22 @@ NonlinearSystem::constraintResiduals(NumericVector<Number> & residual, bool disp
         for (std::vector<MooseSharedPointer<XFEMElementConstraint> >::const_iterator xfemec_it = xfem_element_constraints.begin(); xfemec_it != xfem_element_constraints.end(); ++xfemec_it)
         {
           MooseSharedPointer<XFEMElementConstraint> xfemec = *xfemec_it;
-
-          // reinit variables on element
+         
           _fe_problem.reinitElemPhys(elem, quadrature_pts, tid);
           _fe_problem.reinitNeighborPhys(overlap_elem, 0, quadrature_pts, tid);
 
           xfemec->subProblem().prepareShapes(xfemec->variable().number(), tid);
           xfemec->subProblem().prepareNeighborShapes(xfemec->variable().number(), tid);
 
-          //std::cout << "quad pts = " << quadrature_pts[0] << ",  " << quadrature_pts[1] << std::endl;
-          //std::cout << "quad wts = " << quadrature_wts[0] << ",  " << quadrature_wts[1] << std::endl;
           xfemec->setqRuleNormal(quadrature_pts, quadrature_wts, normal);
           xfemec->computeResidual();
-         //_fe_problem.cacheResidual(tid);
-         //_fe_problem.cacheResidualNeighbor(tid);
-          _fe_problem.addResidualNeighbor(tid);
+          _fe_problem.cacheResidual(tid);
+          _fe_problem.cacheResidualNeighbor(tid);
         }
-
-        //_fe_problem.addCachedResidual(tid);
+        _fe_problem.addCachedResidual(tid);
       }
     }
   }
-
 }
 
 
@@ -1842,7 +1837,7 @@ NonlinearSystem::constraintJacobians(SparseMatrix<Number> & jacobian, bool displ
 
         std::vector<Point> intersectionPoints;
         Point normal(0.0, 0.0, 0.0);
-        xfem->getXFEMIntersectionInfo(elem_pairs[ie].first, 0, normal, intersectionPoints);
+        xfem->getXFEMIntersectionInfo(elem, 0, normal, intersectionPoints);
         
         std::vector<Point> quadrature_pts;
         std::vector<Real> quadrature_wts;
@@ -1857,7 +1852,7 @@ NonlinearSystem::constraintJacobians(SparseMatrix<Number> & jacobian, bool displ
         {
           MooseSharedPointer<XFEMElementConstraint> xfemec = *xfemec_it;
 
-          // reinit variables on element
+          // reinit variables on element and its overlapping element
           _fe_problem.reinitElemPhys(elem, quadrature_pts, tid);
           _fe_problem.reinitNeighborPhys(overlap_elem, 0, quadrature_pts, tid);
 
@@ -1866,17 +1861,14 @@ NonlinearSystem::constraintJacobians(SparseMatrix<Number> & jacobian, bool displ
 
           xfemec->setqRuleNormal(quadrature_pts, quadrature_wts, normal);
           xfemec->computeJacobian();
-         //_fe_problem.cacheJacobian(tid);
-         //_fe_problem.cacheJacobianNeighbor(tid);
-          _fe_problem.addJacobianNeighbor(jacobian, tid);
+         _fe_problem.cacheJacobian(tid);
+         _fe_problem.cacheJacobianNeighbor(tid);
         }
-
-        //_fe_problem.addCachedJacobian(jacobian, tid);
+        _fe_problem.addCachedJacobian(jacobian, tid);
       }
     }
   }
 }
-
 
 void
 NonlinearSystem::computeScalarKernelsJacobians(SparseMatrix<Number> & jacobian)
