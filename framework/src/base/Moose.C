@@ -258,6 +258,7 @@
 #include "EqualValueConstraint.h"
 #include "EqualValueBoundaryConstraint.h"
 #include "LinearNodalConstraint.h"
+#include "XFEMEqualValueConstraint.h"
 
 // ScalarKernels
 #include "ODETimeDerivative.h"
@@ -662,6 +663,7 @@ registerObjects(Factory & factory)
   registerConstraint(EqualValueConstraint);
   registerConstraint(EqualValueBoundaryConstraint);
   registerConstraint(LinearNodalConstraint);
+  registerConstraint(XFEMEqualValueConstraint);
 
   // Scalar kernels
   registerScalarKernel(ODETimeDerivative);
