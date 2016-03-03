@@ -1378,3 +1378,28 @@ XFEM::getXFEMIntersectionInfo(const Elem* elem, unsigned int plane_id, Point & n
       xfce->getIntersectionInfo(plane_id, normal, intersectionPoints);
   }
 }
+
+void
+XFEM::getXFEMqRuleOnLine(std::vector<Point> & intersection_points, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts)
+{
+  Point p1 = intersection_points[0];
+  Point p2 = intersection_points[1];
+
+  //number of quadrature points
+  unsigned int num_qpoints = 2;
+
+  //quadrature coordinates
+  Real xi0 = -std::sqrt(1.0/3.0);
+  Real xi1 =  std::sqrt(1.0/3.0);
+
+  quad_wts.resize(num_qpoints);
+  quad_pts.resize(num_qpoints);
+
+  Real integ_jacobian =  pow((p1 -  p2).size_sq(), 0.5) * 0.5;
+
+  quad_wts[0] = 1.0 * integ_jacobian;
+  quad_wts[1] = 1.0 * integ_jacobian;
+
+  quad_pts[0] = (1.0 - xi0) / 2.0 * p1 + (1.0 + xi0) / 2.0 * p2;
+  quad_pts[1] = (1.0 - xi1) / 2.0 * p1 + (1.0 + xi1) / 2.0 * p2;
+}

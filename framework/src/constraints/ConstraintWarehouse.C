@@ -17,6 +17,7 @@
 #include "NodalConstraint.h"
 #include "NodeFaceConstraint.h"
 #include "FaceFaceConstraint.h"
+#include "XFEMElementConstraint.h"
 
 ConstraintWarehouse::ConstraintWarehouse() :
     MooseObjectWarehouse<Constraint>(/*threaded=*/false)
@@ -34,6 +35,7 @@ ConstraintWarehouse::addObject(MooseSharedPointer<Constraint> object, THREAD_ID 
   MooseSharedPointer<NodeFaceConstraint> nfc = MooseSharedNamespace::dynamic_pointer_cast<NodeFaceConstraint>(object);
   MooseSharedPointer<FaceFaceConstraint> ffc = MooseSharedNamespace::dynamic_pointer_cast<FaceFaceConstraint>(object);
   MooseSharedPointer<NodalConstraint>    nc =  MooseSharedNamespace::dynamic_pointer_cast<NodalConstraint>(object);
+  MooseSharedPointer<XFEMElementConstraint> xfemec = MooseSharedNamespace::dynamic_pointer_cast<XFEMElementConstraint>(object);
 
   // NodeFaceConstraint
   if (nfc)
@@ -53,6 +55,13 @@ ConstraintWarehouse::addObject(MooseSharedPointer<Constraint> object, THREAD_ID 
   {
     const std::string & interface = ffc->getParam<std::string>("interface");
     _face_face_constraints[interface].addObject(ffc);
+  }
+
+  // XFEMElementConstraint
+  else if (xfemec)
+  {
+    const unsigned int xfem_interface_id = xfemec->getParam<unsigned int>("xfem_interface_id");
+    _xfem_element_constraints[xfem_interface_id].addObject(xfemec);
   }
 
   // NodalConstraint
@@ -101,6 +110,13 @@ ConstraintWarehouse::getActiveFaceFaceConstraints(const std::string & interface)
   return it->second.getActiveObjects();
 }
 
+const std::vector<MooseSharedPointer<XFEMElementConstraint> > &
+ConstraintWarehouse::getActiveXFEMElementConstraints(const unsigned int xfem_interface_id) const
+{
+  std::map<unsigned int, MooseObjectWarehouse<XFEMElementConstraint> >::const_iterator it = _xfem_element_constraints.find(xfem_interface_id);
+  mooseAssert(it != _xfem_element_constraints.end(), "Unable to locate storage for XFEMElementConstraint objects for the given interface id: " << xfem_interface_id);
+  return it->second.getActiveObjects();
+}
 
 bool
 ConstraintWarehouse::hasActiveNodalConstraints() const
@@ -114,6 +130,13 @@ ConstraintWarehouse::hasActiveFaceFaceConstraints(const std::string & interface)
 {
   std::map<std::string, MooseObjectWarehouse<FaceFaceConstraint> >::const_iterator it = _face_face_constraints.find(interface);
   return (it != _face_face_constraints.end() && it->second.hasActiveObjects());
+}
+
+bool
+ConstraintWarehouse::hasActiveXFEMElementConstraints(const unsigned int xfem_interface_id) const
+{
+  std::map<unsigned int, MooseObjectWarehouse<XFEMElementConstraint> >::const_iterator it = _xfem_element_constraints.find(xfem_interface_id);
+  return (it != _xfem_element_constraints.end() && it->second.hasActiveObjects());
 }
 
 
@@ -155,6 +178,12 @@ ConstraintWarehouse::updateActive(THREAD_ID /*tid*/)
   {
     std::map<std::string, MooseObjectWarehouse<FaceFaceConstraint> >::iterator it;
     for (std::map<BoundaryID, MooseObjectWarehouse<NodeFaceConstraint> >::iterator it = _node_face_constraints.begin(); it != _node_face_constraints.end(); ++it)
+      it->second.updateActive();
+  }
+
+  {
+    std::map<unsigned int, MooseObjectWarehouse<XFEMElementConstraint> >::iterator it;
+    for (it = _xfem_element_constraints.begin(); it != _xfem_element_constraints.end(); ++it)
       it->second.updateActive();
   }
 }

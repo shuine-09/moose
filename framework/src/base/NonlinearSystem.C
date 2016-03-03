@@ -46,6 +46,7 @@
 #include "NodalConstraint.h"
 #include "NodeFaceConstraint.h"
 #include "FaceFaceConstraint.h"
+#include "XFEMElementConstraint.h"
 #include "ScalarKernel.h"
 #include "Parser.h"
 #include "Split.h"
@@ -59,6 +60,7 @@
 #include "TimeIntegrator.h"
 #include "Predictor.h"
 #include "Assembly.h"
+#include "XFEMInterface.h"
 
 // libMesh
 #include "libmesh/nonlinear_solver.h"
@@ -1187,6 +1189,64 @@ NonlinearSystem::constraintResiduals(NumericVector<Number> & residual, bool disp
       _fe_problem.addCachedResidual(tid);
     }
   }
+  // go over xfem interface
+  MooseSharedPointer<XFEMInterface> xfem = _fe_problem.getXFEM();
+  std::vector<unsigned int> ixfems; // xfem embedded interface ids
+  ixfems.push_back(1);
+  for (unsigned int i = 0; i < ixfems.size(); ++i)
+  {
+    if (_constraints.hasActiveXFEMElementConstraints(ixfems[i]))
+    {
+      // XFEMElementConstraint objects
+      const std::vector<MooseSharedPointer<XFEMElementConstraint> > & xfem_element_constraints = _constraints.getActiveXFEMElementConstraints(ixfems[i]);
+
+        // go over elements cutted by xfem
+      std::vector<std::pair<const Elem*, const Elem*> > elem_pairs;
+      xfem->getXFEMCutElemPair(elem_pairs); // get the cutted element pairs from XFEM
+      for (unsigned int ie = 0; ie < elem_pairs.size(); ++ie)
+      {
+        //cutted element itself and its overlapping element
+        const Elem * elem = elem_pairs[ie].first; 
+        const Elem * overlap_elem = elem_pairs[ie].second;
+
+        std::vector<Point> intersectionPoints;
+        Point normal(0.0, 0.0, 0.0);
+        xfem->getXFEMIntersectionInfo(elem_pairs[ie].first, 0, normal, intersectionPoints);
+        
+        std::vector<Point> quadrature_pts;
+        std::vector<Real> quadrature_wts;
+
+        if (intersectionPoints.size() == 2)
+          xfem->getXFEMqRuleOnLine(intersectionPoints, quadrature_pts, quadrature_wts);
+        else
+          mooseError("XFEM: number of intersetion points in 2D can only be two");
+
+        // for each element process constraints on the
+        for (std::vector<MooseSharedPointer<XFEMElementConstraint> >::const_iterator xfemec_it = xfem_element_constraints.begin(); xfemec_it != xfem_element_constraints.end(); ++xfemec_it)
+        {
+          MooseSharedPointer<XFEMElementConstraint> xfemec = *xfemec_it;
+
+          // reinit variables on element
+          _fe_problem.reinitElemPhys(elem, quadrature_pts, tid);
+          _fe_problem.reinitNeighborPhys(overlap_elem, 0, quadrature_pts, tid);
+
+          xfemec->subProblem().prepareShapes(xfemec->variable().number(), tid);
+          xfemec->subProblem().prepareNeighborShapes(xfemec->variable().number(), tid);
+
+          //std::cout << "quad pts = " << quadrature_pts[0] << ",  " << quadrature_pts[1] << std::endl;
+          //std::cout << "quad wts = " << quadrature_wts[0] << ",  " << quadrature_wts[1] << std::endl;
+          xfemec->setqRuleNormal(quadrature_pts, quadrature_wts, normal);
+          xfemec->computeResidual();
+         //_fe_problem.cacheResidual(tid);
+         //_fe_problem.cacheResidualNeighbor(tid);
+          _fe_problem.addResidualNeighbor(tid);
+        }
+
+        //_fe_problem.addCachedResidual(tid);
+      }
+    }
+  }
+
 }
 
 
@@ -1754,6 +1814,62 @@ NonlinearSystem::constraintJacobians(SparseMatrix<Number> & jacobian, bool displ
         }
 
         _fe_problem.addCachedJacobian(jacobian, tid);
+      }
+    }
+  }
+
+  // go over xfem interface
+  MooseSharedPointer<XFEMInterface> xfem = _fe_problem.getXFEM();
+  std::vector<unsigned int> ixfems; // xfem embedded interface ids
+  ixfems.push_back(1);
+  for (unsigned int i = 0; i < ixfems.size(); ++i)
+  {
+    if (_constraints.hasActiveXFEMElementConstraints(ixfems[i]))
+    {
+      // XFEMElementConstraint objects
+      const std::vector<MooseSharedPointer<XFEMElementConstraint> > & xfem_element_constraints = _constraints.getActiveXFEMElementConstraints(ixfems[i]);
+
+        // go over elements cutted by xfem
+      std::vector<std::pair<const Elem*, const Elem*> > elem_pairs;
+      xfem->getXFEMCutElemPair(elem_pairs); // get the cutted element pairs from XFEM
+      for (unsigned int ie = 0; ie < elem_pairs.size(); ++ie)
+      {
+        //cutted element itself and its overlapping element
+        const Elem * elem = elem_pairs[ie].first; 
+        const Elem * overlap_elem = elem_pairs[ie].second;
+
+        std::vector<Point> intersectionPoints;
+        Point normal(0.0, 0.0, 0.0);
+        xfem->getXFEMIntersectionInfo(elem_pairs[ie].first, 0, normal, intersectionPoints);
+        
+        std::vector<Point> quadrature_pts;
+        std::vector<Real> quadrature_wts;
+
+        if (intersectionPoints.size() == 2)
+          xfem->getXFEMqRuleOnLine(intersectionPoints, quadrature_pts, quadrature_wts);
+        else
+          mooseError("XFEM: number of intersetion points in 2D can only be two");
+
+        // for each element process constraints on the
+        for (std::vector<MooseSharedPointer<XFEMElementConstraint> >::const_iterator xfemec_it = xfem_element_constraints.begin(); xfemec_it != xfem_element_constraints.end(); ++xfemec_it)
+        {
+          MooseSharedPointer<XFEMElementConstraint> xfemec = *xfemec_it;
+
+          // reinit variables on element
+          _fe_problem.reinitElemPhys(elem, quadrature_pts, tid);
+          _fe_problem.reinitNeighborPhys(overlap_elem, 0, quadrature_pts, tid);
+
+          xfemec->subProblem().prepareShapes(xfemec->variable().number(), tid);
+          xfemec->subProblem().prepareNeighborShapes(xfemec->variable().number(), tid);
+
+          xfemec->setqRuleNormal(quadrature_pts, quadrature_wts, normal);
+          xfemec->computeJacobian();
+         //_fe_problem.cacheJacobian(tid);
+         //_fe_problem.cacheJacobianNeighbor(tid);
+          _fe_problem.addJacobianNeighbor(jacobian, tid);
+        }
+
+        //_fe_problem.addCachedJacobian(jacobian, tid);
       }
     }
   }

@@ -16,7 +16,7 @@
 []
 
 [XFEM]
-  cut_data = '0.5 1.0 0.5 0.5 0 0'
+  cut_data = '0.3 1.0 0.3 0.0 0 0'
   qrule = volfrac
   output_cut_plane = true
 []
@@ -41,13 +41,21 @@
   [../]
 []
 
+[Constraints]
+  [./xfem_constraint]
+    type = XFEMEqualValueConstraint
+    variable = u
+    xfem_interface_id = 1
+  [../]
+[]
+
 [BCs]
 # Define boundary conditions
   [./left_u]
-    type = FunctionPresetBC
+    type = DirichletBC
     variable = u
     boundary = 3
-    function = u_left
+    value = 1
   [../]
 
   [./right_u]
@@ -61,8 +69,16 @@
 [Executioner]
   type = Transient
   solve_type = 'PJFNK'
-  petsc_options_iname = '-pc_type -pc_hypre_type'
-  petsc_options_value = 'hypre boomeramg'
+#  petsc_options_iname = '-pc_type -pc_hypre_type'
+#  petsc_options_value = 'hypre boomeramg'
+   petsc_options_iname = '-pc_type -ksp_gmres_restart'
+  petsc_options_value = 'lu                      101'
+
+  [./Quadrature]
+    order = FOURTH
+    type = MONOMIAL
+  [../]
+
   line_search = 'none'
 
   l_tol = 1e-3
@@ -72,7 +88,7 @@
 
   start_time = 0.0
   dt = 1.0
-  end_time = 2.0
+  end_time = 1.0
 []
 
 [Outputs]
