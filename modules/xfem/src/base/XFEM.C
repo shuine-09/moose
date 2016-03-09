@@ -927,6 +927,7 @@ XFEM::cutMeshWithEFA()
   //Add new elements
   const std::vector<EFAElement*> NewElements = _efa_mesh.getChildElements();
 
+  std::map<unsigned int, std::vector<const Elem *> > temporary_parent_children_map;
 
   for (unsigned int i = 0; i < NewElements.size(); ++i)
   {
@@ -935,6 +936,10 @@ XFEM::cutMeshWithEFA()
 
     Elem *parent_elem = _mesh->elem(parent_id);
     Elem *libmesh_elem = Elem::build(parent_elem->type()).release();
+
+    // parent has at least two children
+    if ( NewElements[i]->getParent()->numChildren() > 1)
+      temporary_parent_children_map[parent_id].push_back(libmesh_elem);
 
     Elem *parent_elem2 = NULL;
     Elem *libmesh_elem2 = NULL;
@@ -1093,6 +1098,14 @@ XFEM::cutMeshWithEFA()
       _mesh2->delete_elem(elem_to_delete2);
     }
   }
+
+  for (std::map<unsigned int, std::vector<const Elem *> > :: iterator it = temporary_parent_children_map.begin(); it != temporary_parent_children_map.end(); ++it)
+  {
+      _sibling_elems.push_back(std::make_pair((it->second[0]), (it->second)[1]));
+  }
+  
+  //clear the temporary map
+  temporary_parent_children_map.clear();
 
   //Store information about crack tip elements
   if (mesh_changed)
@@ -1352,4 +1365,19 @@ XFEM::getXFEMWeights(MooseArray<Real> &weights, const Elem * elem, QBase * qrule
     have_weights = true;
   }
   return have_weights;
+}
+
+void 
+XFEM::getXFEMIntersectionInfo(const Elem* elem, unsigned int plane_id, Point & normal, std::vector<Point> & intersectionPoints, bool displaced_mesh) const
+{
+  std::map<unique_id_type, XFEMCutElem*>::const_iterator it;
+  it = _cut_elem_map.find(elem->unique_id());
+  if (it != _cut_elem_map.end())
+  {
+    const XFEMCutElem *xfce = it->second;
+    if (displaced_mesh)
+      xfce->getIntersectionInfo(plane_id, normal, intersectionPoints, _mesh2);
+    else
+      xfce->getIntersectionInfo(plane_id, normal, intersectionPoints);
+  }
 }
