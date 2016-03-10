@@ -148,7 +148,9 @@ public:
   virtual void getXFEMqRuleOnLine(std::vector<Point> & intersection_points, 
                                   std::vector<Point> & quad_pts, 
                                   std::vector<Real> & quad_wts);
-
+  virtual void getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, 
+                                  std::vector<Point> & quad_pts, 
+                                  std::vector<Real> & quad_wts);
 private:
 
   void getFragmentEdges(const Elem* elem,

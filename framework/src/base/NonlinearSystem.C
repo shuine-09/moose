@@ -1212,6 +1212,9 @@ NonlinearSystem::constraintResiduals(NumericVector<Number> & residual, bool disp
         const Elem * elem = elem_pairs[ie].first; 
         const Elem * overlap_elem = elem_pairs[ie].second;
 
+        if (elem->processor_id() != processor_id())
+          continue;
+
         std::vector<Point> intersectionPoints;
         Point normal(0.0, 0.0, 0.0);
         xfem->getXFEMIntersectionInfo(elem, 0, normal, intersectionPoints);
@@ -1222,7 +1225,7 @@ NonlinearSystem::constraintResiduals(NumericVector<Number> & residual, bool disp
         if (intersectionPoints.size() == 2)
           xfem->getXFEMqRuleOnLine(intersectionPoints, quadrature_pts, quadrature_wts);
         else
-          mooseError("XFEM: number of intersetion points in 2D can only be two");
+          xfem->getXFEMqRuleOnSurface(intersectionPoints, quadrature_pts, quadrature_wts);
 
         // for each element process constraints on the
         for (std::vector<MooseSharedPointer<XFEMElementConstraint> >::const_iterator xfemec_it = xfem_element_constraints.begin(); xfemec_it != xfem_element_constraints.end(); ++xfemec_it)
@@ -1835,17 +1838,20 @@ NonlinearSystem::constraintJacobians(SparseMatrix<Number> & jacobian, bool displ
         const Elem * elem = elem_pairs[ie].first; 
         const Elem * overlap_elem = elem_pairs[ie].second;
 
+        if (elem->processor_id() != processor_id())
+          continue;
+
         std::vector<Point> intersectionPoints;
         Point normal(0.0, 0.0, 0.0);
         xfem->getXFEMIntersectionInfo(elem, 0, normal, intersectionPoints);
-        
+      
         std::vector<Point> quadrature_pts;
         std::vector<Real> quadrature_wts;
 
         if (intersectionPoints.size() == 2)
           xfem->getXFEMqRuleOnLine(intersectionPoints, quadrature_pts, quadrature_wts);
         else
-          mooseError("XFEM: number of intersetion points in 2D can only be two");
+          xfem->getXFEMqRuleOnSurface(intersectionPoints, quadrature_pts, quadrature_wts);
 
         // for each element process constraints on the
         for (std::vector<MooseSharedPointer<XFEMElementConstraint> >::const_iterator xfemec_it = xfem_element_constraints.begin(); xfemec_it != xfem_element_constraints.end(); ++xfemec_it)
@@ -1861,8 +1867,8 @@ NonlinearSystem::constraintJacobians(SparseMatrix<Number> & jacobian, bool displ
 
           xfemec->setqRuleNormal(quadrature_pts, quadrature_wts, normal);
           xfemec->computeJacobian();
-         _fe_problem.cacheJacobian(tid);
-         _fe_problem.cacheJacobianNeighbor(tid);
+          _fe_problem.cacheJacobian(tid);
+          _fe_problem.cacheJacobianNeighbor(tid);
         }
         _fe_problem.addCachedJacobian(jacobian, tid);
       }

@@ -108,6 +108,8 @@ public:
 
   virtual void getXFEMqRuleOnLine(std::vector<Point> & intersection_points, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts) = 0;
 
+  virtual void getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts) = 0;
+
 protected:
   std::vector<MooseSharedPointer<MaterialData> > * _material_data;
 
