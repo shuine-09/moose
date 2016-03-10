@@ -145,4 +145,3 @@ XFEMElementConstraint::computeJacobian()
   // Compute neighbor-neighbor Jacobian
   computeElemNeighJacobian(Moose::NeighborNeighbor);
 }
-
