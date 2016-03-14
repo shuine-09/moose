@@ -17,6 +17,7 @@
 
 #include "XFEMCircleCut.h"
 #include "XFEMGeometricCut2D.h"
+#include "XFEMCircleCut2D.h"
 #include "XFEMSquareCut.h"
 #include "XFEMEllipseCut.h"
 
@@ -116,6 +117,19 @@ XFEMAction::act()
         Real t0 = _xfem_cut_data[i*6+4];
         Real t1 = _xfem_cut_data[i*6+5];
         xfem->addGeometricCut(new XFEMGeometricCut2D( x0, y0, x1, y1, t0, t1));
+      }
+    }
+    else if (_xfem_cut_type == "circle_cut_2d")
+    {
+      if (_xfem_cut_data.size() % 3 != 0)
+        mooseError("Length of XFEM_cuts must be 3 when circle_cut_2d");
+
+      unsigned int num_cuts = _xfem_cut_data.size()/3;
+      for (unsigned i = 0; i < num_cuts; ++i){
+        Real x0 = _xfem_cut_data[i*3+0];
+        Real y0 = _xfem_cut_data[i*3+1];
+        Real r0 = _xfem_cut_data[i*3+2];
+        xfem->addGeometricCut(new XFEMCircleCut2D(x0, y0, r0));
       }
     }
     else if (_xfem_cut_type == "square_cut_3d")
