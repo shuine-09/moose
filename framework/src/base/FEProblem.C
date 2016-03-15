@@ -1125,8 +1125,8 @@ FEProblem::reinitNeighborPhys(const Elem * neighbor, unsigned int neighbor_side,
   _assembly[tid]->prepareNeighbor();
 
   // Compute the values of each variable at the points
-  _nl.reinitNeighbor(neighbor, tid);
-  _aux.reinitNeighbor(neighbor, tid);
+  _nl.reinitNeighborFace(neighbor, neighbor_side, 0, tid);
+  _aux.reinitNeighborFace(neighbor, neighbor_side, 0, tid);
 
   // Do the same for the displaced problem
   if (_displaced_problem != NULL)

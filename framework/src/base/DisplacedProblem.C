@@ -379,8 +379,8 @@ DisplacedProblem::reinitNeighborPhys(const Elem * neighbor, unsigned int neighbo
 
   // Compute values at the points
 //  unsigned int bnd_id = 0;
-  _displaced_nl.reinitNeighbor(neighbor, tid);
-  _displaced_aux.reinitNeighbor(neighbor,tid);
+  _displaced_nl.reinitNeighborFace(neighbor, neighbor_side, 0, tid);
+  _displaced_aux.reinitNeighborFace(neighbor, neighbor_side, 0, tid);
 }
 
 void
