@@ -1109,6 +1109,13 @@ Assembly::copyNeighborShapes(unsigned int var)
     _grad_phi_face_neighbor.shallowCopy(v.gradPhiFaceNeighbor());
   if (v.usesSecondPhi())
     _second_phi_face_neighbor.shallowCopy(v.secondPhiFaceNeighbor());
+
+  if (v.usesPhi())
+    _phi_neighbor.shallowCopy(v.phiNeighbor());
+  if (v.usesGradPhi())
+    _grad_phi_neighbor.shallowCopy(v.gradPhiNeighbor());
+  if (v.usesSecondPhi())
+    _second_phi_neighbor.shallowCopy(v.secondPhiNeighbor());
 }
 
 void

@@ -26,6 +26,7 @@
               0.2 0.8 0.1
               0.5 0.8 0.1
               0.8 0.8 0.1'
+#  cut_data = '0.5 0 0.5 1.0 0 0'
   qrule = volfrac
   output_cut_plane = true
 []
@@ -56,7 +57,7 @@
     variable = u
     xfem_interface_id = 1
     jump = 0.0
-    jump_flux = 0
+    jump_flux = 0.2
   [../]
 []
 

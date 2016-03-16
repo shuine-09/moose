@@ -60,11 +60,11 @@ XFEMElementConstraint::XFEMElementConstraint(const InputParameters & parameters)
 
     _normals(_var.normals()), 
 
-    _phi_neighbor(_assembly.phiFaceNeighbor()), 
-    _grad_phi_neighbor(_assembly.gradPhiFaceNeighbor()), 
+    _phi_neighbor(_assembly.phiNeighbor()), 
+    _grad_phi_neighbor(_assembly.gradPhiNeighbor()), 
 
-    _test_neighbor(_var.phiFaceNeighbor()), 
-    _grad_test_neighbor(_var.gradPhiFaceNeighbor()), 
+    _test_neighbor(_var.phiNeighbor()), 
+    _grad_test_neighbor(_var.gradPhiNeighbor()), 
 
     _u_neighbor(_var.slnNeighbor()), 
     _grad_u_neighbor(_var.gradSlnNeighbor())

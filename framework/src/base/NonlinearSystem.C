@@ -1233,7 +1233,7 @@ NonlinearSystem::constraintResiduals(NumericVector<Number> & residual, bool disp
           MooseSharedPointer<XFEMElementConstraint> xfemec = *xfemec_it;
          
           _fe_problem.reinitElemPhys(elem, quadrature_pts, tid);
-          _fe_problem.reinitNeighborPhys(overlap_elem, 0, quadrature_pts, tid);
+          _fe_problem.reinitNeighborPhys(overlap_elem, quadrature_pts, tid);
 
           xfemec->subProblem().prepareShapes(xfemec->variable().number(), tid);
           xfemec->subProblem().prepareNeighborShapes(xfemec->variable().number(), tid);
@@ -1860,7 +1860,7 @@ NonlinearSystem::constraintJacobians(SparseMatrix<Number> & jacobian, bool displ
 
           // reinit variables on element and its overlapping element
           _fe_problem.reinitElemPhys(elem, quadrature_pts, tid);
-          _fe_problem.reinitNeighborPhys(overlap_elem, 0, quadrature_pts, tid);
+          _fe_problem.reinitNeighborPhys(overlap_elem, quadrature_pts, tid);
 
           xfemec->subProblem().prepareShapes(xfemec->variable().number(), tid);
           xfemec->subProblem().prepareNeighborShapes(xfemec->variable().number(), tid);
