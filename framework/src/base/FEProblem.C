@@ -1134,6 +1134,29 @@ FEProblem::reinitNeighborPhys(const Elem * neighbor, unsigned int neighbor_side,
 }
 
 void
+FEProblem::reinitNeighborPhys(const Elem * neighbor, const std::vector<Point> & physical_points, THREAD_ID tid)
+{
+  // Reinits shape the functions at the physical points
+  _assembly[tid]->reinitNeighborAtPhysical(neighbor, physical_points);
+
+  // Sets the neighbor dof indices
+  _nl.prepareNeighbor(tid);
+  _aux.prepareNeighbor(tid);
+
+  // Resizes Re and Ke
+  _assembly[tid]->prepareNeighbor();
+
+  // Compute the values of each variable at the points
+  _nl.reinitNeighbor(neighbor, tid);
+  _aux.reinitNeighbor(neighbor, tid);
+
+  // Do the same for the displaced problem
+  if (_displaced_problem != NULL)
+    _displaced_problem->reinitNeighborPhys(_displaced_mesh->elem(neighbor->id()), physical_points, tid);
+}
+
+
+void
 FEProblem::getDiracElements(std::set<const Elem *> & elems)
 {
   // First add in the undisplaced elements

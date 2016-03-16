@@ -6,8 +6,8 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 3
-  ny = 3
+  nx = 151
+  ny = 151
   xmin = 0.0
   xmax = 1.0
   ymin = 0.0
@@ -16,7 +16,16 @@
 []
 
 [XFEM]
-  cut_data = '0.5 1.0 0.5 0.0 0 0' 
+  cut_type = 'circle_cut_2d'
+  cut_data = '0.2 0.2 0.1
+              0.5 0.2 0.1
+              0.8 0.2 0.1
+              0.2 0.5 0.1
+              0.5 0.5 0.1
+              0.8 0.5 0.1
+              0.2 0.8 0.1
+              0.5 0.8 0.1
+              0.8 0.8 0.1'
   qrule = volfrac
   output_cut_plane = true
 []
@@ -71,10 +80,10 @@
 [Executioner]
   type = Transient
   solve_type = 'PJFNK'
-  petsc_options_iname = '-pc_type -pc_hypre_type'
-  petsc_options_value = 'hypre boomeramg'
-#   petsc_options_iname = '-pc_type -ksp_gmres_restart'
-#  petsc_options_value = 'lu                      101'
+#  petsc_options_iname = '-pc_type -pc_hypre_type'
+#  petsc_options_value = 'hypre boomeramg'
+   petsc_options_iname = '-pc_type -ksp_gmres_restart'
+  petsc_options_value = 'lu                      101'
 
   [./Quadrature]
     order = FOURTH
