@@ -55,8 +55,8 @@ protected:
   virtual void calcResidJacob();
 
   /**
-   * updates the slip system resistances and state variables.
-   * override to modify slip system resistance and state variable evolution.
+   * updates the slip system resistances and state variables
+   * Override to modify slip system resistance and state variable evolution
    */
   virtual void updateSlipSystemResistanceAndStateVariable();
 

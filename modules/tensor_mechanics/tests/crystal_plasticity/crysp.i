@@ -148,6 +148,7 @@
     gprops = '1 4 60.8 5 8 60.8 9 12 60.8'
     fill_method = symmetric9
     tan_mod_type = exact
+    maximum_substep_iteration = 8
   [../]
   [./elastic]
     type = FiniteStrainElasticMaterial
@@ -192,7 +193,7 @@
 
 [Executioner]
   type = Transient
-  dt = 0.05
+  dt = 2.0
 
   #Preconditioned JFNK (default)
   solve_type = 'PJFNK'
