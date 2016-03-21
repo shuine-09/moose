@@ -166,6 +166,7 @@
     block = 0
     stol = 1e-2
     tan_mod_type = exact
+    maximum_substep_iteration = 8
     uo_slip_rates = 'slip_rate_gss'
     uo_slip_resistances = 'slip_resistance_gss'
     uo_state_vars = 'state_var_gss'
@@ -216,7 +217,7 @@
 
 [Executioner]
   type = Transient
-  dt = 0.05
+  dt = 2.0
 
   #Preconditioned JFNK (default)
   solve_type = 'PJFNK'

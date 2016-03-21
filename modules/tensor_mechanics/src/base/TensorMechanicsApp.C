@@ -101,6 +101,13 @@
 #include "CrystalPlasticitySlipResistanceGSS.h"
 #include "CrystalPlasticityStateVariableGSS.h"
 #include "CrystalPlasticityStateVarRateComponentGSS.h"
+#include "CPDislocationBasedImmobileDensity.h"
+#include "CPDislocationBasedMobileDensity.h"
+#include "CPDislocationBasedThermalSlipResistance.h"
+#include "CPDislocationBasedAthermalSlipResistance.h"
+#include "CPDislocationBasedGlideSlipRate.h"
+#include "CPDislocationBasedImmobileGlideRateComp.h"
+#include "CPDislocationBasedMobileGlideRateComp.h"
 
 template<>
 InputParameters validParams<TensorMechanicsApp>()
@@ -211,6 +218,13 @@ TensorMechanicsApp::registerObjects(Factory & factory)
   registerUserObject(CrystalPlasticitySlipResistanceGSS);
   registerUserObject(CrystalPlasticityStateVariableGSS);
   registerUserObject(CrystalPlasticityStateVarRateComponentGSS);
+  registerUserObject(CPDislocationBasedImmobileDensity);
+  registerUserObject(CPDislocationBasedMobileDensity);
+  registerUserObject(CPDislocationBasedThermalSlipResistance);
+  registerUserObject(CPDislocationBasedAthermalSlipResistance);
+  registerUserObject(CPDislocationBasedGlideSlipRate);
+  registerUserObject(CPDislocationBasedImmobileGlideRateComp);
+  registerUserObject(CPDislocationBasedMobileGlideRateComp);
 
   registerAux(CylindricalRankTwoAux);
   registerAux(RankTwoAux);
