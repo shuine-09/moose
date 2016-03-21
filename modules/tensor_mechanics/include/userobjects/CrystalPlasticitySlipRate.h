@@ -57,6 +57,8 @@ class CrystalPlasticitySlipRate : public CrystalPlasticityUOBase
 
   /// Slip increment tolerance
   Real _slip_incr_tol;
+  
+  Real _prefactor;
 
   DenseVector<Real> _mo;
   DenseVector<Real> _no;

@@ -16,6 +16,7 @@ InputParameters validParams<CrystalPlasticitySlipRate>()
   params.addParam<FileName>("slip_sys_flow_prop_file_name", "", "Name of the file containing the values of slip rate equation parameters");
   params.addParam<unsigned int>("num_slip_sys_flowrate_props", 2, "Number of flow rate properties for a slip system"); // Used for reading flow rate parameters
   params.addParam<Real>("slip_incr_tol", 2e-2, "Maximum allowable slip in an increment");
+  params.addParam<Real>("prefactor", 1.0, "Contribution factor to total shear rate");
   params.addClassDescription("Crystal plasticity slip rate class.  Override the virtual functions in your class");
   return params;
 }
@@ -28,6 +29,7 @@ CrystalPlasticitySlipRate::CrystalPlasticitySlipRate(const InputParameters & par
     _slip_sys_flow_prop_file_name(getParam<FileName>("slip_sys_flow_prop_file_name")),
     _num_slip_sys_flowrate_props(getParam<unsigned int>("num_slip_sys_flowrate_props")),
     _slip_incr_tol(getParam<Real>("slip_incr_tol")),
+    _prefactor(getParam<Real>("prefactor")),
     _mo(_variable_size * LIBMESH_DIM),
     _no(_variable_size * LIBMESH_DIM),
     _crysrot(getMaterialPropertyByName<RankTwoTensor>("crysrot"))

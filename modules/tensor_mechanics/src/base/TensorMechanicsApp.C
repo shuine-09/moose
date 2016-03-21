@@ -139,6 +139,19 @@
 #include "CrystalPlasticitySlipResistanceGSS.h"
 #include "CrystalPlasticityStateVariable.h"
 #include "CrystalPlasticityStateVarRateComponentGSS.h"
+#include "CPDislocationBasedThermalSlipResistance.h"
+#include "CPDislocationBasedAthermalSlipResistance.h"
+#include "CPDislocationBasedGlideSlipRate.h"
+#include "CPDislocationBasedImmobileGlideRateComp.h"
+#include "CPDislocationBasedMobileGlideRateComp.h"
+#include "CPDislocationBasedAPBSlipResistance.h"
+#include "CPDislocationBasedAPBSlipRate.h"
+#include "CPDislocationDensityRateCompGeneral.h"
+#include "CPDislocationBasedClimbRate.h"
+#include "CPDislocationBasedConcentrationRate.h"
+#include "CPDislocationDensityRatePptResistance.h"
+#include "CPDislocationAndPptAthermalResistance.h"
+#include "ReadGrainCenterFromFile.h"
 
 #include "Mass.h"
 #include "TorqueReaction.h"
@@ -285,6 +298,19 @@ TensorMechanicsApp::registerObjects(Factory & factory)
   registerUserObject(CrystalPlasticitySlipResistanceGSS);
   registerUserObject(CrystalPlasticityStateVariable);
   registerUserObject(CrystalPlasticityStateVarRateComponentGSS);
+  registerUserObject(CPDislocationBasedThermalSlipResistance);
+  registerUserObject(CPDislocationBasedAthermalSlipResistance);
+  registerUserObject(CPDislocationBasedGlideSlipRate);
+  registerUserObject(CPDislocationBasedImmobileGlideRateComp);
+  registerUserObject(CPDislocationBasedMobileGlideRateComp);
+  registerUserObject(CPDislocationBasedAPBSlipResistance);
+  registerUserObject(CPDislocationBasedAPBSlipRate);
+  registerUserObject(CPDislocationDensityRateCompGeneral);
+  registerUserObject(CPDislocationBasedClimbRate);
+  registerUserObject(CPDislocationBasedConcentrationRate);
+  registerUserObject(CPDislocationDensityRatePptResistance);
+  registerUserObject(CPDislocationAndPptAthermalResistance);
+  registerUserObject(ReadGrainCenterFromFile);
 
   registerAux(CylindricalRankTwoAux);
   registerAux(RankTwoAux);
