@@ -108,6 +108,8 @@
 #include "CPDislocationBasedGlideSlipRate.h"
 #include "CPDislocationBasedImmobileGlideRateComp.h"
 #include "CPDislocationBasedMobileGlideRateComp.h"
+#include "CPDislocationBasedAPBSlipResistance.h"
+#include "CPDislocationBasedAPBSlipRate.h"
 
 template<>
 InputParameters validParams<TensorMechanicsApp>()
@@ -225,6 +227,8 @@ TensorMechanicsApp::registerObjects(Factory & factory)
   registerUserObject(CPDislocationBasedGlideSlipRate);
   registerUserObject(CPDislocationBasedImmobileGlideRateComp);
   registerUserObject(CPDislocationBasedMobileGlideRateComp);
+  registerUserObject(CPDislocationBasedAPBSlipResistance);
+  registerUserObject(CPDislocationBasedAPBSlipRate);
 
   registerAux(CylindricalRankTwoAux);
   registerAux(RankTwoAux);
