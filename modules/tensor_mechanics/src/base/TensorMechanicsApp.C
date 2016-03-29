@@ -138,6 +138,9 @@
 #include "CPDislocationBasedGlideSlipRate.h"
 #include "CPDislocationBasedImmobileGlideRateComp.h"
 #include "CPDislocationBasedMobileGlideRateComp.h"
+#include "CPDislocationBasedAPBSlipResistance.h"
+#include "CPDislocationBasedAPBSlipRate.h"
+#include "CPDislocationBasedGeneralRateComp.h"
 
 #include "Mass.h"
 #include "TorqueReaction.h"
@@ -281,6 +284,9 @@ TensorMechanicsApp::registerObjects(Factory & factory)
   registerUserObject(CPDislocationBasedGlideSlipRate);
   registerUserObject(CPDislocationBasedImmobileGlideRateComp);
   registerUserObject(CPDislocationBasedMobileGlideRateComp);
+  registerUserObject(CPDislocationBasedAPBSlipResistance);
+  registerUserObject(CPDislocationBasedAPBSlipRate);
+  registerUserObject(CPDislocationBasedGeneralRateComp);
 
   registerAux(CylindricalRankTwoAux);
   registerAux(RankTwoAux);
