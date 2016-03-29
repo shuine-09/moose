@@ -4,24 +4,24 @@
 /*          All contents are licensed under LGPL V2.1           */
 /*             See LICENSE for full restrictions                */
 /****************************************************************/
-#ifndef CPDISLOCATIONDENSITYRATECOMPGENERAL_H
-#define CPDISLOCATIONDENSITYRATECOMPGENERAL_H
+#ifndef CPDISLOCATIONBASEDGENERALRATECOMP_H
+#define CPDISLOCATIONBASEDGENERALRATECOMP_H
 
 #include "CrystalPlasticityStateVarRateComponent.h"
 
-class CPDislocationDensityRateCompGeneral;
+class CPDislocationBasedGeneralRateComp;
 
 template<>
-InputParameters validParams<CPDislocationDensityRateCompGeneral>();
+InputParameters validParams<CPDislocationBasedGeneralRateComp>();
 
 /**
  * A general dislocation based constitutive model userobject class to calculate dislocation density rate component
  * following rho_dot^alpha = k * rho^alpha * abs(gamma_dot^alpha)
  */
-class CPDislocationDensityRateCompGeneral : public CrystalPlasticityStateVarRateComponent
+class CPDislocationBasedGeneralRateComp : public CrystalPlasticityStateVarRateComponent
 {
  public:
-  CPDislocationDensityRateCompGeneral(const InputParameters & parameters);
+  CPDislocationBasedGeneralRateComp(const InputParameters & parameters);
 
   virtual bool calcStateVariableEvolutionRateComponent(unsigned int qp, std::vector<Real> & val) const;
 
@@ -34,4 +34,4 @@ class CPDislocationDensityRateCompGeneral : public CrystalPlasticityStateVarRate
   Real _prefactor;
 };
 
-#endif // CPDISLOCATIONDENSITYRATECOMPGENERAL_H
+#endif // CPDISLOCATIONBASEDGENERALRATECOMP_H

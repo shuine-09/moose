@@ -4,10 +4,10 @@
 /*          All contents are licensed under LGPL V2.1           */
 /*             See LICENSE for full restrictions                */
 /****************************************************************/
-#include "CPDislocationDensityRateCompGeneral.h"
+#include "CPDislocationBasedGeneralRateComp.h"
 
 template<>
-InputParameters validParams<CPDislocationDensityRateCompGeneral>()
+InputParameters validParams<CPDislocationBasedGeneralRateComp>()
 {
   InputParameters params = validParams<CrystalPlasticityStateVarRateComponent>();
   params.addRequiredParam<std::string>("uo_dislocation_density_name", "Name of dislocation density property: Same as state variable user object specified in input file.");
@@ -17,7 +17,7 @@ InputParameters validParams<CPDislocationDensityRateCompGeneral>()
   return params;
 }
 
-CPDislocationDensityRateCompGeneral::CPDislocationDensityRateCompGeneral(const InputParameters & parameters) :
+CPDislocationBasedGeneralRateComp::CPDislocationBasedGeneralRateComp(const InputParameters & parameters) :
     CrystalPlasticityStateVarRateComponent(parameters),
     _mat_prop_dislocation_density(getMaterialProperty<std::vector<Real> >(parameters.get<std::string>("uo_dislocation_density_name"))),
     _mat_prop_rate(getMaterialProperty<std::vector<Real> >(parameters.get<std::string>("uo_rate_name"))),
@@ -26,7 +26,7 @@ CPDislocationDensityRateCompGeneral::CPDislocationDensityRateCompGeneral(const I
 }
 
 bool
-CPDislocationDensityRateCompGeneral::calcStateVariableEvolutionRateComponent(unsigned int qp, std::vector<Real> & val) const
+CPDislocationBasedGeneralRateComp::calcStateVariableEvolutionRateComponent(unsigned int qp, std::vector<Real> & val) const
 {
   val.assign(_variable_size, 0.0);
 
