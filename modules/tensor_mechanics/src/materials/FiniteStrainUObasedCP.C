@@ -169,6 +169,10 @@ void FiniteStrainUObasedCP::initQpStatefulProperties()
  */
 void FiniteStrainUObasedCP::computeQpStress()
 {
+  // Userobject based crystal plasticity does not support face/boundary material property calculation.
+  if (isBoundaryMaterial())
+    return;
+
   // Depth of substepping; Limited to maximum substep iteration
   unsigned int substep_iter = 1;
   // Calculated from substep_iter as 2^substep_iter
