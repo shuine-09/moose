@@ -12,32 +12,26 @@
 /*            See COPYRIGHT for full restrictions               */
 /****************************************************************/
 
-#ifndef XFEMEQUALVALUECONSTRAINT_H
-#define XFEMEQUALVALUECONSTRAINT_H
+#ifndef XFEMELEMENTPAIRLOCATOR_H
+#define XFEMELEMENTPAIRLOCATOR_H
 
-// MOOSE includes
-#include "XFEMElementConstraint.h"
-#include "MooseMesh.h"
+#include "ElementPairLocator.h"
+#include "XFEM.h"
 
-// Forward Declarations
-class XFEMEqualValueConstraint;
-
-template<>
-InputParameters validParams<XFEMEqualValueConstraint>();
-
-class XFEMEqualValueConstraint : public XFEMElementConstraint 
+class XFEMElementPairLocator : public ElementPairLocator
 {
 public:
-  XFEMEqualValueConstraint(const InputParameters & parameters);
-  virtual ~XFEMEqualValueConstraint();
+
+  XFEMElementPairLocator(MooseSharedPointer<XFEM> xfem, unsigned int interface_id);
+
+  virtual ~XFEMElementPairLocator();
+
+  virtual void reinit();
 
 protected:
-  virtual Real computeQpResidual(Moose::DGResidualType type);
-  virtual Real computeQpJacobian(Moose::DGJacobianType type);
 
-  Real _alpha;
-  Real _jump;
-  Real _jump_flux;
+  MooseSharedPointer<XFEM> _xfem;
+
 };
 
-#endif /* XFEMEQUALVALUECONSTRAINT_H_ */
+#endif // XFEMELEMENTPAIRLOCATOR_H

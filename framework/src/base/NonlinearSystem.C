@@ -47,7 +47,7 @@
 #include "NodalConstraint.h"
 #include "NodeFaceConstraint.h"
 #include "FaceFaceConstraint.h"
-#include "XFEMElementConstraint.h"
+#include "ElemElemConstraint.h"
 #include "ScalarKernel.h"
 #include "Parser.h"
 #include "Split.h"
@@ -61,7 +61,7 @@
 #include "TimeIntegrator.h"
 #include "Predictor.h"
 #include "Assembly.h"
-#include "XFEMInterface.h"
+#include "ElementPairLocator.h"
 
 // libMesh
 #include "libmesh/nonlinear_solver.h"
@@ -1207,55 +1207,56 @@ NonlinearSystem::constraintResiduals(NumericVector<Number> & residual, bool disp
       _fe_problem.addCachedResidual(tid);
     }
   }
-  // go over xfem interface
-  MooseSharedPointer<XFEMInterface> xfem = _fe_problem.getXFEM();
-  std::vector<unsigned int> ixfems; // xfem embedded interface ids
-  ixfems.push_back(1);
-  for (unsigned int i = 0; i < ixfems.size(); ++i)
+
+  // go over element-element constraint interface
+  std::map<unsigned int, ElementPairLocator *> * element_pair_locators = NULL;
+
+  if (!displaced)
   {
-    if (_constraints.hasActiveXFEMElementConstraints(ixfems[i]))
+    GeometricSearchData & geom_search_data = _fe_problem.geomSearchData();
+    element_pair_locators = &geom_search_data._element_pair_locators;
+  }
+  else
+  {
+    GeometricSearchData & displaced_geom_search_data = _fe_problem.getDisplacedProblem()->geomSearchData();
+    element_pair_locators = &displaced_geom_search_data._element_pair_locators;
+  }
+
+  for (std::map<unsigned int, ElementPairLocator *>::iterator it = element_pair_locators->begin();
+       it != element_pair_locators->end();
+       ++it)
+  {
+    ElementPairLocator & elem_pair_loc = *it->second;
+
+    if (_constraints.hasActiveElemElemConstraints(it->first))
     {
-      // XFEMElementConstraint objects
-      const std::vector<MooseSharedPointer<XFEMElementConstraint> > & xfem_element_constraints = _constraints.getActiveXFEMElementConstraints(ixfems[i]);
+      // ElemElemConstraint objects
+      const std::vector<MooseSharedPointer<ElemElemConstraint> > & _element_constraints = _constraints.getActiveElemElemConstraints(it->first);
 
-        // go over elements cutted by xfem
-      std::vector<std::pair<const Elem*, const Elem*> > elem_pairs;
-      xfem->getXFEMCutElemPair(elem_pairs); // get the cutted element pairs from XFEM
-      for (unsigned int ie = 0; ie < elem_pairs.size(); ++ie)
+      // go over pair elements
+      for (unsigned int ie = 0; ie < elem_pair_loc._elem_pairs.size(); ++ie)
       {
-        //cutted element itself and its overlapping element
-
-        const Elem * elem = elem_pairs[ie].first; 
-        const Elem * overlap_elem = elem_pairs[ie].second;
+        const Elem * elem = elem_pair_loc._elem_pairs[ie].first;
+        const Elem * pair_elem = elem_pair_loc._elem_pairs[ie].second;
 
         if (elem->processor_id() != processor_id())
           continue;
 
-        std::vector<Point> intersectionPoints;
-        Point normal(0.0, 0.0, 0.0);
-        xfem->getXFEMIntersectionInfo(elem, 0, normal, intersectionPoints);
+        ElementPairInfo & info = *elem_pair_loc._element_pair_info[elem];
         
-        std::vector<Point> quadrature_pts;
-        std::vector<Real> quadrature_wts;
-
-        if (intersectionPoints.size() == 2)
-          xfem->getXFEMqRuleOnLine(intersectionPoints, quadrature_pts, quadrature_wts);
-        else
-          xfem->getXFEMqRuleOnSurface(intersectionPoints, quadrature_pts, quadrature_wts);
-
         // for each element process constraints on the
-        for (std::vector<MooseSharedPointer<XFEMElementConstraint> >::const_iterator xfemec_it = xfem_element_constraints.begin(); xfemec_it != xfem_element_constraints.end(); ++xfemec_it)
+        for (std::vector<MooseSharedPointer<ElemElemConstraint> >::const_iterator ec_it = _element_constraints.begin(); ec_it != _element_constraints.end(); ++ec_it)
         {
-          MooseSharedPointer<XFEMElementConstraint> xfemec = *xfemec_it;
-         
-          _fe_problem.reinitElemPhys(elem, quadrature_pts, tid);
-          _fe_problem.reinitNeighborPhys(overlap_elem, 0, quadrature_pts, tid);
+          MooseSharedPointer<ElemElemConstraint> ec = *ec_it;
 
-          xfemec->subProblem().prepareShapes(xfemec->variable().number(), tid);
-          xfemec->subProblem().prepareNeighborShapes(xfemec->variable().number(), tid);
+          _fe_problem.reinitElemPhys(elem, info._q_point, tid);
+          _fe_problem.reinitNeighborPhys(pair_elem, 0, info._q_point, tid);
 
-          xfemec->setqRuleNormal(quadrature_pts, quadrature_wts, normal);
-          xfemec->computeResidual();
+          ec->subProblem().prepareShapes(ec->variable().number(), tid);
+          ec->subProblem().prepareNeighborShapes(ec->variable().number(), tid);
+
+          ec->reinit(info);
+          ec->computeResidual();
           _fe_problem.cacheResidual(tid);
           _fe_problem.cacheResidualNeighbor(tid);
         }
@@ -1835,55 +1836,55 @@ NonlinearSystem::constraintJacobians(SparseMatrix<Number> & jacobian, bool displ
     }
   }
 
-  // go over xfem interface
-  MooseSharedPointer<XFEMInterface> xfem = _fe_problem.getXFEM();
-  std::vector<unsigned int> ixfems; // xfem embedded interface ids
-  ixfems.push_back(1);
-  for (unsigned int i = 0; i < ixfems.size(); ++i)
-  {
-    if (_constraints.hasActiveXFEMElementConstraints(ixfems[i]))
-    {
-      // XFEMElementConstraint objects
-      const std::vector<MooseSharedPointer<XFEMElementConstraint> > & xfem_element_constraints = _constraints.getActiveXFEMElementConstraints(ixfems[i]);
+  // go over element-element constraint interface
+  std::map<unsigned int, ElementPairLocator *> * element_pair_locators = NULL;
 
-        // go over elements cutted by xfem
-      std::vector<std::pair<const Elem*, const Elem*> > elem_pairs;
-      xfem->getXFEMCutElemPair(elem_pairs); // get the cutted element pairs from XFEM
-      for (unsigned int ie = 0; ie < elem_pairs.size(); ++ie)
+  if (!displaced)
+  {
+    GeometricSearchData & geom_search_data = _fe_problem.geomSearchData();
+    element_pair_locators = &geom_search_data._element_pair_locators;
+  }
+  else
+  {
+    GeometricSearchData & displaced_geom_search_data = _fe_problem.getDisplacedProblem()->geomSearchData();
+    element_pair_locators = &displaced_geom_search_data._element_pair_locators;
+  }
+
+  for (std::map<unsigned int, ElementPairLocator *>::iterator it = element_pair_locators->begin();
+       it != element_pair_locators->end();
+       ++it)
+  {
+    ElementPairLocator & elem_pair_loc = *it->second;
+
+    if (_constraints.hasActiveElemElemConstraints(it->first))
+    {
+      // ElemElemConstraint objects
+      const std::vector<MooseSharedPointer<ElemElemConstraint> > & _element_constraints = _constraints.getActiveElemElemConstraints(it->first);
+
+      // go over pair elements
+      for (unsigned int ie = 0; ie < elem_pair_loc._elem_pairs.size(); ++ie)
       {
-        //cutted element itself and its overlapping element
-        const Elem * elem = elem_pairs[ie].first; 
-        const Elem * overlap_elem = elem_pairs[ie].second;
+        const Elem * elem = elem_pair_loc._elem_pairs[ie].first;
+        const Elem * pair_elem = elem_pair_loc._elem_pairs[ie].second;
 
         if (elem->processor_id() != processor_id())
           continue;
 
-        std::vector<Point> intersectionPoints;
-        Point normal(0.0, 0.0, 0.0);
-        xfem->getXFEMIntersectionInfo(elem, 0, normal, intersectionPoints);
-      
-        std::vector<Point> quadrature_pts;
-        std::vector<Real> quadrature_wts;
-
-        if (intersectionPoints.size() == 2)
-          xfem->getXFEMqRuleOnLine(intersectionPoints, quadrature_pts, quadrature_wts);
-        else
-          xfem->getXFEMqRuleOnSurface(intersectionPoints, quadrature_pts, quadrature_wts);
-
+        ElementPairInfo & info = *elem_pair_loc._element_pair_info[elem];
+        
         // for each element process constraints on the
-        for (std::vector<MooseSharedPointer<XFEMElementConstraint> >::const_iterator xfemec_it = xfem_element_constraints.begin(); xfemec_it != xfem_element_constraints.end(); ++xfemec_it)
+        for (std::vector<MooseSharedPointer<ElemElemConstraint> >::const_iterator ec_it = _element_constraints.begin(); ec_it != _element_constraints.end(); ++ec_it)
         {
-          MooseSharedPointer<XFEMElementConstraint> xfemec = *xfemec_it;
+          MooseSharedPointer<ElemElemConstraint> ec = *ec_it;
 
-          // reinit variables on element and its overlapping element
-          _fe_problem.reinitElemPhys(elem, quadrature_pts, tid);
-          _fe_problem.reinitNeighborPhys(overlap_elem, 0, quadrature_pts, tid);
+          _fe_problem.reinitElemPhys(elem, info._q_point, tid);
+          _fe_problem.reinitNeighborPhys(pair_elem, 0, info._q_point, tid);
 
-          xfemec->subProblem().prepareShapes(xfemec->variable().number(), tid);
-          xfemec->subProblem().prepareNeighborShapes(xfemec->variable().number(), tid);
+          ec->subProblem().prepareShapes(ec->variable().number(), tid);
+          ec->subProblem().prepareNeighborShapes(ec->variable().number(), tid);
 
-          xfemec->setqRuleNormal(quadrature_pts, quadrature_wts, normal);
-          xfemec->computeJacobian();
+          ec->reinit(info);
+          ec->computeJacobian();
           _fe_problem.cacheJacobian(tid);
           _fe_problem.cacheJacobianNeighbor(tid);
         }

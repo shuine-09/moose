@@ -12,7 +12,7 @@
 /*            See COPYRIGHT for full restrictions               */
 /****************************************************************/
 
-#include "XFEMElementConstraint.h"
+#include "ElemElemConstraint.h"
 #include "FEProblem.h"
 #include "Assembly.h"
 
@@ -20,14 +20,14 @@
 #include "libmesh/quadrature.h"
 
 template<>
-InputParameters validParams<XFEMElementConstraint>()
+InputParameters validParams<ElemElemConstraint>()
 {
   InputParameters params = validParams<Constraint>();
-  params.addRequiredParam<unsigned int>("xfem_interface_id", "The id of the xfem embedded interface.");
+  params.addRequiredParam<unsigned int>("interface_id", "The id of the interface.");
   return params;
 }
 
-XFEMElementConstraint::XFEMElementConstraint(const InputParameters & parameters) :
+ElemElemConstraint::ElemElemConstraint(const InputParameters & parameters) :
     Constraint(parameters),
     NeighborCoupleableMooseVariableDependencyIntermediateInterface(parameters, false, false),
     _fe_problem(*parameters.get<FEProblem *>("_fe_problem")),
@@ -71,22 +71,27 @@ XFEMElementConstraint::XFEMElementConstraint(const InputParameters & parameters)
 {
 }
 
-XFEMElementConstraint::~XFEMElementConstraint()
+ElemElemConstraint::~ElemElemConstraint()
 {
-}
-
-void 
-XFEMElementConstraint::setqRuleNormal(std::vector<Point> & quadrature_pts, std::vector<Real> & quadrature_wts, Point &  normal)
-{
-  _xfem_normal = normal;
-  _xfem_quad_pts.resize(quadrature_pts.size());
-  _xfem_quad_wts.resize(quadrature_wts.size());
-  std::copy(quadrature_pts.begin(), quadrature_pts.end(), _xfem_quad_pts.begin());
-  std::copy(quadrature_wts.begin(), quadrature_wts.end(), _xfem_quad_wts.begin());
 }
 
 void
-XFEMElementConstraint::computeElemNeighResidual(Moose::DGResidualType type)
+ElemElemConstraint::reinit(ElementPairInfo & element_pair_info)
+{
+  setqRuleNormal(element_pair_info);
+}
+
+void 
+ElemElemConstraint::setqRuleNormal(ElementPairInfo & element_pair_info)
+{
+  _interface_q_point.resize(element_pair_info._q_point.size());
+  _interface_JxW.resize(element_pair_info._JxW.size());
+  std::copy(element_pair_info._q_point.begin(), element_pair_info._q_point.end(), _interface_q_point.begin());
+  std::copy(element_pair_info._JxW.begin(), element_pair_info._JxW.end(), _interface_JxW.begin());
+}
+
+void
+ElemElemConstraint::computeElemNeighResidual(Moose::DGResidualType type)
 {
   bool is_elem;
   if (type == Moose::Element)
@@ -97,13 +102,13 @@ XFEMElementConstraint::computeElemNeighResidual(Moose::DGResidualType type)
   const VariableTestValue & test_space = is_elem ? _test : _test_neighbor;
   DenseVector<Number> & re = is_elem ? _assembly.residualBlock(_var.number()) :
                                        _assembly.residualBlockNeighbor(_var.number());
-  for (_qp=0; _qp < _xfem_quad_pts.size(); _qp++)
+  for (_qp=0; _qp < _interface_q_point.size(); _qp++)
       for (_i=0; _i< test_space.size(); _i++)
-        re(_i) += _xfem_quad_wts[_qp] * computeQpResidual(type);
+        re(_i) += _interface_JxW[_qp] * computeQpResidual(type);
 }
 
 void
-XFEMElementConstraint::computeResidual()
+ElemElemConstraint::computeResidual()
 {
  // Compute the residual for this element
   computeElemNeighResidual(Moose::Element);
@@ -113,7 +118,7 @@ XFEMElementConstraint::computeResidual()
 }
 
 void
-XFEMElementConstraint::computeElemNeighJacobian(Moose::DGJacobianType type)
+ElemElemConstraint::computeElemNeighJacobian(Moose::DGJacobianType type)
 {
   const VariableTestValue & test_space = ( type == Moose::ElementElement || type == Moose::ElementNeighbor ) ?
                                          _test : _test_neighbor;
@@ -124,14 +129,14 @@ XFEMElementConstraint::computeElemNeighJacobian(Moose::DGJacobianType type)
                               type == Moose::NeighborElement ? _assembly.jacobianBlockNeighbor(Moose::NeighborElement, _var.number(), _var.number()) :
                               _assembly.jacobianBlockNeighbor(Moose::NeighborNeighbor, _var.number(), _var.number());
 
-  for (_qp=0; _qp< _xfem_quad_pts.size(); _qp++)
+  for (_qp=0; _qp< _interface_q_point.size(); _qp++)
     for (_i=0; _i<test_space.size(); _i++)
       for (_j=0; _j<loc_phi.size(); _j++)
-        Kxx(_i,_j) += _xfem_quad_wts[_qp]*computeQpJacobian(type);
+        Kxx(_i,_j) += _interface_JxW[_qp]*computeQpJacobian(type);
 }
 
 void
-XFEMElementConstraint::computeJacobian()
+ElemElemConstraint::computeJacobian()
 {
   // Compute element-element Jacobian
   computeElemNeighJacobian(Moose::ElementElement);

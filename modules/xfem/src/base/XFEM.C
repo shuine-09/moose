@@ -1383,7 +1383,7 @@ XFEM::getXFEMIntersectionInfo(const Elem* elem, unsigned int plane_id, Point & n
 }
 
 void
-XFEM::getXFEMqRuleOnLine(std::vector<Point> & intersection_points, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts)
+XFEM::getXFEMqRuleOnLine(std::vector<Point> & intersection_points, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts) const
 {
   Point p1 = intersection_points[0];
   Point p2 = intersection_points[1];
@@ -1408,7 +1408,7 @@ XFEM::getXFEMqRuleOnLine(std::vector<Point> & intersection_points, std::vector<P
 }
 
 void
-XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts)
+XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts) const
 {
   unsigned nnd_pe = intersection_points.size();
   Point xcrd(0.0, 0.0, 0.0);

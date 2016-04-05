@@ -6,8 +6,8 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 3
-  ny = 3
+  nx = 29
+  ny = 29
   xmin = 0.0
   xmax = 1.0
   ymin = 0.0
@@ -45,8 +45,8 @@
   [./xfem_constraint]
     type = XFEMEqualValueConstraint
     variable = u
-    xfem_interface_id = 1
-    jump = 0.0
+    interface_id = 0
+    jump = 0.2
     jump_flux = 0
   [../]
 []

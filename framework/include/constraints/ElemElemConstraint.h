@@ -12,35 +12,39 @@
 /*            See COPYRIGHT for full restrictions               */
 /****************************************************************/
 
-#ifndef XFEMELEMENTCONSTRAINT_H
-#define XFEMELEMENTCONSTRAINT_H
+#ifndef ELEMELEMCONSTRAINT_H
+#define ELEMELEMCONSTRAINT_H
 
 // MOOSE includes
 #include "Constraint.h"
 #include "NeighborCoupleableMooseVariableDependencyIntermediateInterface.h"
 #include "MooseMesh.h"
+#include "ElementPairInfo.h"
 
 // Forward Declarations
-class XFEMElementConstraint;
+class ElemElemConstraint;
 class FEProblem;
 
 template<>
-InputParameters validParams<XFEMElementConstraint>();
+InputParameters validParams<ElemElemConstraint>();
 
-class XFEMElementConstraint :
+class ElemElemConstraint :
   public Constraint,
   public NeighborCoupleableMooseVariableDependencyIntermediateInterface
 {
 public:
-  XFEMElementConstraint(const InputParameters & parameters);
-  virtual ~XFEMElementConstraint();
+  ElemElemConstraint(const InputParameters & parameters);
+  virtual ~ElemElemConstraint();
+
+  /**
+   * reinit element-element constraint
+   */
+  virtual void reinit(ElementPairInfo & element_pair_info);
 
   /**
    * Set the quadrature points and normal direction
    */
-  virtual void setqRuleNormal(std::vector<Point> & quadrature_pts,
-                              std::vector<Real> & quadrature_wts,
-                              Point & normal);
+  virtual void setqRuleNormal(ElementPairInfo & element_pair_info);
 
   /**
    * Computes the residual for this element or the neighbor
@@ -92,9 +96,9 @@ protected:
   const MooseArray<Real> & _JxW;
   const MooseArray<Real> & _coord;
 
-  Point _xfem_normal;
-  std::vector<Point> _xfem_quad_pts;
-  std::vector<Real> _xfem_quad_wts;
+  Point _interface_normal;
+  std::vector<Point> _interface_q_point;
+  std::vector<Real> _interface_JxW;
 
   unsigned int _i, _j;
 
@@ -143,4 +147,4 @@ protected:
   virtual Real computeQpJacobian(Moose::DGJacobianType type) = 0;
 };
 
-#endif /* XFEMELEMENTCONSTRAINT_H_ */
+#endif /* ELEMELEMCONSTRAINT_H_ */

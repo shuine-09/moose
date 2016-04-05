@@ -102,14 +102,6 @@ public:
    */
   virtual bool getXFEMWeights(MooseArray<Real> &weights, const Elem * elem, QBase * qrule, const MooseArray<Point> & q_points) = 0;
 
-  virtual void getXFEMCutElemPair(std::vector<std::pair<const Elem*, const Elem*> > & _elem_pair) const = 0;
-
-  virtual void getXFEMIntersectionInfo(const Elem* elem, unsigned int plane_id, Point & normal, std::vector<Point> & intersectionPoints, bool displaced_mesh = false) const = 0;
-
-  virtual void getXFEMqRuleOnLine(std::vector<Point> & intersection_points, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts) = 0;
-
-  virtual void getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts) = 0;
-
 protected:
   std::vector<MooseSharedPointer<MaterialData> > * _material_data;
 

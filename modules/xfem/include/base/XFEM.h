@@ -147,10 +147,10 @@ public:
                                        bool displaced_mesh = false) const;
   virtual void getXFEMqRuleOnLine(std::vector<Point> & intersection_points, 
                                   std::vector<Point> & quad_pts, 
-                                  std::vector<Real> & quad_wts);
+                                  std::vector<Real> & quad_wts) const;
   virtual void getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, 
                                   std::vector<Point> & quad_pts, 
-                                  std::vector<Real> & quad_wts);
+                                  std::vector<Real> & quad_wts) const;
 private:
 
   void getFragmentEdges(const Elem* elem,
