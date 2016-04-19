@@ -202,7 +202,7 @@ XFEM::update(Real time)
     MeshCommunication().make_nodes_parallel_consistent(*_mesh);
 //    _mesh->find_neighbors();
 //    _mesh->contract();
-    _mesh->allow_renumbering(false);
+    _mesh->allow_renumbering(true);
     _mesh->skip_partitioning(true);
     _mesh->prepare_for_use();
 //    _mesh->prepare_for_use(true,true); //doing this preserves the numbering, but generates warning
@@ -212,7 +212,7 @@ XFEM::update(Real time)
       _mesh2->update_parallel_id_counts();
       MeshCommunication().make_elems_parallel_consistent(*_mesh2);
       MeshCommunication().make_nodes_parallel_consistent(*_mesh2);
-      _mesh2->allow_renumbering(false);
+      _mesh2->allow_renumbering(true);
       _mesh2->skip_partitioning(true);
       _mesh2->prepare_for_use();
 //      _mesh2->prepare_for_use(true,true);

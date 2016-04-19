@@ -86,6 +86,7 @@ ComputeUserObjectsThread::onElement(const Elem * elem)
 void
 ComputeUserObjectsThread::onBoundary(const Elem *elem, unsigned int side, BoundaryID bnd_id)
 {
+  return;
   if (_side_user_objects.hasActiveBoundaryObjects(bnd_id, _tid))
   {
     _fe_problem.reinitElemFace(elem, side, bnd_id, _tid);
