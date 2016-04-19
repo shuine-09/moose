@@ -56,7 +56,7 @@ class XFEM : public XFEMInterface
 public:
 
   explicit
-  XFEM(MooseApp & app);
+  XFEM(MooseApp & app, MooseSharedPointer<FEProblem> & fe_problem);
 
   ~XFEM();
 
