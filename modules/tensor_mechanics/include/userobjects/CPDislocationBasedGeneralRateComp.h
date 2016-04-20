@@ -28,7 +28,7 @@ class CPDislocationBasedGeneralRateComp : public CrystalPlasticityStateVarRateCo
  protected:
 
   const MaterialProperty<std::vector<Real> > & _mat_prop_dislocation_density;
- 
+
   const MaterialProperty<std::vector<Real> > & _mat_prop_rate;
 
   Real _prefactor;

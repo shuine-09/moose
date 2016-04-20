@@ -100,7 +100,7 @@
   [../]
   [./rho_m]
     type = MaterialStdVectorAux
-    variable = rho_m 
+    variable = rho_m
     property = mobile_dislocation_density
     index = 14
     execute_on = timestep_end
@@ -108,7 +108,7 @@
   [../]
   [./rho_i]
     type = MaterialStdVectorAux
-    variable = rho_i 
+    variable = rho_i
     property = immobile_dislocation_density
     index = 14
     execute_on = timestep_end
@@ -152,7 +152,7 @@
     disloc_line_dist = 1.5e-6  #mm
     jump_freq = 1e6
     active_enthal  = 1.2161e-18
-    temp = 323.0 
+    temp = 323.0
     slip_sys_file_name = input_slip_sys.txt
     uo_mobile_dislocation_density_name = mobile_dislocation_density
     uo_thermal_slip_resistance_name = thermal_slip_resistance

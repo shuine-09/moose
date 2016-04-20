@@ -101,7 +101,7 @@ CPDislocationBasedAPBSlipRate::calcSlipRate(unsigned int qp, Real dt, std::vecto
       c = 0.0;
 
     c = 1.0 - c / _mat_prop_thermal_slip_resistance[qp][i];
-   
+
     Real a = _mat_prop_mobile_dislocation_density[qp][i] * _b * _lg * _jump_freq;
     Real b = _enthal/ (_k * _temp);
 

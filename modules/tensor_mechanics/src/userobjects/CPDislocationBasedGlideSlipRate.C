@@ -104,7 +104,7 @@ CPDislocationBasedGlideSlipRate::calcSlipRate(unsigned int qp, Real dt, std::vec
     }
 
     Real c2 = std::pow(1.0 - v1p, _q) + v2/_penalty_param;
-    
+
     Real a = _mat_prop_mobile_dislocation_density[qp][i] * _b * _lg * _jump_freq;
     Real b = _enthal/ (_k * _temp);
 

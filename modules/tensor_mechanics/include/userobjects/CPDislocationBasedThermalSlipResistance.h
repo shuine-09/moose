@@ -26,7 +26,7 @@ class CPDislocationBasedThermalSlipResistance : public CrystalPlasticitySlipResi
 
  protected:
 
-  Real _thermal_resist; 
+  Real _thermal_resist;
 };
 
 #endif // CPDISLOCATIONBASEDTHERMALSLIPRESISTANCE_H

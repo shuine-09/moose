@@ -26,7 +26,7 @@ class CPDislocationBasedAPBSlipResistance : public CrystalPlasticitySlipResistan
 
  protected:
 
-  Real _apb_shear_resist; 
+  Real _apb_shear_resist;
 };
 
 #endif // CPDISLOCATIONBASEDSLIPRESISTANCE_H

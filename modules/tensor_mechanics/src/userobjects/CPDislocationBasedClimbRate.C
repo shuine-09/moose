@@ -65,10 +65,10 @@ CPDislocationBasedClimbRate::calcFlowDirection(unsigned int qp, std::vector<Rank
       for (unsigned int k = 0; k < LIBMESH_DIM; ++k)
         mo(j) = mo(j) + _crysrot[qp](j,k) * _mo(i*LIBMESH_DIM+k);
     }
-    
+
     to = no.cross(mo);
     ro = mo * std::sin(_edge_screw_angle) - to * std::cos(_edge_screw_angle);
-    
+
     flow_dirn_tmp.vectorOuterProduct(mo, ro);
     flow_dirn_tmp = 0.5 * (flow_dirn_tmp + flow_dirn_tmp.transpose());
     flow_dirn_tmp = flow_dirn_tmp - flow_dirn_tmp.trace()/3.0 * iden;
@@ -144,7 +144,7 @@ CPDislocationBasedClimbRate::calcSlipRateDerivative(unsigned int qp, Real dt, st
     Real a1 = 1.0/_climb_resistance;
     Real a2 = _p * std::pow(tau_ratio, _p - 1.0);
     Real a3 = _q * std::pow(1.0 - factor, _q - 1.0);
-    
+
     val[i] *= _enthal/(_k * _temp) * a1 * a2 * a3;
   }
   return true;

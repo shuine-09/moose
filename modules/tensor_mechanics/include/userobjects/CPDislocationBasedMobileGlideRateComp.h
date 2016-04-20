@@ -28,7 +28,7 @@ class CPDislocationBasedMobileGlideRateComp : public CrystalPlasticityStateVarRa
   const MaterialProperty<std::vector<Real> > & _mat_prop_mobile_dislocation_density;
 
   const MaterialProperty<std::vector<Real> > & _mat_prop_immobile_dislocation_density;
- 
+
   const MaterialProperty<std::vector<Real> > & _mat_prop_glide_slip_rate;
 
   Real _b;
