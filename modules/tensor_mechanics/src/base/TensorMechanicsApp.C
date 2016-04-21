@@ -131,8 +131,6 @@
 #include "CrystalPlasticitySlipResistanceGSS.h"
 #include "CrystalPlasticityStateVariable.h"
 #include "CrystalPlasticityStateVarRateComponentGSS.h"
-#include "CPDislocationBasedImmobileDensity.h"
-#include "CPDislocationBasedMobileDensity.h"
 #include "CPDislocationBasedThermalSlipResistance.h"
 #include "CPDislocationBasedAthermalSlipResistance.h"
 #include "CPDislocationBasedGlideSlipRate.h"
@@ -277,8 +275,6 @@ TensorMechanicsApp::registerObjects(Factory & factory)
   registerUserObject(CrystalPlasticitySlipResistanceGSS);
   registerUserObject(CrystalPlasticityStateVariable);
   registerUserObject(CrystalPlasticityStateVarRateComponentGSS);
-  registerUserObject(CPDislocationBasedImmobileDensity);
-  registerUserObject(CPDislocationBasedMobileDensity);
   registerUserObject(CPDislocationBasedThermalSlipResistance);
   registerUserObject(CPDislocationBasedAthermalSlipResistance);
   registerUserObject(CPDislocationBasedGlideSlipRate);

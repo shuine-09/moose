@@ -171,24 +171,27 @@
     uo_immobile_dislocation_density_name = immobile_dislocation_density
   [../]
   [./mobile_dislocation_density]
-    type = CPDislocationBasedMobileDensity
+    type = CrystalPlasticityStateVariable
     variable_size = 48
-    initial_value = 2.0e7
+    groups = '0 48'
+    group_values = 2.0e7 
     uo_state_var_evol_rate_comp_name = mobile_glide_rate_comp
     scale_factor = 1.0
   [../]
   [./immobile_dislocation_density]
-    type = CPDislocationBasedImmobileDensity
+    type = CrystalPlasticityStateVariable
     variable_size = 48
-    initial_value = 3.0e7
-    uo_state_var_evol_rate_comp_name = immobile_glide_rate_comp
-    scale_factor = 1.0
+    groups = '0 48'
+    group_values = 3.0e7 
+    uo_state_var_evol_rate_comp_name = 'immobile_glide_rate_comp immobile_dyn_rate_comp'
+    scale_factor = '1.0 -1.0'
   [../]
   [./mobile_glide_rate_comp]
     type = CPDislocationBasedMobileGlideRateComp
     variable_size = 48
     burgers_length  = 0.248e-6 #mm
     rho_imm_factor = 0.1
+    rho_mult_factor = 0.143
     uo_mobile_dislocation_density_name = mobile_dislocation_density
     uo_immobile_dislocation_density_name = immobile_dislocation_density
     uo_glide_slip_rate_name = glide_slip_rate
@@ -202,21 +205,28 @@
     uo_immobile_dislocation_density_name = immobile_dislocation_density
     uo_glide_slip_rate_name = glide_slip_rate
   [../]
+  [./immobile_dyn_rate_comp]
+    type = CPDislocationBasedGeneralRateComp
+    variable_size = 48
+    uo_dislocation_density_name = immobile_dislocation_density
+    uo_rate_name = glide_slip_rate
+    prefactor = 3329.5
+  [../]
 []
 
 [Materials]
   [./crysp]
     type = FiniteStrainUObasedCP
     block = 0
-    stol = 1.0e-5
+    stol = 1.0e-4
     rtol = 1e-7
     abs_tol = 1e-15
     tan_mod_type = exact
-    maximum_substep_iteration = 1
+    maximum_substep_iteration = 8
     uo_slip_rates = 'glide_slip_rate'
     uo_slip_resistances = 'thermal_slip_resistance athermal_slip_resistance'
     uo_state_vars = 'mobile_dislocation_density immobile_dislocation_density'
-    uo_state_var_evol_rate_comps = 'mobile_glide_rate_comp immobile_glide_rate_comp'
+    uo_state_var_evol_rate_comps = 'mobile_glide_rate_comp immobile_glide_rate_comp immobile_dyn_rate_comp'
   [../]
   [./strain]
     type = ComputeFiniteStrain
@@ -282,7 +292,7 @@
   end_time = 50.0
   dtmin = 1e-8
 #  num_steps = 200
-  dt = 0.1
+  dt = 0.5
   #  nl_abs_step_tol = 1e-10
   l_max_its = 60
   nl_max_its = 20
