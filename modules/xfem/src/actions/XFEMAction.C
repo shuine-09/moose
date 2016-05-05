@@ -70,6 +70,8 @@ validParams<XFEMAction>()
   params.addParam<Real>("cut_off_radius",
                         "The cut off radius of crack tip enrichment functions (only needed if "
                         "'use_crack_tip_enrichment=true')");
+  params.addParam<std::vector<Real>>("heal_times", "Times when previous cuts are healed");
+  params.addParam<bool>("heal_every_time", false, "Heal previous cuts at every time step");
   return params;
 }
 
@@ -145,7 +147,13 @@ XFEMAction::act()
 
     xfem->setCrackGrowthMethod(_xfem_use_crack_growth_increment, _xfem_crack_growth_increment);
 
-    std::shared_ptr<XFEMElementPairLocator> new_xfem_epl(new XFEMElementPairLocator(xfem, 0));
+    xfem->setHealEveryTime(getParam<bool>("heal_every_time"));
+
+    std::vector<Real> heal_times = getParam<std::vector<Real>>("heal_times");
+    for (unsigned int i = 0; i < heal_times.size(); ++i)
+      xfem->addHealTime(heal_times[i]);
+
+    MooseSharedPointer<XFEMElementPairLocator> new_xfem_epl(new XFEMElementPairLocator(xfem, 0));
     _problem->geomSearchData().addElementPairLocator(0, new_xfem_epl);
 
     if (_problem->getDisplacedProblem() != NULL)

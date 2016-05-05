@@ -68,6 +68,9 @@ public:
 
   void addGeometricCut(const GeometricCutUserObject * geometric_cut);
 
+  void addHealTime(Real heal_time) { _heal_times.push_back(heal_time); }
+  void setHealEveryTime(bool heal_every_time) { _heal_every_time = heal_every_time; }
+
   void addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal);
   void addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal, unsigned int marked_side);
   void addStateMarkedFrag(unsigned int elem_id, RealVectorValue & normal);
@@ -108,6 +111,7 @@ public:
   virtual void initSolution(NonlinearSystemBase & nl, AuxiliarySystem & aux);
 
   void buildEFAMesh();
+  bool shouldHealMesh(Real time);
   bool markCuts(Real time);
   bool markCutEdgesByGeometry();
   bool markCutEdgesByState(Real time);
@@ -116,6 +120,8 @@ public:
   bool initCutIntersectionEdge(
       Point cut_origin, RealVectorValue cut_normal, Point & edge_p1, Point & edge_p2, Real & dist);
   bool cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux);
+  bool healMesh();
+  virtual bool updateHeal(Real time) override;
   Point getEFANodeCoords(EFANode * CEMnode,
                          EFAElement * CEMElem,
                          const Elem * elem,
@@ -351,6 +357,9 @@ private:
    * @param sys  System for which the dof indices are found
    */
   std::vector<dof_id_type> getNodeSolutionDofs(const Node * node, SystemBase & sys) const;
+
+  bool _heal_every_time;
+  std::vector<Real> _heal_times;
 };
 
 #endif // XFEM_H
