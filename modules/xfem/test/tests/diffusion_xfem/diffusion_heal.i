@@ -6,45 +6,31 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 3
-  ny = 3
-  xmin = 0
-  xmax = 1
-  ymin = 0
-  ymax = 1
+  nx = 5
+  ny = 6
+  xmin = 0.0
+  xmax = 1.0
+  ymin = 0.0
+  ymax = 1.0
   elem_type = QUAD4
 []
 
 [XFEM]
+  geometric_cut_userobjects = 'line_seg_cut_uo'
+  heal_times = 2
   qrule = volfrac
   output_cut_plane = true
-  heal_every_time = true
 []
 
 [UserObjects]
-  [./level_set_cut_uo]
-    type = LevelSetCutUserObject
-    level_set_var = ls
+  [./line_seg_cut_uo]
+    type = LineSegmentCutSetUserObject
+    cut_data = '0.5 1.0 0.5 0.5 0 0
+                0.75 1.0 0.75 0.5 3 3'
   [../]
 []
-
 [Variables]
   [./u]
-  [../]
-[]
-
-[AuxVariables]
-  [./ls]
-    order = FIRST
-    family = LAGRANGE
-  [../]
-[]
-
-[AuxKernels]
-  [./ls_function]
-    type = FunctionAux
-    variable = ls
-    function = ls_func
   [../]
 []
 
@@ -52,24 +38,9 @@
   [./u_left]
     type = PiecewiseLinear
     x = '0   2'
-    y = '3   5'
-  [../]
-  [./ls_func]
-    type = ParsedFunction
-    #value = 'sqrt((x-0.)*(x-0.) + (y-0.)*(y-0.))-0.11*t'
-    value = 'x-0.5'
+    y = '0.1  0.1'
   [../]
 []
-
-# [Constraints]
-#   [./u_constraint]
-#     type = XFEMSingleVariableConstraint
-#     use_displaced_mesh = false
-#     variable = u
-#     use_penalty = true
-#     alpha = 1e5
-#   [../]
-# []
 
 [Kernels]
   [./diff]
@@ -81,10 +52,10 @@
 [BCs]
 # Define boundary conditions
   [./left_u]
-    type = DirichletBC
+    type = FunctionPresetBC
     variable = u
     boundary = 3
-    value = 3
+    function = u_left
   [../]
 
   [./right_u]
@@ -93,7 +64,6 @@
     boundary = 1
     value = 0
   [../]
-
 []
 
 [Executioner]
@@ -109,12 +79,14 @@
   nl_abs_tol = 1e-10
 
   start_time = 0.0
-  dt = 1
-  end_time = 5.0
-  max_xfem_update = 1
+  dt = 1.0
+  end_time = 3.0
+  max_xfem_update = 0
+  update_xfem_at_timestep_begin = true
 []
 
 [Outputs]
+  file_base = diffusion_out
   interval = 1
   execute_on = timestep_end
   exodus = true

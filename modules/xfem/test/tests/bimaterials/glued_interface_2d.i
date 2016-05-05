@@ -1,11 +1,13 @@
 [GlobalParams]
   order = FIRST
   family = LAGRANGE
+  displacements = 'disp_x disp_y'
 []
 
 [XFEM]
   qrule = volfrac
   output_cut_plane = true
+  heal_every_time = true
 []
 
 [UserObjects]
@@ -66,7 +68,7 @@
 [Functions]
   [./ls_func]
     type = ParsedFunction
-    value = 'y-2.5'
+    value = 'y-5.0+1.1*t'
   [../]
 []
 
@@ -79,59 +81,104 @@
     order = CONSTANT
     family = MONOMIAL
   [../]
-  [./vonmises]
+  [./stress_xy]
     order = CONSTANT
     family = MONOMIAL
   [../]
-  [./elastic_strain_yy]
+  [./a_strain_xx]
     order = CONSTANT
     family = MONOMIAL
   [../]
-  [./resid_y]
-   # block = 0
+  [./a_strain_yy]
+    order = CONSTANT
+    family = MONOMIAL
   [../]
-  [./resid_x]
+  [./a_strain_xy]
+    order = CONSTANT
+    family = MONOMIAL
   [../]
-  [./traction_y]
+  [./b_strain_xx]
+    order = CONSTANT
+    family = MONOMIAL
+  [../]
+  [./b_strain_yy]
+    order = CONSTANT
+    family = MONOMIAL
+  [../]
+  [./b_strain_xy]
+    order = CONSTANT
+    family = MONOMIAL
   [../]
 []
 
-
-[SolidMechanics]
-  [./solid]
-    disp_x = disp_x
-    disp_y = disp_y
-    save_in_disp_y = resid_y
-    save_in_disp_x = resid_x
-#    use_displaced_mesh = true
+[Kernels]
+  [./TensorMechanics]
   [../]
 []
 
 [AuxKernels]
   [./stress_xx]
-    type = MaterialTensorAux
+    type = RankTwoAux
+    rank_two_tensor = stress
+    index_i = 0
+    index_j = 0
     variable = stress_xx
-    tensor = stress
-    index = 0
   [../]
   [./stress_yy]
-    type = MaterialTensorAux
+    type = RankTwoAux
+    rank_two_tensor = stress
+    index_i = 1
+    index_j = 1
     variable = stress_yy
-    tensor = stress
-    index = 1
   [../]
-  [./vonmises]
-    type = MaterialTensorAux
-    tensor = stress
-    variable = vonmises
-    quantity = vonmises
-    execute_on = timestep_end
+  [./stress_xy]
+    type = RankTwoAux
+    rank_two_tensor = stress
+    index_i = 0
+    index_j = 1
+    variable = stress_xy
   [../]
-  [./elastic_strain_yy]
-    type = MaterialTensorAux
-    variable = elastic_strain_yy
-    tensor = elastic_strain
-    index = 1
+  [./a_strain_xx]
+    type = RankTwoAux
+    rank_two_tensor = A_total_strain
+    index_i = 0
+    index_j = 0
+    variable = a_strain_xx
+  [../]
+  [./a_strain_yy]
+    type = RankTwoAux
+    rank_two_tensor = A_total_strain
+    index_i = 1
+    index_j = 1
+    variable = a_strain_yy
+  [../]
+  [./a_strain_xy]
+    type = RankTwoAux
+    rank_two_tensor = A_total_strain
+    index_i = 0
+    index_j = 1
+    variable = a_strain_xy
+  [../]
+  [./b_strain_xx]
+    type = RankTwoAux
+    rank_two_tensor = B_total_strain
+    index_i = 0
+    index_j = 0
+    variable = b_strain_xx
+  [../]
+  [./b_strain_yy]
+    type = RankTwoAux
+    rank_two_tensor = B_total_strain
+    index_i = 1
+    index_j = 1
+    variable = b_strain_yy
+  [../]
+  [./b_strain_xy]
+    type = RankTwoAux
+    rank_two_tensor = B_total_strain
+    index_i = 0
+    index_j = 1
+    variable = b_strain_xy
   [../]
 []
 
@@ -141,14 +188,14 @@
     use_displaced_mesh = false
     variable = disp_x
     use_penalty = true
-    alpha = 10000
+    alpha = 1e5
   [../]
   [./dispy_constraint]
     type = XFEMSingleVariableConstraint
     use_displaced_mesh = false
     variable = disp_y
     use_penalty = true
-    alpha = 10000
+    alpha = 1e5
   [../]
 []
 
@@ -172,58 +219,52 @@
     function = 0.03*t
   [../]
   [./topy]
-#    type = PresetBC
-    type = FunctionPresetBC
+    type = PresetBC
+    #type = FunctionPresetBC
     boundary = top
     variable = disp_y
-#    value = 0.1
-    function = '0.03*t'
+    value = 0.01
+    # function = '0.03*t'
   [../]
 []
 
 [Materials]
-  [./linelast]
-    type = LinearIsotropicMaterial
-    block = 0
-    disp_x = disp_x
-    disp_y = disp_y
-    poissons_ratio = 0.31
-    youngs_modulus = 200.
-    thermal_expansion = 0.02
-    t_ref = 0.5
+  [./elasticity_tensor_A]
+    type = ComputeIsotropicElasticityTensor
+    base_name = A
+    youngs_modulus = 1e9
+    poissons_ratio = 0.3
   [../]
-[]
+  [./strain_A]
+    type = ComputeSmallStrain
+    base_name = A
+  [../]
+  [./stress_A]
+    type = ComputeLinearElasticStress
+    base_name = A
+  [../]
 
-[Postprocessors]
-  [./react_y_top]
-    type = NodalSum
-    variable = resid_y
-    boundary = top
+  [./elasticity_tensor_B]
+    type = ComputeIsotropicElasticityTensor
+    base_name = B
+    youngs_modulus = 1e5
+    poissons_ratio = 0.3
   [../]
-  [./react_x_top]
-    type = NodalSum
-    variable = resid_x
-    boundary = top
+
+  [./strain_B]
+    type = ComputeSmallStrain
+    base_name = B
   [../]
-  [./react_y_bottom]
-    type = NodalSum
-    variable = resid_y
-    boundary = bottom
+  [./stress_B]
+    type = ComputeLinearElasticStress
+    base_name = B
   [../]
-  [./react_x_bottom]
-    type = NodalSum
-    variable = resid_x
-    boundary = bottom
-  [../]
-  [./react_y_left]
-    type = NodalSum
-    variable = resid_y
-    boundary = left
-  [../]
-  [./react_x_left]
-    type = NodalSum
-    variable = resid_x
-    boundary = left
+
+  [./combined]
+    type = LevelSetMultiStressMaterial
+    levelset_plus_base = 'A'
+    levelset_minus_base = 'B'
+    level_set_var = ls
   [../]
 []
 
@@ -231,14 +272,14 @@
   type = Transient
 
   solve_type = 'PJFNK'
-#  petsc_options_iname = '-ksp_gmres_restart -pc_type -pc_hypre_type -pc_hypre_boomeramg_max_iter'
-#  petsc_options_value = '201                hypre    boomeramg      8'
+  petsc_options_iname = '-ksp_gmres_restart -pc_type -pc_hypre_type -pc_hypre_boomeramg_max_iter'
+  petsc_options_value = '201                hypre    boomeramg      8'
 
 
-   petsc_options_iname = '-pc_type -pc_factor_mat_solver_package'
-   petsc_options_value = 'lu     superlu_dist'
+  # petsc_options_iname = '-pc_type -pc_factor_mat_solver_package'
+  # petsc_options_value = 'lu     superlu_dist'
 
-   line_search = 'bt'
+  line_search = 'bt'
 
   #[./Predictor]
   #  type = SimplePredictor
@@ -256,8 +297,8 @@
 
 # time control
   start_time = 0.0
-  dt = 0.1
-  end_time = 1.0
+  dt = 1
+  end_time = 5.0
   num_steps = 5000
 
   max_xfem_update = 1

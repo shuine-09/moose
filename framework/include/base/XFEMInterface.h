@@ -30,7 +30,7 @@ namespace libMesh
 {
 class MeshBase;
 class QBase;
-}
+} // namespace libMesh
 
 /**
  * This is the XFEMInterface class.  This is an abstract base
@@ -101,6 +101,11 @@ public:
    * Method to update the mesh due to modified cut definitions
    */
   virtual bool update(Real time, NonlinearSystemBase & nl, AuxiliarySystem & aux) = 0;
+
+  /**
+   * Method to update mesh due to mesh healing
+   */
+  virtual bool updateHeal(Real time) = 0;
 
   /**
    * Initialize the solution on newly created nodes
