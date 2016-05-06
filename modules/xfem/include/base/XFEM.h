@@ -82,6 +82,7 @@ public:
   Node * getNodeFromUniqueID(unique_id_type uid);
 
   void buildEFAMesh();
+  ElementFragmentAlgorithm * getEFAMesh(){return &_efa_mesh;}
   bool markCuts(Real time);
   bool markCutEdgesByGeometry(Real time);
   bool markCutEdgesByState(Real time);
@@ -152,7 +153,7 @@ public:
   virtual void getXFEMqRuleOnSurface(std::vector<Point> & intersection_points,
                                   std::vector<Point> & quad_pts,
                                   std::vector<Real> & quad_wts) const;
-private:
+//private:
 
   void getFragmentEdges(const Elem* elem,
                         EFAElement2D* CEMElem,

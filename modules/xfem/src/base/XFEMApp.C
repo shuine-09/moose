@@ -15,8 +15,11 @@
 #include "XFEMVolFracAux.h"
 #include "XFEMCutPlaneAux.h"
 #include "XFEMMarkerAux.h"
+
 #include "XFEMMarkerUserObject.h"
 #include "XFEMMaterialTensorMarkerUserObject.h"
+#include "XFEMMeshCutLine.h"
+
 #include "XFEMAction.h"
 #include "XFEMSingleVariableConstraint.h"
 
@@ -73,6 +76,7 @@ XFEMApp::registerObjects(Factory & factory)
   //UserObjects
   registerUserObject(XFEMMarkerUserObject);
   registerUserObject(XFEMMaterialTensorMarkerUserObject);
+  registerUserObject(XFEMMeshCutLine);
 }
 
 // External entry point for dynamic syntax association

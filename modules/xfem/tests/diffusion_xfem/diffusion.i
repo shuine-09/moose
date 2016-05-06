@@ -16,9 +16,13 @@
 []
 
 [XFEM]
-  cut_data = '0.5 1.0 0.5 0.5 0 0'
   qrule = volfrac
   output_cut_plane = true
+  [./xfem_mesh_cut]
+    type = XFEMMeshCutLine 
+    cut_data = '0.5 1.0 0.5 0.5'
+    execute_on = timestep_end
+  [../]
 []
 
 [Variables]
