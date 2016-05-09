@@ -25,7 +25,7 @@
 #include "EFAFragment3D.h"
 #include "EFAFuncs.h"
 
-XFEM::XFEM (MooseApp & app, const MooseSharedPointer<FEProblem> fe_problem) :
+XFEM::XFEM (MooseApp & app, const MooseSharedPointer<FEProblem> & fe_problem) :
     XFEMInterface(app, fe_problem),
     _efa_mesh(Moose::out)
 {

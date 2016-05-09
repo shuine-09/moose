@@ -48,7 +48,7 @@ public:
    * Constructor
    */
   explicit
-  XFEMInterface(MooseApp & app, const MooseSharedPointer<FEProblem> fe_problem):
+  XFEMInterface(MooseApp & app, const MooseSharedPointer<FEProblem> & fe_problem):
     ConsoleStreamInterface(app),
     _fe_problem(fe_problem),
     _material_data(NULL),
@@ -114,7 +114,7 @@ public:
   virtual bool getXFEMWeights(MooseArray<Real> &weights, const Elem * elem, QBase * qrule, const MooseArray<Point> & q_points) = 0;
 
 protected:
-  const MooseSharedPointer<FEProblem> _fe_problem;
+  const MooseSharedPointer<FEProblem> & _fe_problem;
   std::vector<MooseSharedPointer<MaterialData> > * _material_data;
   std::vector<MooseSharedPointer<MaterialData> > * _bnd_material_data;
 
