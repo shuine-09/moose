@@ -170,11 +170,11 @@ XFEMConfigurationForce::computeQpIntegrals(const std::vector<std::vector<Real> >
     if (!isWithin(crack_front))
       continue;
 
-   // const Elem * undisplaced_elem  = NULL;
-   // if(_fe_problem->getDisplacedProblem() != NULL)
-   //   undisplaced_elem = _fe_problem->getDisplacedProblem()->refMesh().elem(_current_elem->id());
-   // else
-   //   undisplaced_elem = _current_elem;
+    //const Elem * undisplaced_elem  = NULL;
+    //if(_fe_problem->getDisplacedProblem() != NULL)
+    //  undisplaced_elem = _fe_problem->getDisplacedProblem()->refMesh().elem(_current_elem->id());
+    //else
+    //  undisplaced_elem = _current_elem;
 
     for (unsigned int i = 0; i < n_nodes; i++)
     {
