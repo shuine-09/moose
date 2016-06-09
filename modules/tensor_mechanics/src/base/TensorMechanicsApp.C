@@ -35,6 +35,7 @@
 #include "FiniteStrainCrystalPlasticity.h"
 #include "FiniteStrainCPSlipRateRes.h"
 #include "FiniteStrainUObasedCP.h"
+#include "FiniteStrainUObasedPolyCP.h"
 #include "ComputeMultiPlasticityStress.h"
 #include "ComputeCosseratLinearElasticStress.h"
 #include "ComputeCosseratSmallStrain.h"
@@ -198,6 +199,7 @@ TensorMechanicsApp::registerObjects(Factory & factory)
   registerMaterial(FiniteStrainCrystalPlasticity);
   registerMaterial(FiniteStrainCPSlipRateRes);
   registerMaterial(FiniteStrainUObasedCP);
+  registerMaterial(FiniteStrainUObasedPolyCP);
   registerMaterial(ComputeMultiPlasticityStress);
   registerMaterial(ComputeCosseratLinearElasticStress);
   registerMaterial(ComputeCosseratSmallStrain);
