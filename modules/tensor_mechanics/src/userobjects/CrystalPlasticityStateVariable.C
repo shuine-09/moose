@@ -44,27 +44,27 @@ CrystalPlasticityStateVariable::CrystalPlasticityStateVariable(const InputParame
 }
 
 void
-CrystalPlasticityStateVariable::initSlipSysProps(std::vector<Real> & val) const
+CrystalPlasticityStateVariable::initSlipSysProps(std::vector<Real> & val, unsigned int grn_ind) const
 {
   switch (_intvar_read_type)
   {
     case 0:
-      readInitialValueFromFile(val);
+      readInitialValueFromFile(val, grn_ind);
       break;
     case 1:
-      readInitialValueFromInline(val);
+      readInitialValueFromInline(val, grn_ind);
       break;
     default:
       mooseError("CrystalPlasticityStateVariable: Read option for initial value of internal variables is not supported.");
   }
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    if (val[i] <= 0.0)
+    if (val[_variable_size * grn_ind + i] <= 0.0)
       mooseError("CrystalPlasticityStateVariable: Value of state variables " << i  << " non positive");
 }
 
 void
-CrystalPlasticityStateVariable::readInitialValueFromFile(std::vector<Real> & val) const
+CrystalPlasticityStateVariable::readInitialValueFromFile(std::vector<Real> & val, unsigned int grn_ind) const
 {
   MooseUtils::checkFileReadable(_state_variable_file_name);
 
@@ -72,14 +72,14 @@ CrystalPlasticityStateVariable::readInitialValueFromFile(std::vector<Real> & val
   file.open(_state_variable_file_name.c_str());
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    if (!(file >> val[i]))
+    if (!(file >> val[_variable_size * grn_ind + i]))
       mooseError("Error CrystalPlasticityStateVariable: Premature end of state_variable file");
 
   file.close();
 }
 
 void
-CrystalPlasticityStateVariable::readInitialValueFromInline(std::vector<Real> & val) const
+CrystalPlasticityStateVariable::readInitialValueFromInline(std::vector<Real> & val, unsigned int grn_ind) const
 {
   if (_groups.size() <= 0)
     mooseError("CrystalPlasticityStateVariable: Error in reading initial state variable values: Specify input in .i file or in state_variable file");
@@ -97,28 +97,28 @@ CrystalPlasticityStateVariable::readInitialValueFromInline(std::vector<Real> & v
       mooseError("CrystalPlasticityStateVariable: Start index is = " << is << " should be greater than end index ie = " << ie << " in state variable read");
 
     for (unsigned int j = is; j <= ie; ++j)
-      val[j] = _group_values[i];
+      val[_variable_size * grn_ind + j] = _group_values[i];
   }
 }
 
 bool
-CrystalPlasticityStateVariable::updateStateVariable(unsigned int qp, Real dt, std::vector<Real> & val) const
+CrystalPlasticityStateVariable::updateStateVariable(unsigned int qp, Real dt, std::vector<Real> & val, unsigned int grn_ind) const
 {
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
-    val[i] = 0.0;
+    val[_variable_size * grn_ind + i] = 0.0;
     for (unsigned int j = 0; j < _num_mat_state_var_evol_rate_comps; j++)
-      val[i] += (*_mat_prop_state_var_evol_rate_comps[j])[qp][i] * dt * _scale_factor[j];
+      val[_variable_size * grn_ind + i] += (*_mat_prop_state_var_evol_rate_comps[j])[qp][_variable_size * grn_ind + i] * dt * _scale_factor[j];
   }
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
-    if (_mat_prop_state_var_old[qp][i] < _zero && val[i] < 0.0)
-      val[i] = _mat_prop_state_var_old[qp][i];
+    if (_mat_prop_state_var_old[qp][_variable_size * grn_ind + i] < _zero && val[_variable_size * grn_ind + i] < 0.0)
+      val[_variable_size * grn_ind + i] = _mat_prop_state_var_old[qp][_variable_size * grn_ind + i];
     else
-      val[i] = _mat_prop_state_var_old[qp][i] + val[i];
+      val[_variable_size * grn_ind + i] = _mat_prop_state_var_old[qp][_variable_size * grn_ind + i] + val[_variable_size * grn_ind + i];
 
-    if (val[i] < 0.0)
+    if (val[_variable_size * grn_ind + i] < 0.0)
       return false;
   }
   return true;

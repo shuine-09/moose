@@ -22,7 +22,7 @@ class CrystalPlasticitySlipResistanceGSS : public CrystalPlasticitySlipResistanc
  public:
   CrystalPlasticitySlipResistanceGSS(const InputParameters & parameters);
 
-  virtual bool calcSlipResistance(unsigned int qp, std::vector<Real> & val) const;
+  virtual bool calcSlipResistance(unsigned int qp, std::vector<Real> & val, unsigned int grn_ind = 0) const;
 
  protected:
   const MaterialProperty<std::vector<Real> > & _mat_prop_state_var;

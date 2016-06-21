@@ -64,8 +64,8 @@ FiniteStrainUObasedPolyCP::FiniteStrainUObasedPolyCP(const InputParameters & par
     _lsrch_method(getParam<MooseEnum>("line_search_method")),
     _fp(declareProperty<std::vector<RankTwoTensor> >("fp")), // Plastic deformation gradient
     _fp_old(declarePropertyOld<std::vector<RankTwoTensor> >("fp")), // Plastic deformation gradient of previous increment
-    _pk2(declareProperty<std::vector<RankTwoTensor> >("pk3")), // 2nd Piola Kirchoff Stress
-    _pk2_old(declarePropertyOld<std::vector<RankTwoTensor> >("pk3")), // 2nd Piola Kirchoff Stress of previous increment
+    _pk2(declareProperty<std::vector<RankTwoTensor> >("pk2")), // 2nd Piola Kirchoff Stress
+    _pk2_old(declarePropertyOld<std::vector<RankTwoTensor> >("pk2")), // 2nd Piola Kirchoff Stress of previous increment
     _update_rot(declareProperty<std::vector<RankTwoTensor> >("update_rot")), // Rotation tensor considering material rotation and crystal orientation
     _update_rot_old(declarePropertyOld<std::vector<RankTwoTensor> >("update_rot")),
     _lag_e(declareProperty<RankTwoTensor>("lage")), // Lagrangian strain
@@ -74,8 +74,7 @@ FiniteStrainUObasedPolyCP::FiniteStrainUObasedPolyCP(const InputParameters & par
     _crysrot(getMaterialProperty<RankTwoTensor>("crysrot")),
     _grain_tracker(getUserObject<GrainTracker>("graintracker_object")),
     _nop(coupledComponents("v")),
-    _vals(_nop),
-    _active_ops(_grain_tracker.getElementalValues(_current_elem->id()))
+    _vals(_nop)
 {
   _err_tol = false;
 
@@ -86,6 +85,20 @@ FiniteStrainUObasedPolyCP::FiniteStrainUObasedPolyCP(const InputParameters & par
   _uo_slip_resistances.resize(_num_uo_slip_resistances);
   _uo_state_vars.resize(_num_uo_state_vars);
   _uo_state_var_evol_rate_comps.resize(_num_uo_state_var_evol_rate_comps);
+
+  // resize the material properties for each userobject
+  _mat_prop_slip_rates.resize(_num_uo_slip_rates);
+  _mat_prop_slip_resistances.resize(_num_uo_slip_resistances);
+  _mat_prop_state_vars.resize(_num_uo_state_vars);
+  _mat_prop_state_vars_old.resize(_num_uo_state_vars);
+  _mat_prop_state_var_evol_rate_comps.resize(_num_uo_state_var_evol_rate_comps);
+
+  // resize local state variables
+  _state_vars_old.resize(_num_uo_state_vars);
+  _state_vars_prev.resize(_num_uo_state_vars);
+
+  // resize the flow direction
+  _flow_direction.resize(_num_uo_slip_rates);
 
   // assign the user objects
   for (unsigned int i = 0; i < _num_uo_slip_rates; ++i)
@@ -121,69 +134,48 @@ FiniteStrainUObasedPolyCP::FiniteStrainUObasedPolyCP(const InputParameters & par
 
 void FiniteStrainUObasedPolyCP::initQpStatefulProperties()
 {  
+  _active_ops = &(_grain_tracker.getElementalValues(_current_elem->id()));
+  
   /// Active number of order parameters
-  _n_active_ops = _active_ops.size();
-
+  _n_active_ops = (*_active_ops).size();
+  
   if (_n_active_ops)
   {
-    // resize the material properties for each userobject
-    _mat_prop_slip_rates.resize(_n_active_ops * _num_uo_slip_rates);
-    _mat_prop_slip_resistances.resize(_n_active_ops * _num_uo_slip_resistances);
-    _mat_prop_state_vars.resize(_n_active_ops * _num_uo_state_vars);
-    _mat_prop_state_vars_old.resize(_n_active_ops * _num_uo_state_vars);
-    _mat_prop_state_var_evol_rate_comps.resize(_n_active_ops * _num_uo_state_var_evol_rate_comps);
+    _fp[_qp].resize(_n_active_ops);
+    _fp_old[_qp].resize(_n_active_ops);
+    _pk2[_qp].resize(_n_active_ops);
+    _pk2_old[_qp].resize(_n_active_ops);
+    _update_rot[_qp].resize(_n_active_ops);
+    _update_rot_old[_qp].resize(_n_active_ops);
 
-    _flow_direction.resize(_n_active_ops);
-
-    // resize local state variables
-    _state_vars_old.resize(_n_active_ops);
-    _state_vars_prev.resize(_n_active_ops);
-
-    _fp.resize(_n_active_ops);
-    _fp_old.resize(_n_active_ops);
-    _pk2.resize(_n_active_ops);
-    _pk2_old.resize(_n_active_ops);
-    _update_rot.resize(_n_active_ops);
-    _update_rot_old.resize(_n_active_ops);
-
-    for (unsigned int i = 0; i < _num_uo_slip_rates; ++i)
-    {
-      (*_mat_prop_slip_rates[i])[_qp].resize(_uo_slip_rates[i]->variableSize() * _n_active_ops);
-      (*_flow_direction[i])[_qp].resize(_uo_slip_rates[i]->variableSize() * _n_active_ops);
-    }
-
-    for (unsigned int i = 0; i < _num_uo_slip_resistances; ++i)
-      (*_mat_prop_slip_resistances[i])[_qp].resize(_uo_slip_resistances[i]->variableSize() * _n_active_ops);
 
     for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
     {
       (*_mat_prop_state_vars[i])[_qp].resize(_uo_state_vars[i]->variableSize() * _n_active_ops);
       (*_mat_prop_state_vars_old[i])[_qp].resize(_uo_state_vars[i]->variableSize() * _n_active_ops);
-      _state_vars_old[i].resize(_uo_state_vars[i]->variableSize() * _n_active_ops);
-      _state_vars_prev[i].resize(_uo_state_vars[i]->variableSize() * _n_active_ops);
+      _state_vars_old[i].resize(_uo_state_vars[i]->variableSize());
+      _state_vars_prev[i].resize(_uo_state_vars[i]->variableSize());
     }
-
-    for (unsigned int i = 0; i < _num_uo_state_var_evol_rate_comps; ++i)
-      (*_mat_prop_state_var_evol_rate_comps[i])[_qp].resize(_uo_state_var_evol_rate_comps[i]->variableSize() * _n_active_ops);
 
     for( unsigned int op = 0; op < _n_active_ops; ++op)
     {
-      _fp[op][_qp].zero();
-      _fp[op][_qp].addIa(1.0);
+      _fp[_qp][op].zero();
+      _fp[_qp][op].addIa(1.0);
 
-      _pk2[op][_qp].zero();
-      _update_rot[op][_qp].zero();
-      _update_rot[op][_qp].addIa(1.0);
+      _pk2[_qp][op].zero();
+      _update_rot[_qp][op].zero();
+      _update_rot[_qp][op].addIa(1.0);
+    }
 
-      for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
-      {
+    for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
+    {
+      for( unsigned int op = 0; op < _n_active_ops; ++op)
         // Initializes slip system related properties
-        _uo_state_vars[i]->initSlipSysProps((*_mat_prop_state_vars[op * _num_uo_state_vars + i])[_qp]);
-        (*_mat_prop_state_vars_old[op * _num_uo_state_vars + i])[_qp] = (*_mat_prop_state_vars[op * _num_uo_state_vars + i])[_qp];
-      }
+        _uo_state_vars[i]->initSlipSysProps((*_mat_prop_state_vars[i])[_qp], op);
+      
+      (*_mat_prop_state_vars_old[i])[_qp] = (*_mat_prop_state_vars[i])[_qp];
     }
   }
-
   _stress[_qp].zero();
   _lag_e[_qp].zero();
 }
@@ -197,6 +189,29 @@ void FiniteStrainUObasedPolyCP::computeQpStress()
   // Userobject based crystal plasticity does not support face/boundary material property calculation.
   if (isBoundaryMaterial())
     return;
+
+  _active_ops = &(_grain_tracker.getElementalValues(_current_elem->id()));
+  
+  /// Active number of order parameters
+  _n_active_ops = (*_active_ops).size();
+
+  _fe.resize(_n_active_ops);
+  _fp_old_inv.resize(_n_active_ops);
+  _fp_inv.resize(_n_active_ops);
+
+  // resize non-stateful material property
+  for (unsigned int i = 0; i < _num_uo_slip_rates; ++i)
+  {
+    (*_mat_prop_slip_rates[i])[_qp].resize(_uo_slip_rates[i]->variableSize() * _n_active_ops);
+    (*_flow_direction[i])[_qp].resize(_uo_slip_rates[i]->variableSize() * _n_active_ops);
+  }
+
+  for (unsigned int i = 0; i < _num_uo_slip_resistances; ++i)
+    (*_mat_prop_slip_resistances[i])[_qp].resize(_uo_slip_resistances[i]->variableSize() * _n_active_ops);
+
+  for (unsigned int i = 0; i < _num_uo_state_var_evol_rate_comps; ++i)
+    (*_mat_prop_state_var_evol_rate_comps[i])[_qp].resize(_uo_state_var_evol_rate_comps[i]->variableSize() * _n_active_ops);
+ 
   // Depth of substepping; Limited to maximum substep iteration
   unsigned int substep_iter = 1;
   // Calculated from substep_iter as 2^substep_iter
@@ -216,11 +231,12 @@ void FiniteStrainUObasedPolyCP::computeQpStress()
     _grn_index = op;
 
     for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
-      _state_vars_old[i + _num_uo_state_vars * op] = (*_mat_prop_state_vars_old[i + _num_uo_state_vars * op])[_qp];
+      for (unsigned int j = 0; j < _uo_state_vars[i]->variableSize(); ++j)
+        _state_vars_old[i][j] = (*_mat_prop_state_vars_old[i])[_qp][_uo_state_vars[i]->variableSize() * _grn_index + j];
 
     for (unsigned int i = 0; i < _num_uo_slip_rates; ++i)
-      _uo_slip_rates[i + _num_uo_slip_rates * op]->calcFlowDirection(_qp, (*_flow_direction[i + _num_uo_state_vars * op])[_qp]);
-
+      _uo_slip_rates[i]->calcFlowDirection(_qp, (*_flow_direction[i])[_qp], _grn_index);
+   
     do
     {
       _err_tol = false;
@@ -251,16 +267,19 @@ void FiniteStrainUObasedPolyCP::computeQpStress()
 
     postSolveQp();
   }
+  
+  finalSolveSressQp();
 }
 
 void
 FiniteStrainUObasedPolyCP::preSolveQp()
 {
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
-    (*_mat_prop_state_vars[i + _num_uo_state_vars * _grn_index])[_qp] = (*_mat_prop_state_vars_old[i + _num_uo_state_vars * _grn_index])[_qp] = _state_vars_old[i + _num_uo_state_vars * _grn_index];
+    for (unsigned int j = 0; j < _uo_state_vars[i]->variableSize(); ++j)
+      (*_mat_prop_state_vars[i])[_qp][_uo_state_vars[i]->variableSize() * _grn_index + j] = (*_mat_prop_state_vars_old[i])[_qp][_uo_state_vars[i]->variableSize() * _grn_index + j] = _state_vars_old[i][j];
 
-  _pk2[_grn_index][_qp] = _pk2_old[_grn_index][_qp];
-  _fp_old_inv[_grn_index] = _fp_old[_grn_index][_qp].inverse();
+  _pk2[_qp][_grn_index] = _pk2_old[_qp][_grn_index];
+  _fp_old_inv[_grn_index] = _fp_old[_qp][_grn_index].inverse();
 }
 
 void
@@ -279,20 +298,20 @@ FiniteStrainUObasedPolyCP::finalSolveSressQp()
   Real sum_h = 0.0; 
 
   _stress[_qp].zero();
-
+  
   // Calculate elasticity tensor
   for (unsigned int op = 0; op < _n_active_ops; ++op)
   {
     // Second position contains the order parameter index
-    unsigned int op_index = _active_ops[op].second;
+    unsigned int op_index = (*_active_ops)[op].second;
 
     // Interpolation factor for elasticity tensors
     Real h = (1.0 + std::sin(libMesh::pi * ((*_vals[op_index])[_qp] - 0.5)))/2.0;
 
     // Sum all rotated elasticity tensors
     sum_h += h;
-
-    _stress[_qp] += h * _fe[op] * _pk2[op][_qp] * _fe[op].transpose()/_fe[op].det();
+    
+    _stress[_qp] += h * _fe[op] * _pk2[_qp][op] * _fe[op].transpose()/_fe[op].det();
   }
 
   _stress[_qp] /= sum_h;
@@ -317,17 +336,20 @@ FiniteStrainUObasedPolyCP::postSolveQp()
 {
   // Restores the the old stateful properties after a successful solve
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
-    (*_mat_prop_state_vars_old[i + _num_uo_state_vars * _grn_index])[_qp] = _state_vars_old[i + _num_uo_state_vars * _grn_index];
+    for (unsigned int j = 0; j < _uo_state_vars[i]->variableSize(); ++j)
+    (*_mat_prop_state_vars_old[i])[_qp][_uo_state_vars[i]->variableSize() * _grn_index + j] = _state_vars_old[i][j];
 }
 
 void
 FiniteStrainUObasedPolyCP::preSolveStatevar()
 {
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
-    (*_mat_prop_state_vars[i + _num_uo_state_vars * _grn_index])[_qp] = (*_mat_prop_state_vars_old[i + _num_uo_state_vars * _grn_index])[_qp];
+    for (unsigned int j = 0; j < _uo_state_vars[i]->variableSize(); ++j)
+      (*_mat_prop_state_vars[i])[_qp][_uo_state_vars[i]->variableSize() * _grn_index + j] = (*_mat_prop_state_vars_old[i])[_qp][_uo_state_vars[i]->variableSize() * _grn_index + j];
 
   for (unsigned int i = 0; i < _num_uo_slip_resistances; ++i)
-    _uo_slip_resistances[i + _num_uo_slip_resistances * _grn_index]->calcSlipResistance(_qp, (*_mat_prop_slip_resistances[i + _num_uo_slip_resistances * _grn_index])[_qp]);
+    for (unsigned int j = 0; j < _uo_slip_resistances[i]->variableSize(); ++j)
+      _uo_slip_resistances[i]->calcSlipResistance(_qp, (*_mat_prop_slip_resistances[i])[_qp], _grn_index);
 
   _fp_inv[_grn_index] = _fp_old_inv[_grn_index];
 }
@@ -374,13 +396,12 @@ FiniteStrainUObasedPolyCP::isStateVariablesConverged()
 
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
   {
-    unsigned int n = (*_mat_prop_state_vars[i + _num_uo_state_vars * _grn_index])[_qp].size();
-    for (unsigned j = 0; j < n; j++)
+    for (unsigned j = 0; j < _uo_state_vars[i]->variableSize(); ++ j)
     {
-      diff = std::abs((*_mat_prop_state_vars[i + _num_uo_state_vars * _grn_index])[_qp][j] - _state_vars_prev[i + _num_uo_state_vars * _grn_index][j]);// Calculate increment size
-      if (std::abs((*_mat_prop_state_vars_old[i + _num_uo_state_vars * _grn_index])[_qp][j]) < _zero_tol && diff > _zero_tol)
+      diff = std::abs((*_mat_prop_state_vars[i])[_qp][_uo_state_vars[i]->variableSize() * _grn_index + j] - _state_vars_prev[i][j]);// Calculate increment size
+      if (std::abs((*_mat_prop_state_vars_old[i])[_qp][_uo_state_vars[i]->variableSize() * _grn_index + j]) < _zero_tol && diff > _zero_tol)
         return true;
-      if (std::abs((*_mat_prop_state_vars_old[i + _num_uo_state_vars * _grn_index])[_qp][j]) >  _zero_tol && diff > _stol * std::abs((*_mat_prop_state_vars_old[i + _num_uo_state_vars * _grn_index])[_qp][j]))
+      if (std::abs((*_mat_prop_state_vars_old[i])[_qp][_uo_state_vars[i]->variableSize() * _grn_index + j]) >  _zero_tol && diff > _stol * std::abs((*_mat_prop_state_vars_old[i])[_qp][_uo_state_vars[i]->variableSize() * _grn_index + j]))
         return true;
     }
   }
@@ -391,7 +412,8 @@ void
 FiniteStrainUObasedPolyCP::postSolveStatevar()
 {
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
-    (*_mat_prop_state_vars_old[i + _num_uo_state_vars * _grn_index])[_qp] = (*_mat_prop_state_vars[i + _num_uo_state_vars * _grn_index])[_qp];
+    for (unsigned int j = 0; j < _uo_state_vars[i]->variableSize(); ++j)
+    (*_mat_prop_state_vars_old[i])[_qp][_uo_state_vars[i]->variableSize() * _grn_index + j] = (*_mat_prop_state_vars[i])[_qp][_uo_state_vars[i]->variableSize() * _grn_index + j];
 
   _fp_old_inv[_grn_index] = _fp_inv[_grn_index];
 }
@@ -426,7 +448,7 @@ FiniteStrainUObasedPolyCP::solveStress()
   {
     // Calculate stress increment
     dpk2 = - _jac.invSymm() * _resid;
-    _pk2[_grn_index][_qp] = _pk2[_grn_index][_qp] + dpk2;
+    _pk2[_qp][_grn_index] = _pk2[_qp][_grn_index] + dpk2;
     calcResidJacob();
 
     if (_err_tol)
@@ -467,26 +489,27 @@ FiniteStrainUObasedPolyCP::solveStress()
 void
 FiniteStrainUObasedPolyCP::postSolveStress()
 {
-  _fp[_grn_index][_qp] = _fp_inv[_grn_index].inverse();
+  _fp[_qp][_grn_index] = _fp_inv[_grn_index].inverse();
 }
 
 void
 FiniteStrainUObasedPolyCP::updateSlipSystemResistanceAndStateVariable()
 {
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
-    _state_vars_prev[i + _num_uo_state_vars * _grn_index] = (*_mat_prop_state_vars[i + _num_uo_state_vars * _grn_index])[_qp];
+    for (unsigned int j = 0; j < _uo_state_vars[i]->variableSize(); ++j)
+      _state_vars_prev[i][j] = (*_mat_prop_state_vars[i])[_qp][_uo_state_vars[i]->variableSize() * _grn_index + j];
 
   for (unsigned int i = 0; i < _num_uo_state_var_evol_rate_comps; ++i)
-    _uo_state_var_evol_rate_comps[i + _num_uo_state_var_evol_rate_comps * _grn_index]->calcStateVariableEvolutionRateComponent(_qp, (*_mat_prop_state_var_evol_rate_comps[i + _num_uo_state_var_evol_rate_comps * _grn_index])[_qp]);
+      _uo_state_var_evol_rate_comps[i]->calcStateVariableEvolutionRateComponent(_qp, (*_mat_prop_state_var_evol_rate_comps[i])[_qp], _grn_index);
 
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
   {
-    if (!_uo_state_vars[i + _num_uo_state_vars * _grn_index]->updateStateVariable(_qp, _dt, (*_mat_prop_state_vars[i + _num_uo_state_vars * _grn_index])[_qp]))
+    if (!_uo_state_vars[i]->updateStateVariable(_qp, _dt, (*_mat_prop_state_vars[i])[_qp], _grn_index))
       _err_tol = true;
   }
 
   for (unsigned int i = 0; i < _num_uo_slip_resistances; ++i)
-    _uo_slip_resistances[i]->calcSlipResistance(_qp, (*_mat_prop_slip_resistances[i + _num_uo_slip_resistances * _grn_index])[_qp]);
+    _uo_slip_resistances[i]->calcSlipResistance(_qp, (*_mat_prop_slip_resistances[i])[_qp], _grn_index);
 }
 
 // Calculates stress residual equation and jacobian
@@ -504,7 +527,7 @@ FiniteStrainUObasedPolyCP::getSlipRates()
 {
   for (unsigned int i = 0; i < _num_uo_slip_rates; ++i)
   {
-    if (!_uo_slip_rates[i]->calcSlipRate(_qp, _dt, (*_mat_prop_slip_rates[i + _num_uo_slip_rates * _grn_index])[_qp]))
+    if (!_uo_slip_rates[i]->calcSlipRate(_qp, _dt, (*_mat_prop_slip_rates[i])[_qp], _grn_index))
     {
       _err_tol = true;
       return;
@@ -529,7 +552,7 @@ FiniteStrainUObasedPolyCP::calcResidual()
 
   for (unsigned int i = 0; i < _num_uo_slip_rates; ++i)
     for (unsigned int j = 0; j < _uo_slip_rates[i]->variableSize(); ++j)
-      eqv_slip_incr += (*_flow_direction[i + _num_uo_slip_rates * _grn_index])[_qp][j] * (*_mat_prop_slip_rates[i + _num_uo_slip_rates * _grn_index])[_qp][j] * _dt;
+      eqv_slip_incr += (*_flow_direction[i])[_qp][_uo_slip_rates[i]->variableSize() * _grn_index +j] * (*_mat_prop_slip_rates[i])[_qp][_uo_slip_rates[i]->variableSize() * _grn_index + j] * _dt;
 
   eqv_slip_incr = iden - eqv_slip_incr;
   _fp_inv[_grn_index] = _fp_old_inv[_grn_index] * eqv_slip_incr;
@@ -541,7 +564,7 @@ FiniteStrainUObasedPolyCP::calcResidual()
 
   pk2_new = _elasticity_tensor[_qp] * ee;
 
-  _resid = _pk2[_grn_index][_qp] - pk2_new;
+  _resid = _pk2[_qp][_grn_index] - pk2_new;
 }
 
 void
@@ -568,11 +591,11 @@ FiniteStrainUObasedPolyCP::calcJacobian()
     std::vector<RankTwoTensor> dtaudpk2(nss), dfpinvdslip(nss);
     std::vector<Real> dslipdtau;
     dslipdtau.resize(nss);
-    _uo_slip_rates[i]->calcSlipRateDerivative(_qp, _dt, dslipdtau);
+    _uo_slip_rates[i]->calcSlipRateDerivative(_qp, _dt, dslipdtau, _grn_index);
     for (unsigned int j = 0; j < nss; j++)
     {
-      dtaudpk2[j] = (*_flow_direction[i + _num_uo_slip_rates * _grn_index])[_qp][j];
-      dfpinvdslip[j] = - _fp_old_inv[_grn_index] * (*_flow_direction[i + _num_uo_slip_rates * _grn_index])[_qp][j];
+      dtaudpk2[j] = (*_flow_direction[i])[_qp][nss * _grn_index + j];
+      dfpinvdslip[j] = - _fp_old_inv[_grn_index] * (*_flow_direction[i])[_qp][nss * _grn_index + j];
     }
 
     for (unsigned int j = 0; j < nss; j++)
@@ -604,7 +627,7 @@ FiniteStrainUObasedPolyCP::elastoPlasticTangentModuli()
   for (unsigned int op = 0; op < _n_active_ops; ++op)
   {
     // Second position contains the order parameter index
-    unsigned int op_index = _active_ops[op].second;
+    unsigned int op_index = (*_active_ops)[op].second;
 
     // Interpolation factor for elasticity tensors
     Real h = (1.0 + std::sin(libMesh::pi * ((*_vals[op_index])[_qp] - 0.5)))/2.0;
@@ -612,7 +635,6 @@ FiniteStrainUObasedPolyCP::elastoPlasticTangentModuli()
     // Sum all rotated elasticity tensors
     sum_h += h;
 
-    _stress[_qp] += h * _fe[op] * _pk2[op][_qp] * _fe[op].transpose()/_fe[op].det();
     RankFourTensor tan_mod;
     RankTwoTensor pk2fet, fepk2;
     RankFourTensor deedfe, dsigdpk2dfe, dfedf;
@@ -628,8 +650,8 @@ FiniteStrainUObasedPolyCP::elastoPlasticTangentModuli()
 
     dsigdpk2dfe = _fe[op].mixedProductIkJl(_fe[op]) * _elasticity_tensor[_qp] * deedfe;
 
-    pk2fet = _pk2[op][_qp] * _fe[op].transpose();
-    fepk2 = _fe[op] * _pk2[op][_qp];
+    pk2fet = _pk2[_qp][op] * _fe[op].transpose();
+    fepk2 = _fe[op] * _pk2[_qp][op];
 
     for (unsigned int i = 0; i < LIBMESH_DIM; ++i)
       for (unsigned int j = 0; j < LIBMESH_DIM; ++j)
@@ -675,9 +697,9 @@ FiniteStrainUObasedPolyCP::lineSearchUpdate(const Real rnorm_prev, const RankTwo
 
       do
       {
-        _pk2[_grn_index][_qp] = _pk2[_grn_index][_qp] - step * dpk2;
+        _pk2[_qp][_grn_index] = _pk2[_qp][_grn_index] - step * dpk2;
         step /= 2.0;
-        _pk2[_grn_index][_qp] = _pk2[_grn_index][_qp] + step * dpk2;
+        _pk2[_qp][_grn_index] = _pk2[_qp][_grn_index] + step * dpk2;
 
         calcResidual();
         rnorm = _resid.L2norm();
@@ -700,11 +722,11 @@ FiniteStrainUObasedPolyCP::lineSearchUpdate(const Real rnorm_prev, const RankTwo
       calcResidual();
       Real s_b = _resid.doubleContraction(dpk2);
       Real rnorm1 = _resid.L2norm();
-      _pk2[_grn_index][_qp] = _pk2[_grn_index][_qp] - dpk2;
+      _pk2[_qp][_grn_index] = _pk2[_qp][_grn_index] - dpk2;
       calcResidual();
       Real s_a = _resid.doubleContraction(dpk2);
       Real rnorm0 = _resid.L2norm();
-      _pk2[_grn_index][_qp] = _pk2[_grn_index][_qp] + dpk2;
+      _pk2[_qp][_grn_index] = _pk2[_qp][_grn_index] + dpk2;
 
       if ((rnorm1/rnorm0) < _lsrch_tol || s_a*s_b > 0){
         calcResidual();
@@ -713,9 +735,9 @@ FiniteStrainUObasedPolyCP::lineSearchUpdate(const Real rnorm_prev, const RankTwo
 
       while ((rnorm/rnorm0) > _lsrch_tol && count < _lsrch_max_iter)
       {
-        _pk2[_grn_index][_qp] = _pk2[_grn_index][_qp] - step*dpk2;
+        _pk2[_qp][_grn_index] = _pk2[_qp][_grn_index] - step*dpk2;
         step = 0.5 * (step_b + step_a);
-        _pk2[_grn_index][_qp] = _pk2[_grn_index][_qp] + step*dpk2;
+        _pk2[_qp][_grn_index] = _pk2[_qp][_grn_index] + step*dpk2;
         calcResidual();
         s_m = _resid.doubleContraction(dpk2);
         rnorm = _resid.L2norm();

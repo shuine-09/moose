@@ -280,7 +280,7 @@ protected:
   std::vector<const VariableValue *> _vals;
 
   /// Active order parameters
-  const std::vector<std::pair<unsigned int, unsigned int> > & _active_ops;
+  const std::vector<std::pair<unsigned int, unsigned int> > * _active_ops;
 
   /// Active number of order parameters
   unsigned int _n_active_ops;

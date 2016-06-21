@@ -18,7 +18,7 @@ InputParameters validParams<CrystalPlasticitySlipRateGSS>()
 CrystalPlasticitySlipRateGSS::CrystalPlasticitySlipRateGSS(const InputParameters & parameters) :
     CrystalPlasticitySlipRate(parameters),
     _mat_prop_state_var(getMaterialProperty<std::vector<Real> >(parameters.get<std::string>("uo_state_var_name"))),
-    _pk2(getMaterialPropertyByName<RankTwoTensor>("pk2")),
+    _pk2(getMaterialPropertyByName<std::vector<RankTwoTensor> >("pk2")),
     _a0(_variable_size),
     _xm(_variable_size),
     _flow_direction(getMaterialProperty<std::vector<RankTwoTensor> >(_name + "_flow_direction"))
@@ -102,7 +102,7 @@ CrystalPlasticitySlipRateGSS::getFlowRateParams()
 }
 
 void
-CrystalPlasticitySlipRateGSS::calcFlowDirection(unsigned int qp, std::vector<RankTwoTensor> & flow_direction) const
+CrystalPlasticitySlipRateGSS::calcFlowDirection(unsigned int qp, std::vector<RankTwoTensor> & flow_direction, unsigned int grn_ind) const
 {
   DenseVector<Real> mo(LIBMESH_DIM*_variable_size),no(LIBMESH_DIM*_variable_size);
 
@@ -128,24 +128,24 @@ CrystalPlasticitySlipRateGSS::calcFlowDirection(unsigned int qp, std::vector<Ran
   for (unsigned int i = 0; i < _variable_size; ++i)
     for (unsigned int j = 0; j < LIBMESH_DIM; ++j)
       for (unsigned int k = 0; k < LIBMESH_DIM; ++k)
-        flow_direction[i](j,k) = mo(i*LIBMESH_DIM+j) * no(i*LIBMESH_DIM+k);
+        flow_direction[_variable_size * grn_ind + i](j,k) = mo(i*LIBMESH_DIM+j) * no(i*LIBMESH_DIM+k);
 }
 
 bool
-CrystalPlasticitySlipRateGSS::calcSlipRate(unsigned int qp, Real dt, std::vector<Real> & val) const
+CrystalPlasticitySlipRateGSS::calcSlipRate(unsigned int qp, Real dt, std::vector<Real> & val, unsigned int grn_ind) const
 {
   DenseVector<Real> tau(_variable_size);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    tau(i) = _pk2[qp].doubleContraction(_flow_direction[qp][i]);
+    tau(i) = _pk2[qp][grn_ind].doubleContraction(_flow_direction[qp][_variable_size * grn_ind + i]);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
-    val[i] = _a0(i) * std::pow(std::abs(tau(i) / _mat_prop_state_var[qp][i]), 1.0 / _xm(i)) * copysign(1.0, tau(i));
-    if (std::abs(val[i] * dt) > _slip_incr_tol)
+    val[_variable_size * grn_ind + i] = _a0(i) * std::pow(std::abs(tau(i) / _mat_prop_state_var[qp][_variable_size * grn_ind + i]), 1.0 / _xm(i)) * copysign(1.0, tau(i));
+    if (std::abs(val[_variable_size * grn_ind + i] * dt) > _slip_incr_tol)
     {
 #ifdef DEBUG
-      mooseWarning("Maximum allowable slip increment exceeded " << std::abs(val[i])*dt);
+      mooseWarning("Maximum allowable slip increment exceeded " << std::abs(val[_variable_size * grn_ind + i])*dt);
 #endif
       return false;
     }
@@ -155,15 +155,15 @@ CrystalPlasticitySlipRateGSS::calcSlipRate(unsigned int qp, Real dt, std::vector
 }
 
 bool
-CrystalPlasticitySlipRateGSS::calcSlipRateDerivative(unsigned int qp, Real /*dt*/, std::vector<Real> & val) const
+CrystalPlasticitySlipRateGSS::calcSlipRateDerivative(unsigned int qp, Real /*dt*/, std::vector<Real> & val, unsigned int grn_ind) const
 {
   DenseVector<Real> tau(_variable_size);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    tau(i) = _pk2[qp].doubleContraction(_flow_direction[qp][i]);
+    tau(i) = _pk2[qp][grn_ind].doubleContraction(_flow_direction[qp][_variable_size * grn_ind + i]);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    val[i] = _a0(i) / _xm(i) * std::pow(std::abs(tau(i) / _mat_prop_state_var[qp][i]), 1.0 / _xm(i) - 1.0) / _mat_prop_state_var[qp][i];
+    val[i] = _a0(i) / _xm(i) * std::pow(std::abs(tau(i) / _mat_prop_state_var[qp][_variable_size * grn_ind + i]), 1.0 / _xm(i) - 1.0) / _mat_prop_state_var[qp][_variable_size * grn_ind + i];
 
   return true;
 }

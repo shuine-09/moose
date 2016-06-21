@@ -23,7 +23,7 @@ class CrystalPlasticityStateVarRateComponent : public CrystalPlasticityUOBase
 public:
    CrystalPlasticityStateVarRateComponent(const InputParameters & parameters);
 
-   virtual bool calcStateVariableEvolutionRateComponent(unsigned int qp, std::vector<Real> & val) const = 0;
+   virtual bool calcStateVariableEvolutionRateComponent(unsigned int qp, std::vector<Real> & val, unsigned int grn_ind = 0) const = 0;
 };
 
 #endif // CRYSTALPLASTICITYSTATEVARRATECOMPONENT_H
