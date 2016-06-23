@@ -22,10 +22,10 @@ CrystalPlasticitySlipResistanceGSS::CrystalPlasticitySlipResistanceGSS(const Inp
 }
 
 bool
-CrystalPlasticitySlipResistanceGSS::calcSlipResistance(unsigned int qp, std::vector<Real> & val, unsigned int grn_ind) const
+CrystalPlasticitySlipResistanceGSS::calcSlipResistance(unsigned int qp, std::vector<Real> & val, unsigned int op_index) const
 {
   for (unsigned int i = 0; i < _variable_size; ++i)
-    val[_variable_size * grn_ind + i] = _mat_prop_state_var[qp][_variable_size * grn_ind + i];
+    val[_variable_size * op_index + i] = _mat_prop_state_var[qp][_variable_size * op_index + i];
 
   return true;
 }

@@ -30,7 +30,7 @@ CrystalPlasticitySlipRate::CrystalPlasticitySlipRate(const InputParameters & par
     _slip_incr_tol(getParam<Real>("slip_incr_tol")),
     _mo(_variable_size * LIBMESH_DIM),
     _no(_variable_size * LIBMESH_DIM),
-    _crysrot(getMaterialPropertyByName<RankTwoTensor>("crysrot"))
+    _crysrot(getMaterialPropertyByName<std::vector<RankTwoTensor> >("crysrot"))
 {
   getSlipSystems();
 }

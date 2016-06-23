@@ -24,7 +24,7 @@ class CrystalPlasticitySlipResistance : public CrystalPlasticityUOBase
  public:
   CrystalPlasticitySlipResistance(const InputParameters & parameters);
 
-  virtual bool calcSlipResistance(unsigned int qp, std::vector<Real> & val, unsigned int grn_ind = 0) const = 0;
+  virtual bool calcSlipResistance(unsigned int qp, std::vector<Real> & val, unsigned int op_index = 0) const = 0;
 };
 
 #endif // CRYSTALPLASTICITYSLIPRESISTANCE_H

@@ -22,13 +22,13 @@ class CrystalPlasticityStateVariable : public CrystalPlasticityUOBase
 public:
   CrystalPlasticityStateVariable(const InputParameters & parameters);
 
-  virtual bool updateStateVariable(unsigned int qp, Real dt, std::vector<Real> & val, unsigned int grn_ind = 0) const;
-  virtual void initSlipSysProps(std::vector<Real> & val, unsigned int grn_ind = 0) const;
+  virtual bool updateStateVariable(unsigned int qp, Real dt, std::vector<Real> & val, unsigned int op_index = 0) const;
+  virtual void initSlipSysProps(std::vector<Real> & val, unsigned int op_index = 0) const;
 
 protected:
-  virtual void readInitialValueFromFile(std::vector<Real> & val, unsigned int grn_ind = 0) const;
+  virtual void readInitialValueFromFile(std::vector<Real> & val, unsigned int op_index = 0) const;
 
-  virtual void readInitialValueFromInline(std::vector<Real> & val, unsigned int grn_ind = 0) const;
+  virtual void readInitialValueFromInline(std::vector<Real> & val, unsigned int op_index = 0) const;
 
   unsigned int _num_mat_state_var_evol_rate_comps;
 

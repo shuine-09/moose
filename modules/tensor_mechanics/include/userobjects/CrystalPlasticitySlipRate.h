@@ -25,9 +25,9 @@ class CrystalPlasticitySlipRate : public CrystalPlasticityUOBase
  public:
   CrystalPlasticitySlipRate(const InputParameters & parameters);
 
-  virtual void calcFlowDirection(unsigned int qp, std::vector<RankTwoTensor> & flow_direction, unsigned int grn_ind = 0) const = 0;
-  virtual bool calcSlipRate(unsigned qp, Real dt, std::vector<Real> & val, unsigned int grn_ind = 0) const = 0;
-  virtual bool calcSlipRateDerivative(unsigned qp, Real dt, std::vector<Real> & val, unsigned int grn_ind = 0) const = 0;
+  virtual void calcFlowDirection(unsigned int qp, std::vector<RankTwoTensor> & flow_direction, unsigned int op_index = 0, unsigned int op_global_ind = 0) const = 0;
+  virtual bool calcSlipRate(unsigned qp, Real dt, std::vector<Real> & val, unsigned int op_index = 0) const = 0;
+  virtual bool calcSlipRateDerivative(unsigned qp, Real dt, std::vector<Real> & val, unsigned int op_index = 0) const = 0;
 
  protected:
   virtual void getSlipSystems();
@@ -62,7 +62,7 @@ class CrystalPlasticitySlipRate : public CrystalPlasticityUOBase
   DenseVector<Real> _no;
 
   /// Crystal rotation
-  const MaterialProperty<RankTwoTensor> & _crysrot;
+  const MaterialProperty<std::vector<RankTwoTensor> > & _crysrot;
 };
 
 #endif // CRYSTALPLASTICITYSLIPRATE_H

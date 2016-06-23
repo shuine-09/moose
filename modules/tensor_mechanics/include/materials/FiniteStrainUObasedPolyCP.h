@@ -244,15 +244,15 @@ protected:
   MaterialProperty<std::vector<RankTwoTensor> > & _fp_old;
   MaterialProperty<std::vector<RankTwoTensor> > & _pk2;
   MaterialProperty<std::vector<RankTwoTensor> > & _pk2_old;
-  MaterialProperty<std::vector<RankTwoTensor> > & _update_rot;
-  MaterialProperty<std::vector<RankTwoTensor> > & _update_rot_old;
   MaterialProperty<RankTwoTensor> & _lag_e;
 
   const MaterialProperty<RankTwoTensor> & _deformation_gradient;
   const MaterialProperty<RankTwoTensor> & _deformation_gradient_old;
 
   /// Crystal rotation
-  const MaterialProperty<RankTwoTensor> & _crysrot;
+  const MaterialProperty<std::vector<RankTwoTensor> > & _crysrot;
+
+  const MaterialProperty<std::vector<RankFourTensor> > & _elastic_tensor_cp;
 
   RankTwoTensor _dfgrd_tmp;
   std::vector<RankTwoTensor> _fe, _fp_old_inv, _fp_inv;
@@ -285,8 +285,11 @@ protected:
   /// Active number of order parameters
   unsigned int _n_active_ops;
 
-  /// Grain local index
-  unsigned int _grn_index;
+  /// local order parameter index
+  unsigned int _op_local_index;
+
+  /// order parameter index
+  unsigned int _op_index;
 };
 
 #endif //FINITESTRAINUOBASEDPOLYCP_H

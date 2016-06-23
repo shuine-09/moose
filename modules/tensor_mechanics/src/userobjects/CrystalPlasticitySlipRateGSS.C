@@ -102,7 +102,7 @@ CrystalPlasticitySlipRateGSS::getFlowRateParams()
 }
 
 void
-CrystalPlasticitySlipRateGSS::calcFlowDirection(unsigned int qp, std::vector<RankTwoTensor> & flow_direction, unsigned int grn_ind) const
+CrystalPlasticitySlipRateGSS::calcFlowDirection(unsigned int qp, std::vector<RankTwoTensor> & flow_direction, unsigned int op_index, unsigned int op_global_ind) const
 {
   DenseVector<Real> mo(LIBMESH_DIM*_variable_size),no(LIBMESH_DIM*_variable_size);
 
@@ -113,14 +113,14 @@ CrystalPlasticitySlipRateGSS::calcFlowDirection(unsigned int qp, std::vector<Ran
     {
       mo(i*LIBMESH_DIM+j) = 0.0;
       for (unsigned int k = 0; k < LIBMESH_DIM; ++k)
-        mo(i*LIBMESH_DIM+j) = mo(i*LIBMESH_DIM+j) + _crysrot[qp](j,k) * _mo(i*LIBMESH_DIM+k);
+        mo(i*LIBMESH_DIM+j) = mo(i*LIBMESH_DIM+j) + _crysrot[qp][op_global_ind](j,k) * _mo(i*LIBMESH_DIM+k);
     }
 
     for (unsigned int j = 0; j < LIBMESH_DIM; ++j)
     {
       no(i*LIBMESH_DIM+j) = 0.0;
       for (unsigned int k = 0; k < LIBMESH_DIM; ++k)
-        no(i*LIBMESH_DIM+j) = no(i*LIBMESH_DIM+j) + _crysrot[qp](j,k) * _no(i*LIBMESH_DIM+k);
+        no(i*LIBMESH_DIM+j) = no(i*LIBMESH_DIM+j) + _crysrot[qp][op_global_ind](j,k) * _no(i*LIBMESH_DIM+k);
     }
   }
 
@@ -128,24 +128,24 @@ CrystalPlasticitySlipRateGSS::calcFlowDirection(unsigned int qp, std::vector<Ran
   for (unsigned int i = 0; i < _variable_size; ++i)
     for (unsigned int j = 0; j < LIBMESH_DIM; ++j)
       for (unsigned int k = 0; k < LIBMESH_DIM; ++k)
-        flow_direction[_variable_size * grn_ind + i](j,k) = mo(i*LIBMESH_DIM+j) * no(i*LIBMESH_DIM+k);
+        flow_direction[_variable_size * op_index + i](j,k) = mo(i*LIBMESH_DIM+j) * no(i*LIBMESH_DIM+k);
 }
 
 bool
-CrystalPlasticitySlipRateGSS::calcSlipRate(unsigned int qp, Real dt, std::vector<Real> & val, unsigned int grn_ind) const
+CrystalPlasticitySlipRateGSS::calcSlipRate(unsigned int qp, Real dt, std::vector<Real> & val, unsigned int op_index) const
 {
   DenseVector<Real> tau(_variable_size);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    tau(i) = _pk2[qp][grn_ind].doubleContraction(_flow_direction[qp][_variable_size * grn_ind + i]);
+    tau(i) = _pk2[qp][op_index].doubleContraction(_flow_direction[qp][_variable_size * op_index + i]);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
-    val[_variable_size * grn_ind + i] = _a0(i) * std::pow(std::abs(tau(i) / _mat_prop_state_var[qp][_variable_size * grn_ind + i]), 1.0 / _xm(i)) * copysign(1.0, tau(i));
-    if (std::abs(val[_variable_size * grn_ind + i] * dt) > _slip_incr_tol)
+    val[_variable_size * op_index + i] = _a0(i) * std::pow(std::abs(tau(i) / _mat_prop_state_var[qp][_variable_size * op_index + i]), 1.0 / _xm(i)) * copysign(1.0, tau(i));
+    if (std::abs(val[_variable_size * op_index + i] * dt) > _slip_incr_tol)
     {
 #ifdef DEBUG
-      mooseWarning("Maximum allowable slip increment exceeded " << std::abs(val[_variable_size * grn_ind + i])*dt);
+      mooseWarning("Maximum allowable slip increment exceeded " << std::abs(val[_variable_size * op_index + i])*dt);
 #endif
       return false;
     }
@@ -155,15 +155,15 @@ CrystalPlasticitySlipRateGSS::calcSlipRate(unsigned int qp, Real dt, std::vector
 }
 
 bool
-CrystalPlasticitySlipRateGSS::calcSlipRateDerivative(unsigned int qp, Real /*dt*/, std::vector<Real> & val, unsigned int grn_ind) const
+CrystalPlasticitySlipRateGSS::calcSlipRateDerivative(unsigned int qp, Real /*dt*/, std::vector<Real> & val, unsigned int op_index) const
 {
   DenseVector<Real> tau(_variable_size);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    tau(i) = _pk2[qp][grn_ind].doubleContraction(_flow_direction[qp][_variable_size * grn_ind + i]);
+    tau(i) = _pk2[qp][op_index].doubleContraction(_flow_direction[qp][_variable_size * op_index + i]);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    val[i] = _a0(i) / _xm(i) * std::pow(std::abs(tau(i) / _mat_prop_state_var[qp][_variable_size * grn_ind + i]), 1.0 / _xm(i) - 1.0) / _mat_prop_state_var[qp][_variable_size * grn_ind + i];
+    val[i] = _a0(i) / _xm(i) * std::pow(std::abs(tau(i) / _mat_prop_state_var[qp][_variable_size * op_index + i]), 1.0 / _xm(i) - 1.0) / _mat_prop_state_var[qp][_variable_size * op_index + i];
 
   return true;
 }
