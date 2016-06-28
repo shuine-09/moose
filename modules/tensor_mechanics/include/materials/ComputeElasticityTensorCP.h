@@ -34,7 +34,7 @@ protected:
   MaterialProperty<RealVectorValue> & _Euler_angles_mat_prop;
 
   /// Crystal Rotation Matrix
-  MaterialProperty<RankTwoTensor> & _crysrot;
+  MaterialProperty<std::vector<RankTwoTensor> > & _crysrot;
 
   /// Rotation matrix
   RotationTensor _R;

@@ -60,14 +60,14 @@ FiniteStrainUObasedCP::FiniteStrainUObasedCP(const InputParameters & parameters)
     _lsrch_method(getParam<MooseEnum>("line_search_method")),
     _fp(declareProperty<RankTwoTensor>("fp")), // Plastic deformation gradient
     _fp_old(declarePropertyOld<RankTwoTensor>("fp")), // Plastic deformation gradient of previous increment
-    _pk2(declareProperty<RankTwoTensor>("pk2")), // 2nd Piola Kirchoff Stress
-    _pk2_old(declarePropertyOld<RankTwoTensor>("pk2")), // 2nd Piola Kirchoff Stress of previous increment
+    _pk2(declareProperty<std::vector<RankTwoTensor> >("pk2")), // 2nd Piola Kirchoff Stress
+    _pk2_old(declarePropertyOld<std::vector<RankTwoTensor> >("pk2")), // 2nd Piola Kirchoff Stress of previous increment
     _lag_e(declareProperty<RankTwoTensor>("lage")), // Lagrangian strain
     _update_rot(declareProperty<RankTwoTensor>("update_rot")), // Rotation tensor considering material rotation and crystal orientation
     _update_rot_old(declarePropertyOld<RankTwoTensor>("update_rot")),
     _deformation_gradient(getMaterialProperty<RankTwoTensor>("deformation_gradient")),
     _deformation_gradient_old(getMaterialPropertyOld<RankTwoTensor>("deformation_gradient")),
-    _crysrot(getMaterialProperty<RankTwoTensor>("crysrot"))
+    _crysrot(getMaterialProperty<std::vector<RankTwoTensor> >("crysrot"))
 {
   _err_tol = false;
 
@@ -143,12 +143,15 @@ void FiniteStrainUObasedCP::initQpStatefulProperties()
   for (unsigned int i = 0; i < _num_uo_state_var_evol_rate_comps; ++i)
     (*_mat_prop_state_var_evol_rate_comps[i])[_qp].resize(_uo_state_var_evol_rate_comps[i]->variableSize());
 
+  _pk2[_qp].resize(1);
+  _pk2_old[_qp].resize(1);
+
   _stress[_qp].zero();
 
   _fp[_qp].zero();
   _fp[_qp].addIa(1.0);
 
-  _pk2[_qp].zero();
+  _pk2[_qp][0].zero();
 
   _lag_e[_qp].zero();
 
@@ -229,7 +232,7 @@ FiniteStrainUObasedCP::preSolveQp()
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
     (*_mat_prop_state_vars[i])[_qp] = (*_mat_prop_state_vars_old[i])[_qp] = _state_vars_old[i];
 
-  _pk2[_qp] = _pk2_old[_qp];
+  _pk2[_qp][0] = _pk2_old[_qp][0];
   _fp_old_inv = _fp_old[_qp].inverse();
 }
 
@@ -250,7 +253,7 @@ FiniteStrainUObasedCP::postSolveQp()
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
     (*_mat_prop_state_vars_old[i])[_qp] = _state_vars_old[i];
 
-  _stress[_qp] = _fe * _pk2[_qp] * _fe.transpose()/_fe.det();
+  _stress[_qp] = _fe * _pk2[_qp][0] * _fe.transpose()/_fe.det();
 
   // Calculate jacobian for preconditioner
   calcTangentModuli();
@@ -264,7 +267,7 @@ FiniteStrainUObasedCP::postSolveQp()
   RankTwoTensor rot;
   // Calculate material rotation
   _deformation_gradient[_qp].getRUDecompositionRotation(rot);
-  _update_rot[_qp] = rot * _crysrot[_qp];
+  _update_rot[_qp] = rot * _crysrot[_qp][0];
 }
 
 void
@@ -373,7 +376,7 @@ FiniteStrainUObasedCP::solveStress()
   {
     // Calculate stress increment
     dpk2 = - _jac.invSymm() * _resid;
-    _pk2[_qp] = _pk2[_qp] + dpk2;
+    _pk2[_qp][0] = _pk2[_qp][0] + dpk2;
     calcResidJacob();
 
     if (_err_tol)
@@ -488,7 +491,7 @@ FiniteStrainUObasedCP::calcResidual()
 
   pk2_new = _elasticity_tensor[_qp] * ee;
 
-  _resid = _pk2[_qp] - pk2_new;
+  _resid = _pk2[_qp][0] - pk2_new;
 }
 
 void
@@ -559,8 +562,8 @@ FiniteStrainUObasedCP::elastoPlasticTangentModuli()
 
   dsigdpk2dfe = _fe.mixedProductIkJl(_fe) * _elasticity_tensor[_qp] * deedfe;
 
-  pk2fet = _pk2[_qp] * _fe.transpose();
-  fepk2 = _fe * _pk2[_qp];
+  pk2fet = _pk2[_qp][0] * _fe.transpose();
+  fepk2 = _fe * _pk2[_qp][0];
 
   for (unsigned int i = 0; i < LIBMESH_DIM; ++i)
     for (unsigned int j = 0; j < LIBMESH_DIM; ++j)
@@ -604,9 +607,9 @@ FiniteStrainUObasedCP::lineSearchUpdate(const Real rnorm_prev, const RankTwoTens
 
       do
       {
-        _pk2[_qp] = _pk2[_qp] - step * dpk2;
+        _pk2[_qp][0] = _pk2[_qp][0] - step * dpk2;
         step /= 2.0;
-        _pk2[_qp] = _pk2[_qp] + step * dpk2;
+        _pk2[_qp][0] = _pk2[_qp][0] + step * dpk2;
 
         calcResidual();
         rnorm = _resid.L2norm();
@@ -629,11 +632,11 @@ FiniteStrainUObasedCP::lineSearchUpdate(const Real rnorm_prev, const RankTwoTens
       calcResidual();
       Real s_b = _resid.doubleContraction(dpk2);
       Real rnorm1 = _resid.L2norm();
-      _pk2[_qp] = _pk2[_qp] - dpk2;
+      _pk2[_qp][0] = _pk2[_qp][0] - dpk2;
       calcResidual();
       Real s_a = _resid.doubleContraction(dpk2);
       Real rnorm0 = _resid.L2norm();
-      _pk2[_qp] = _pk2[_qp] + dpk2;
+      _pk2[_qp][0] = _pk2[_qp][0] + dpk2;
 
       if ((rnorm1/rnorm0) < _lsrch_tol || s_a*s_b > 0){
         calcResidual();
@@ -642,9 +645,9 @@ FiniteStrainUObasedCP::lineSearchUpdate(const Real rnorm_prev, const RankTwoTens
 
       while ((rnorm/rnorm0) > _lsrch_tol && count < _lsrch_max_iter)
       {
-        _pk2[_qp] = _pk2[_qp] - step*dpk2;
+        _pk2[_qp][0] = _pk2[_qp][0] - step*dpk2;
         step = 0.5 * (step_b + step_a);
-        _pk2[_qp] = _pk2[_qp] + step*dpk2;
+        _pk2[_qp][0] = _pk2[_qp][0] + step*dpk2;
         calcResidual();
         s_m = _resid.doubleContraction(dpk2);
         rnorm = _resid.L2norm();

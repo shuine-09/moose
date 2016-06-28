@@ -20,7 +20,7 @@ ComputeElasticityTensorCP::ComputeElasticityTensorCP(const InputParameters & par
     ComputeElasticityTensor(parameters),
     _read_prop_user_object(isParamValid("read_prop_user_object") ? & getUserObject<ElementPropertyReadFile>("read_prop_user_object") : NULL),
     _Euler_angles_mat_prop(declareProperty<RealVectorValue>("Euler_angles")),
-    _crysrot(declareProperty<RankTwoTensor>("crysrot")),
+    _crysrot(declareProperty<std::vector<RankTwoTensor> >("crysrot")),
     _R(_Euler_angles)
 {
 }
@@ -41,12 +41,13 @@ ComputeElasticityTensorCP::assignEulerAngles()
 void
 ComputeElasticityTensorCP::computeQpElasticityTensor()
 {
+  _crysrot[_qp].resize(1);
   //Properties assigned at the beginning of every call to material calculation
   assignEulerAngles();
 
   _R.update(_Euler_angles_mat_prop[_qp]);
 
-  _crysrot[_qp] = _R.transpose();
+  _crysrot[_qp][0] = _R.transpose();
   _elasticity_tensor[_qp] = _Cijkl;
-  _elasticity_tensor[_qp].rotate(_crysrot[_qp]);
+  _elasticity_tensor[_qp].rotate(_crysrot[_qp][0]);
 }

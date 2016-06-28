@@ -135,7 +135,7 @@ bool
 CrystalPlasticitySlipRateGSS::calcSlipRate(unsigned int qp, Real dt, std::vector<Real> & val, unsigned int op_index) const
 {
   DenseVector<Real> tau(_variable_size);
-
+  
   for (unsigned int i = 0; i < _variable_size; ++i)
     tau(i) = _pk2[qp][op_index].doubleContraction(_flow_direction[qp][_variable_size * op_index + i]);
 

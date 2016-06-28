@@ -236,8 +236,8 @@ protected:
 
   MaterialProperty<RankTwoTensor> & _fp;
   MaterialProperty<RankTwoTensor> & _fp_old;
-  MaterialProperty<RankTwoTensor> & _pk2;
-  MaterialProperty<RankTwoTensor> & _pk2_old;
+  MaterialProperty<std::vector<RankTwoTensor> > & _pk2;
+  MaterialProperty<std::vector<RankTwoTensor> > & _pk2_old;
   MaterialProperty<RankTwoTensor> & _lag_e;
   MaterialProperty<RankTwoTensor> & _update_rot;
   MaterialProperty<RankTwoTensor> & _update_rot_old;
@@ -246,7 +246,7 @@ protected:
   const MaterialProperty<RankTwoTensor> & _deformation_gradient_old;
 
   /// Crystal rotation
-  const MaterialProperty<RankTwoTensor> & _crysrot;
+  const MaterialProperty<std::vector<RankTwoTensor> > & _crysrot;
 
   RankTwoTensor _dfgrd_tmp;
   RankTwoTensor _fe, _fp_old_inv, _fp_inv;
