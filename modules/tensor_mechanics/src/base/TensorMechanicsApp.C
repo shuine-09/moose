@@ -112,6 +112,7 @@
 
 #include "CylindricalRankTwoAux.h"
 #include "RankTwoAux.h"
+#include "RankTwoStdVectorAux.h"
 #include "RankFourAux.h"
 #include "ElasticEnergyAux.h"
 #include "AccumulateAux.h"
@@ -282,6 +283,7 @@ TensorMechanicsApp::registerObjects(Factory & factory)
 
   registerAux(CylindricalRankTwoAux);
   registerAux(RankTwoAux);
+  registerAux(RankTwoStdVectorAux);
   registerAux(RankFourAux);
   registerAux(ElasticEnergyAux);
   registerAux(AccumulateAux);

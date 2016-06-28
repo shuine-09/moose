@@ -242,6 +242,8 @@ protected:
 
   MaterialProperty<std::vector<RankTwoTensor> > & _fp;
   MaterialProperty<std::vector<RankTwoTensor> > & _fp_old;
+  MaterialProperty<std::vector<RankTwoTensor> > & _fp_cp;
+  MaterialProperty<std::vector<RankTwoTensor> > & _fp_cp_old;
   MaterialProperty<std::vector<RankTwoTensor> > & _pk2;
   MaterialProperty<std::vector<RankTwoTensor> > & _pk2_old;
   MaterialProperty<RankTwoTensor> & _lag_e;

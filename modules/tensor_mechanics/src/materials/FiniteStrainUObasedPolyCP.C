@@ -64,6 +64,8 @@ FiniteStrainUObasedPolyCP::FiniteStrainUObasedPolyCP(const InputParameters & par
     _lsrch_method(getParam<MooseEnum>("line_search_method")),
     _fp(declareProperty<std::vector<RankTwoTensor> >("fp")), // Plastic deformation gradient
     _fp_old(declarePropertyOld<std::vector<RankTwoTensor> >("fp")), // Plastic deformation gradient of previous increment
+    _fp_cp(declareProperty<std::vector<RankTwoTensor> >("fp_cp")),
+    _fp_cp_old(declarePropertyOld<std::vector<RankTwoTensor> >("fp_cp")),
     _pk2(declareProperty<std::vector<RankTwoTensor> >("pk2")), // 2nd Piola Kirchoff Stress
     _pk2_old(declarePropertyOld<std::vector<RankTwoTensor> >("pk2")), // 2nd Piola Kirchoff Stress of previous increment
     _lag_e(declareProperty<RankTwoTensor>("lage")), // Lagrangian strain
@@ -137,6 +139,9 @@ void FiniteStrainUObasedPolyCP::initQpStatefulProperties()
   
   /// Active number of order parameters
   _n_active_ops = (*_active_ops).size();
+
+  _fp_cp[_qp].resize(_nop);
+  _fp_old[_qp].resize(_nop);
 
   if (_n_active_ops)
   {
@@ -307,6 +312,8 @@ FiniteStrainUObasedPolyCP::finalSolveSressQp()
     sum_h += h;
     
     _stress[_qp] += h * _fe[op] * _pk2[_qp][op] * _fe[op].transpose()/_fe[op].det();
+
+    _fp_cp[_qp][op_index] = _fp[_qp][op];
   }
 
   _stress[_qp] /= sum_h;
