@@ -228,15 +228,18 @@ void FiniteStrainUObasedPolyCP::computeQpStress()
   {
     _op_local_index = op;
 
-    _op_index = (*_active_ops)[op].second;
+    _grn_index = (*_active_ops)[op].first;
 
     for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
       for (unsigned int j = 0; j < _uo_state_vars[i]->variableSize(); ++j)
         _state_vars_old[i][j] = (*_mat_prop_state_vars_old[i])[_qp][_uo_state_vars[i]->variableSize() * _op_local_index + j];
 
     for (unsigned int i = 0; i < _num_uo_slip_rates; ++i)
-      _uo_slip_rates[i]->calcFlowDirection(_qp, (*_flow_direction[i])[_qp], _op_local_index, _op_index);
-   
+    {
+      _uo_slip_rates[i]->calcFlowDirection(_qp, (*_flow_direction[i])[_qp], _op_local_index, _grn_index);
+      std::cout << "op_local_index = " << _op_local_index << ", op_index = " << _grn_index << std::endl;
+    }
+
     do
     {
       _err_tol = false;
@@ -559,7 +562,7 @@ FiniteStrainUObasedPolyCP::calcResidual()
   ee = ce - iden;
   ee *= 0.5;
 
-  pk2_new = _elastic_tensor_cp[_qp][_op_index] * ee;
+  pk2_new = _elastic_tensor_cp[_qp][_op_local_index] * ee;
 
   _resid = _pk2[_qp][_op_local_index] - pk2_new;
 }
@@ -598,7 +601,7 @@ FiniteStrainUObasedPolyCP::calcJacobian()
     for (unsigned int j = 0; j < nss; j++)
       dfpinvdpk2 += (dfpinvdslip[j] * dslipdtau[j] * _dt).outerProduct(dtaudpk2[j]);
   }
-  _jac = RankFourTensor::IdentityFour() - (_elastic_tensor_cp[_qp][_op_index] * deedfe * dfedfpinv * dfpinvdpk2);
+  _jac = RankFourTensor::IdentityFour() - (_elastic_tensor_cp[_qp][_op_local_index] * deedfe * dfedfpinv * dfpinvdpk2);
 }
 
 void

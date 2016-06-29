@@ -290,8 +290,8 @@ protected:
   /// local order parameter index
   unsigned int _op_local_index;
 
-  /// order parameter index
-  unsigned int _op_index;
+  /// grain index
+  unsigned int _grn_index;
 };
 
 #endif //FINITESTRAINUOBASEDPOLYCP_H

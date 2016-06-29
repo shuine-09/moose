@@ -102,9 +102,15 @@ CrystalPlasticitySlipRateGSS::getFlowRateParams()
 }
 
 void
-CrystalPlasticitySlipRateGSS::calcFlowDirection(unsigned int qp, std::vector<RankTwoTensor> & flow_direction, unsigned int op_index, unsigned int op_global_ind) const
+CrystalPlasticitySlipRateGSS::calcFlowDirection(unsigned int qp, std::vector<RankTwoTensor> & flow_direction, unsigned int op_index, unsigned int grn_ind) const
 {
   DenseVector<Real> mo(LIBMESH_DIM*_variable_size),no(LIBMESH_DIM*_variable_size);
+
+  std::cout << "size of _crysrot = " << _crysrot[qp].size() << std::endl;
+
+  std::cout << "grn_ind = " << grn_ind << std::endl;
+
+  _crysrot[qp][grn_ind].print();
 
   // Update slip direction and normal with crystal orientation
   for (unsigned int i = 0; i < _variable_size; ++i)
@@ -113,14 +119,14 @@ CrystalPlasticitySlipRateGSS::calcFlowDirection(unsigned int qp, std::vector<Ran
     {
       mo(i*LIBMESH_DIM+j) = 0.0;
       for (unsigned int k = 0; k < LIBMESH_DIM; ++k)
-        mo(i*LIBMESH_DIM+j) = mo(i*LIBMESH_DIM+j) + _crysrot[qp][op_global_ind](j,k) * _mo(i*LIBMESH_DIM+k);
+        mo(i*LIBMESH_DIM+j) = mo(i*LIBMESH_DIM+j) + _crysrot[qp][grn_ind](j,k) * _mo(i*LIBMESH_DIM+k);
     }
 
     for (unsigned int j = 0; j < LIBMESH_DIM; ++j)
     {
       no(i*LIBMESH_DIM+j) = 0.0;
       for (unsigned int k = 0; k < LIBMESH_DIM; ++k)
-        no(i*LIBMESH_DIM+j) = no(i*LIBMESH_DIM+j) + _crysrot[qp][op_global_ind](j,k) * _no(i*LIBMESH_DIM+k);
+        no(i*LIBMESH_DIM+j) = no(i*LIBMESH_DIM+j) + _crysrot[qp][grn_ind](j,k) * _no(i*LIBMESH_DIM+k);
     }
   }
 
@@ -137,8 +143,14 @@ CrystalPlasticitySlipRateGSS::calcSlipRate(unsigned int qp, Real dt, std::vector
   DenseVector<Real> tau(_variable_size);
   
   for (unsigned int i = 0; i < _variable_size; ++i)
+  {
+    std::cout << "pk2 " << std::endl;
+    _pk2[qp][op_index].print();
+    std::cout << "flow direction " << std::endl;
+    _flow_direction[qp][_variable_size*op_index + i].print();
+    std::cout << "op_index = " << op_index << ", size of flow direction = " << _flow_direction[qp].size() << std::endl;
     tau(i) = _pk2[qp][op_index].doubleContraction(_flow_direction[qp][_variable_size * op_index + i]);
-
+  }
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
     val[_variable_size * op_index + i] = _a0(i) * std::pow(std::abs(tau(i) / _mat_prop_state_var[qp][_variable_size * op_index + i]), 1.0 / _xm(i)) * copysign(1.0, tau(i));

@@ -61,7 +61,7 @@ ComputePolycrystalElasticityTensorCP::ComputePolycrystalElasticityTensorCP(const
 void
 ComputePolycrystalElasticityTensorCP::computeQpElasticityTensor()
 {
-  _crysrot[_qp].resize(_nop);
+  _crysrot[_qp].resize(_grain_num);
 
   _elastic_tensor_cp[_qp].resize(_nop);
 
@@ -107,11 +107,11 @@ ComputePolycrystalElasticityTensorCP::computeQpElasticityTensor()
   for (unsigned int op = 0; op < n_active_ops; ++op)
   {
     unsigned int grn_index = active_ops[op].first;
-    unsigned int op_index = active_ops[op].second;
+    //unsigned int op_index = active_ops[op].second;
 
-    _crysrot[_qp][op_index] = _rot_trans[grn_index];
+    _crysrot[_qp][grn_index] = _rot_trans[grn_index];
 
     // Fill in material property
-    _elastic_tensor_cp[_qp][op_index] = _C_rotated[grn_index];
+    _elastic_tensor_cp[_qp][op] = _C_rotated[grn_index];
   }
 }
