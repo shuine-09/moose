@@ -47,9 +47,9 @@ ComputePolycrystalElasticityTensorCP::ComputePolycrystalElasticityTensorCP(const
   {
     // Rotate one elasticity tensor for each grain
     RotationTensor R(_euler.getEulerAngles(grn));
-    _C_rotated[grn] = _C_unrotated;
-    _C_rotated[grn].rotate(R);
     _rot_trans[grn] = R.transpose();
+    _C_rotated[grn] = _C_unrotated;
+    _C_rotated[grn].rotate(_rot_trans[grn]);
   }
 
   // Loop over variables (ops)
@@ -61,10 +61,6 @@ ComputePolycrystalElasticityTensorCP::ComputePolycrystalElasticityTensorCP(const
 void
 ComputePolycrystalElasticityTensorCP::computeQpElasticityTensor()
 {
-  _crysrot[_qp].resize(_grain_num);
-
-  _elastic_tensor_cp[_qp].resize(_nop);
-
   // Initialize local elasticity tnesor and sum of h
   RankFourTensor local_elasticity_tensor;
 
@@ -75,13 +71,16 @@ ComputePolycrystalElasticityTensorCP::computeQpElasticityTensor()
 
   unsigned int n_active_ops= active_ops.size();
 
+  _crysrot[_qp].resize(n_active_ops);
+
+  _elastic_tensor_cp[_qp].resize(n_active_ops);
+
   if (n_active_ops < 1 && _t_step > 0)
     mooseError("No active order parameters");
 
   // Calculate elasticity tensor
   for (unsigned int op = 0; op<n_active_ops; ++op)
   {
-    // First position of the active ops contains grain number
     unsigned int grn_index = active_ops[op].first;
 
     // Second position contains the order parameter index
@@ -91,7 +90,7 @@ ComputePolycrystalElasticityTensorCP::computeQpElasticityTensor()
     Real h = (1.0 + std::sin(libMesh::pi * ((*_vals[op_index])[_qp] - 0.5)))/2.0;
 
     // Sum all rotated elasticity tensors
-    local_elasticity_tensor += _C_rotated[grn_index] * h;
+    local_elasticity_tensor += _C_rotated[op_index] * h;
     sum_h += h;
   }
 
@@ -109,7 +108,7 @@ ComputePolycrystalElasticityTensorCP::computeQpElasticityTensor()
     unsigned int grn_index = active_ops[op].first;
     //unsigned int op_index = active_ops[op].second;
 
-    _crysrot[_qp][grn_index] = _rot_trans[grn_index];
+    _crysrot[_qp][op] = _rot_trans[grn_index]; //TODO
 
     // Fill in material property
     _elastic_tensor_cp[_qp][op] = _C_rotated[grn_index];

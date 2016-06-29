@@ -39,7 +39,8 @@ InputParameters validParams<FiniteStrainUObasedPolyCP>()
   params.addRequiredParam<std::vector<UserObjectName> >("uo_state_vars", "List of names of user objects that define the state variable for this material.");
   params.addRequiredParam<std::vector<UserObjectName> >("uo_state_var_evol_rate_comps", "List of names iof user objects that define the state variable evolution rate components for this material.");
   params.addRequiredCoupledVarWithAutoBuild("v", "var_name_base", "op_num", "Array of coupled variables");
-  params.addRequiredParam<UserObjectName>("graintracker_object", "The GrainTracker UserObject to get values from."); 
+  params.addRequiredParam<UserObjectName>("graintracker_object", "The GrainTracker UserObject to get values from.");
+  params.addRequiredParam<unsigned int>("grain_num", "The total number of grains.");
   return params;
 }
 
@@ -65,7 +66,6 @@ FiniteStrainUObasedPolyCP::FiniteStrainUObasedPolyCP(const InputParameters & par
     _fp(declareProperty<std::vector<RankTwoTensor> >("fp")), // Plastic deformation gradient
     _fp_old(declarePropertyOld<std::vector<RankTwoTensor> >("fp")), // Plastic deformation gradient of previous increment
     _fp_cp(declareProperty<std::vector<RankTwoTensor> >("fp_cp")),
-    _fp_cp_old(declarePropertyOld<std::vector<RankTwoTensor> >("fp_cp")),
     _pk2(declareProperty<std::vector<RankTwoTensor> >("pk2")), // 2nd Piola Kirchoff Stress
     _pk2_old(declarePropertyOld<std::vector<RankTwoTensor> >("pk2")), // 2nd Piola Kirchoff Stress of previous increment
     _lag_e(declareProperty<RankTwoTensor>("lage")), // Lagrangian strain
@@ -75,7 +75,8 @@ FiniteStrainUObasedPolyCP::FiniteStrainUObasedPolyCP(const InputParameters & par
     _elastic_tensor_cp(getMaterialProperty<std::vector<RankFourTensor> >("elastic_tensor_cp")),
     _grain_tracker(getUserObject<GrainTracker>("graintracker_object")),
     _nop(coupledComponents("v")),
-    _vals(_nop)
+    _vals(_nop),
+    _grain_num(getParam<unsigned int>("grain_num"))
 {
   _err_tol = false;
 
@@ -136,12 +137,11 @@ FiniteStrainUObasedPolyCP::FiniteStrainUObasedPolyCP(const InputParameters & par
 void FiniteStrainUObasedPolyCP::initQpStatefulProperties()
 {  
   _active_ops = &(_grain_tracker.getElementalValues(_current_elem->id()));
-  
+
   /// Active number of order parameters
   _n_active_ops = (*_active_ops).size();
-
-  _fp_cp[_qp].resize(_nop);
-  _fp_old[_qp].resize(_nop);
+  
+  _fp_cp[_qp].resize(_grain_num);
 
   if (_n_active_ops)
   {
@@ -218,6 +218,7 @@ void FiniteStrainUObasedPolyCP::computeQpStress()
   Real dt_original = _dt;
 
   _dfgrd_tmp_old = _deformation_gradient_old[_qp];
+  
   if (_dfgrd_tmp_old.det() == 0)
     _dfgrd_tmp_old.addIa(1.0);
 
@@ -228,18 +229,17 @@ void FiniteStrainUObasedPolyCP::computeQpStress()
   {
     _op_local_index = op;
 
-    _grn_index = (*_active_ops)[op].first;
+    substep_iter = 1;
+
+    num_substep = 1;
 
     for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
       for (unsigned int j = 0; j < _uo_state_vars[i]->variableSize(); ++j)
         _state_vars_old[i][j] = (*_mat_prop_state_vars_old[i])[_qp][_uo_state_vars[i]->variableSize() * _op_local_index + j];
 
     for (unsigned int i = 0; i < _num_uo_slip_rates; ++i)
-    {
-      _uo_slip_rates[i]->calcFlowDirection(_qp, (*_flow_direction[i])[_qp], _op_local_index, _grn_index);
-      std::cout << "op_local_index = " << _op_local_index << ", op_index = " << _grn_index << std::endl;
-    }
-
+      _uo_slip_rates[i]->calcFlowDirection(_qp, (*_flow_direction[i])[_qp], _op_local_index);
+    
     do
     {
       _err_tol = false;
@@ -305,18 +305,24 @@ FiniteStrainUObasedPolyCP::finalSolveSressQp()
   // Calculate elasticity tensor
   for (unsigned int op = 0; op < _n_active_ops; ++op)
   {
+    unsigned int grn_index = (*_active_ops)[op].first;
+
     // Second position contains the order parameter index
     unsigned int op_index = (*_active_ops)[op].second;
 
     // Interpolation factor for elasticity tensors
     Real h = (1.0 + std::sin(libMesh::pi * ((*_vals[op_index])[_qp] - 0.5)))/2.0;
+    //Real h = (*_vals[op_index])[_qp];
+
+    if (h < 0.005)
+      h = 0.0;
 
     // Sum all rotated elasticity tensors
     sum_h += h;
     
     _stress[_qp] += h * _fe[op] * _pk2[_qp][op] * _fe[op].transpose()/_fe[op].det();
 
-    _fp_cp[_qp][op_index] = _fp[_qp][op];
+    _fp_cp[_qp][grn_index] = _fp[_qp][op];
   }
 
   _stress[_qp] /= sum_h;
@@ -449,6 +455,7 @@ FiniteStrainUObasedPolyCP::solveStress()
     // Calculate stress increment
     dpk2 = - _jac.invSymm() * _resid;
     _pk2[_qp][_op_local_index] = _pk2[_qp][_op_local_index] + dpk2;
+
     calcResidJacob();
 
     if (_err_tol)
@@ -624,11 +631,6 @@ FiniteStrainUObasedPolyCP::elastoPlasticTangentModuli()
   
   Real sum_h = 0.0;
 
-  _active_ops = &(_grain_tracker.getElementalValues(_current_elem->id()));
-
-  /// Active number of order parameters
-  _n_active_ops = (*_active_ops).size();
-
   for (unsigned int op = 0; op < _n_active_ops; ++op)
   {
     // Second position contains the order parameter index
@@ -636,6 +638,10 @@ FiniteStrainUObasedPolyCP::elastoPlasticTangentModuli()
 
     // Interpolation factor for elasticity tensors
     Real h = (1.0 + std::sin(libMesh::pi * ((*_vals[op_index])[_qp] - 0.5)))/2.0;
+    //Real h = (*_vals[op_index])[_qp];
+
+    if (h < 0.005)
+      h = 0.0;
 
     // Sum all rotated elasticity tensors
     sum_h += h;
@@ -653,7 +659,7 @@ FiniteStrainUObasedPolyCP::elastoPlasticTangentModuli()
           deedfe(i,j,k,j) = deedfe(i,j,k,j) + _fe[op](k,i) * 0.5;
         }
 
-    dsigdpk2dfe = _fe[op].mixedProductIkJl(_fe[op]) * _elastic_tensor_cp[_qp][op_index] * deedfe;
+    dsigdpk2dfe = _fe[op].mixedProductIkJl(_fe[op]) * _elastic_tensor_cp[_qp][op] * deedfe;
 
     pk2fet = _pk2[_qp][op] * _fe[op].transpose();
     fepk2 = _fe[op] * _pk2[_qp][op];
@@ -676,7 +682,6 @@ FiniteStrainUObasedPolyCP::elastoPlasticTangentModuli()
       for (unsigned int j = 0; j < LIBMESH_DIM; ++j)
         for (unsigned int l = 0; l < LIBMESH_DIM; ++l)
           dfedf(i,j,i,l) =  _fp_inv[op](l,j);
-
 
     _Jacobian_mult[_qp] += tan_mod * dfedf * h;
   }

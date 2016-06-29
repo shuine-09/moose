@@ -243,7 +243,6 @@ protected:
   MaterialProperty<std::vector<RankTwoTensor> > & _fp;
   MaterialProperty<std::vector<RankTwoTensor> > & _fp_old;
   MaterialProperty<std::vector<RankTwoTensor> > & _fp_cp;
-  MaterialProperty<std::vector<RankTwoTensor> > & _fp_cp_old;
   MaterialProperty<std::vector<RankTwoTensor> > & _pk2;
   MaterialProperty<std::vector<RankTwoTensor> > & _pk2_old;
   MaterialProperty<RankTwoTensor> & _lag_e;
@@ -272,9 +271,6 @@ protected:
   /// Grain tracker object
   const GrainTracker & _grain_tracker;
   
-  /// Number of grains
-  unsigned int _grain_num;
-
   /// Number of order parameters
   unsigned int _nop;
 
@@ -290,8 +286,8 @@ protected:
   /// local order parameter index
   unsigned int _op_local_index;
 
-  /// grain index
-  unsigned int _grn_index;
+  /// number of grains
+  unsigned int _grain_num;
 };
 
 #endif //FINITESTRAINUOBASEDPOLYCP_H
