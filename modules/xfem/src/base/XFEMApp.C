@@ -20,6 +20,8 @@
 #include "XFEMAction.h"
 #include "XFEMSingleVariableConstraint.h"
 #include "XFEMPressure.h"
+#include "HeatFluxMaterial.h"
+#include "XFEMHeatTransferConstraint.h"
 
 template<>
 InputParameters validParams<XFEMApp>()
@@ -70,6 +72,7 @@ XFEMApp::registerObjects(Factory & factory)
 
   //Constraints
   registerConstraint(XFEMSingleVariableConstraint);
+  registerConstraint(XFEMHeatTransferConstraint);
 
   //UserObjects
   registerUserObject(XFEMMarkerUserObject);
@@ -77,6 +80,9 @@ XFEMApp::registerObjects(Factory & factory)
 
   //DiracKernels
   registerDiracKernel(XFEMPressure);
+
+  //Materials
+  registerMaterial(HeatFluxMaterial);
 }
 
 // External entry point for dynamic syntax association

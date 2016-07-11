@@ -1228,6 +1228,8 @@ NonlinearSystem::constraintResiduals(NumericVector<Number> & residual, bool disp
           ec->subProblem().prepareShapes(ec->variable().number(), tid);
           ec->subProblem().prepareNeighborShapes(ec->variable().number(), tid);
 
+          _fe_problem.reinitMaterials(elem1->subdomain_id(), tid, /*swap_stateful=*/false);
+
           ec->reinit(info);
           ec->computeResidual();
           _fe_problem.cacheResidual(tid);
@@ -1808,6 +1810,8 @@ NonlinearSystem::constraintJacobians(SparseMatrix<Number> & jacobian, bool displ
 
           ec->subProblem().prepareShapes(ec->variable().number(), tid);
           ec->subProblem().prepareNeighborShapes(ec->variable().number(), tid);
+
+          _fe_problem.reinitMaterials(elem1->subdomain_id(), tid, /*swap_stateful=*/false);
 
           ec->reinit(info);
           ec->computeJacobian();
