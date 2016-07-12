@@ -21,6 +21,7 @@
 #include "XFEMSingleVariableConstraint.h"
 #include "XFEMPressure.h"
 #include "HeatFluxMaterial.h"
+#include "StatefulHeatFluxMaterial.h"
 #include "XFEMHeatTransferConstraint.h"
 
 template<>
@@ -83,6 +84,7 @@ XFEMApp::registerObjects(Factory & factory)
 
   //Materials
   registerMaterial(HeatFluxMaterial);
+  registerMaterial(StatefulHeatFluxMaterial);
 }
 
 // External entry point for dynamic syntax association

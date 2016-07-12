@@ -16,13 +16,15 @@ template<>
 InputParameters validParams<XFEMHeatTransferConstraint>()
 {
   InputParameters params = validParams<ElemElemConstraint>();
+  params.set<Moose::MaterialDataType>("_material_data_type") = Moose::DIRAC_MATERIAL_DATA;
   return params;
 }
 
 XFEMHeatTransferConstraint::XFEMHeatTransferConstraint(const InputParameters & parameters) :
     ElemElemConstraint(parameters),
     MaterialPropertyInterface(this),
-    _heat_flux(getMaterialProperty<Real>("heatflux"))
+    _heat_flux(getMaterialProperty<Real>("heatflux")),
+    _heat_flux_old(getMaterialPropertyOld<Real>("heatflux"))
 {
 }
 
@@ -43,6 +45,7 @@ XFEMHeatTransferConstraint::computeQpResidual(Moose::DGResidualType type)
   Real r = 0;
 
   std::cout << "heat_flux[" << _qp << "] = " << _heat_flux[_qp] << std::endl;
+  std::cout << "heat_flux_old[" << _qp << "] = " << _heat_flux_old[_qp] << std::endl;
 
   switch (type)
   {

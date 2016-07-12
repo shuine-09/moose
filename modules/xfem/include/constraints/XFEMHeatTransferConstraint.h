@@ -48,6 +48,7 @@ protected:
 
   const MaterialProperty<Real> & _heat_flux;
 
+  const MaterialProperty<Real> & _heat_flux_old;
 };
 
 #endif /* XFEMHEATTRANSFERCONSTRAINT_H_ */
