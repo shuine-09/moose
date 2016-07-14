@@ -1838,15 +1838,26 @@ FEProblem::addMaterial(const std::string & mat_name, const std::string & name, I
         MooseSharedPointer<Material> dirac_material = _factory.create<Material>(mat_name, object_name, current_parameters, tid);
         // Store the material objects
         _all_materials.addObjects(material, neighbor_material, face_material, dirac_material, tid);
+        
+        MooseObjectParameterName dirac_name(MooseObjectName("Material", dirac_material->name()), "enabled");
+        _app.getInputParameterWarehouse().addControllableParameterConnection(name, dirac_name);
+        
+        if (discrete)
+          _discrete_materials.addObjects(material, neighbor_material, face_material, dirac_material, tid);
+        else
+          _materials.addObjects(material, neighbor_material, face_material, dirac_material, tid);
       }
-
-      // Store the material objects
-      _all_materials.addObjects(material, neighbor_material, face_material, tid);
-
-      if (discrete)
-        _discrete_materials.addObjects(material, neighbor_material, face_material, dirac_material, tid);
       else
-        _materials.addObjects(material, neighbor_material, face_material, dirac_material, tid);
+      {
+        // Store the material objects
+        _all_materials.addObjects(material, neighbor_material, face_material, tid);
+
+        if (discrete)
+          _discrete_materials.addObjects(material, neighbor_material, face_material, tid);
+        else
+          _materials.addObjects(material, neighbor_material, face_material, tid);
+
+      }
 
          // link enabled parameter of face and neighbor materials
       MooseObjectParameterName name(MooseObjectName("Material", material->name()), "enabled");
@@ -1854,13 +1865,7 @@ FEProblem::addMaterial(const std::string & mat_name, const std::string & name, I
       MooseObjectParameterName neighbor_name(MooseObjectName("Material", neighbor_material->name()), "enabled");
       _app.getInputParameterWarehouse().addControllableParameterConnection(name, face_name);
       _app.getInputParameterWarehouse().addControllableParameterConnection(name, neighbor_name);
-
-      if (dirac)
-      {
-        MooseObjectParameterName dirac_name(MooseObjectName("Material", dirac_material->name()), "enabled");
-        _app.getInputParameterWarehouse().addControllableParameterConnection(name, dirac_name);
-      }
-    }
+     }
   }
 }
 

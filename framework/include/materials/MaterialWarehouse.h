@@ -73,6 +73,14 @@ MaterialWarehouse<T>::addObjects(MooseSharedPointer<T> block, MooseSharedPointer
   _dirac_materials.addObject(dirac,tid);
 }
 
+template<typename T>
+void
+MaterialWarehouse<T>::addObjects(MooseSharedPointer<T> block, MooseSharedPointer<T> neighbor, MooseSharedPointer<T> face, THREAD_ID tid /*=0*/)
+{
+  ExecuteMooseObjectWarehouse<T>::addObject(block, tid);
+  _neighbor_materials.addObject(neighbor, tid);
+  _face_materials.addObject(face, tid);
+}
 
 template<typename T>
 const ExecuteMooseObjectWarehouse<T> &
