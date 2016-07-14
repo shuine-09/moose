@@ -23,6 +23,7 @@
 #include "HeatFluxMaterial.h"
 #include "StatefulHeatFluxMaterial.h"
 #include "XFEMHeatTransferConstraint.h"
+#include "XFEMDisplacementConstraint.h"
 
 template<>
 InputParameters validParams<XFEMApp>()
@@ -74,6 +75,7 @@ XFEMApp::registerObjects(Factory & factory)
   //Constraints
   registerConstraint(XFEMSingleVariableConstraint);
   registerConstraint(XFEMHeatTransferConstraint);
+  registerConstraint(XFEMDisplacementConstraint);
 
   //UserObjects
   registerUserObject(XFEMMarkerUserObject);

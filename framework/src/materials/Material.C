@@ -33,6 +33,7 @@ InputParameters validParams<Material>()
 
   params.addParam<bool>("use_displaced_mesh", false, "Whether or not this object should use the displaced mesh for computation.  Note that in the case this is true but no displacements are provided in the Mesh block the undisplaced mesh will still be used.");
   params.addParam<bool>("compute", true, "When false MOOSE will not call compute methods on this material, compute then must be called retrieving the Material object via MaterialPropertyInterface::getMaterial and calling the computeProerties method.");
+  params.addParam<bool>("dirac", false, "Whether or not this object is a material property at DiracKernel points.");
 
   // Outputs
   params += validParams<OutputInterface>();
@@ -74,7 +75,8 @@ Material::Material(const InputParameters & parameters) :
     _tid(parameters.get<THREAD_ID>("_tid")),
     _assembly(_subproblem.assembly(_tid)),
     _bnd( (_material_data_type != Moose::BLOCK_MATERIAL_DATA) && (_material_data_type != Moose::DIRAC_MATERIAL_DATA)),
-    _neighbor(_material_data_type == Moose::NEIGHBOR_MATERIAL_DATA),
+    _neighbor(_material_data_type == Moose::NEIGHBOR_MATERIAL_DATA), 
+    _dirac(getParam<bool>("dirac")),
     _qp(std::numeric_limits<unsigned int>::max()),
     _qrule(_bnd ? _assembly.qRuleFace() : _assembly.qRule()),
     _JxW(_bnd ? _assembly.JxWFace() : _assembly.JxW()),

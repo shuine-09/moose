@@ -173,6 +173,11 @@ public:
    */
   bool isBoundaryMaterial() const { return _bnd; }
 
+  /**
+   * Returns true of the MaterialData type is Dirac Material
+   */
+  bool isDiracMaterial() const { return _dirac; }
+
 protected:
 
   /**
@@ -204,6 +209,7 @@ protected:
 
   bool _bnd;
   bool _neighbor;
+  bool _dirac;
 
   unsigned int _qp;
 

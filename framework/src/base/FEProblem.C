@@ -1797,6 +1797,7 @@ FEProblem::addMaterial(const std::string & mat_name, const std::string & name, I
     // Create the general Block/Boundary Material object
     MooseSharedPointer<Material> material = _factory.create<Material>(mat_name, name, parameters, tid);
     bool discrete = !material->getParam<bool>("compute");
+    bool dirac = material->getParam<bool>("dirac");
 
     // If the object is boundary restricted do not create the nieghbor and face objects
     if (material->boundaryRestricted())
@@ -1828,29 +1829,37 @@ FEProblem::addMaterial(const std::string & mat_name, const std::string & name, I
       object_name = name + "_neighbor";
       MooseSharedPointer<Material> neighbor_material = _factory.create<Material>(mat_name, object_name, current_parameters, tid);
 
-      // dirac material
-      current_parameters.set<Moose::MaterialDataType>("_material_data_type") = Moose::DIRAC_MATERIAL_DATA;
-      current_parameters.set<bool>("_dirac") = true;
-      object_name = name + "_dirac";
-      MooseSharedPointer<Material> dirac_material = _factory.create<Material>(mat_name, object_name, current_parameters, tid);
+      if (dirac)
+      {
+        // dirac material
+        current_parameters.set<Moose::MaterialDataType>("_material_data_type") = Moose::DIRAC_MATERIAL_DATA;
+        current_parameters.set<bool>("_dirac") = true;
+        object_name = name + "_dirac";
+        MooseSharedPointer<Material> dirac_material = _factory.create<Material>(mat_name, object_name, current_parameters, tid);
+        // Store the material objects
+        _all_materials.addObjects(material, neighbor_material, face_material, dirac_material, tid);
+      }
 
       // Store the material objects
-      _all_materials.addObjects(material, neighbor_material, face_material, dirac_material, tid);
+      _all_materials.addObjects(material, neighbor_material, face_material, tid);
 
       if (discrete)
         _discrete_materials.addObjects(material, neighbor_material, face_material, dirac_material, tid);
       else
         _materials.addObjects(material, neighbor_material, face_material, dirac_material, tid);
 
-        // link enabled parameter of face and neighbor materials
+         // link enabled parameter of face and neighbor materials
       MooseObjectParameterName name(MooseObjectName("Material", material->name()), "enabled");
       MooseObjectParameterName face_name(MooseObjectName("Material", face_material->name()), "enabled");
       MooseObjectParameterName neighbor_name(MooseObjectName("Material", neighbor_material->name()), "enabled");
-      MooseObjectParameterName dirac_name(MooseObjectName("Material", dirac_material->name()), "enabled");
       _app.getInputParameterWarehouse().addControllableParameterConnection(name, face_name);
       _app.getInputParameterWarehouse().addControllableParameterConnection(name, neighbor_name);
-      _app.getInputParameterWarehouse().addControllableParameterConnection(name, dirac_name);
 
+      if (dirac)
+      {
+        MooseObjectParameterName dirac_name(MooseObjectName("Material", dirac_material->name()), "enabled");
+        _app.getInputParameterWarehouse().addControllableParameterConnection(name, dirac_name);
+      }
     }
   }
 }

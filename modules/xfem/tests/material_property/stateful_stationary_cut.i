@@ -46,6 +46,7 @@
     block = '0'
     temp = u
     heat_transfer_coef = 1
+    dirac = true
   [../]
 []
 
