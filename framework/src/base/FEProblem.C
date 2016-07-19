@@ -1833,6 +1833,7 @@ FEProblem::addMaterial(const std::string & mat_name, const std::string & name, I
       {
         // dirac material
         current_parameters.set<Moose::MaterialDataType>("_material_data_type") = Moose::DIRAC_MATERIAL_DATA;
+        current_parameters.set<bool>("_neighbor") = false;
         current_parameters.set<bool>("_dirac") = true;
         object_name = name + "_dirac";
         MooseSharedPointer<Material> dirac_material = _factory.create<Material>(mat_name, object_name, current_parameters, tid);
@@ -1892,7 +1893,8 @@ FEProblem::prepareMaterials(SubdomainID blk_id, THREAD_ID tid)
 void
 FEProblem::reinitMaterials(SubdomainID blk_id, THREAD_ID tid, bool swap_stateful)
 {
-  if (_all_materials.hasActiveBlockObjects(blk_id, tid))
+  //if (_all_materials.hasActiveBlockObjects(blk_id, tid))
+  if (_all_materials[Moose::BLOCK_MATERIAL_DATA].hasActiveBlockObjects(blk_id, tid)) 
   {
     const Elem * & elem = _assembly[tid]->elem();
     unsigned int n_points = _assembly[tid]->qRule()->n_points();
@@ -1906,8 +1908,17 @@ FEProblem::reinitMaterials(SubdomainID blk_id, THREAD_ID tid, bool swap_stateful
     if (_discrete_materials.hasActiveBlockObjects(blk_id, tid))
       _material_data[tid]->reset(_discrete_materials.getActiveBlockObjects(blk_id, tid));
 
+    std::vector<MooseSharedPointer<Material> > mats = _all_materials[Moose::BLOCK_MATERIAL_DATA].getActiveBlockObjects(blk_id, tid);
+    std::vector<MooseSharedPointer<Material> >::iterator it = mats.begin();
+    while (it != mats.end())  
+      if ((*it)->isDiracMaterial())
+        it = mats.erase(it);
+      else
+        it++;
+
     if (_materials.hasActiveBlockObjects(blk_id, tid))
-      _material_data[tid]->reinit(_materials.getActiveBlockObjects(blk_id, tid));
+      //_material_data[tid]->reinit(_materials.getActiveBlockObjects(blk_id, tid));
+      _material_data[tid]->reinit(mats);
   }
 }
 
@@ -1922,8 +1933,11 @@ FEProblem::reinitMaterialsDirac(SubdomainID blk_id, THREAD_ID tid, bool swap_sta
     if (_dirac_material_data[tid]->nQPoints() != n_points)
       _dirac_material_data[tid]->size(n_points);
 
-    if (_dirac_material_props.needInitialized(n_points, *elem))
-      _dirac_material_props.initStatefulProps(*_dirac_material_data[tid], _all_materials[Moose::DIRAC_MATERIAL_DATA].getActiveBlockObjects(blk_id, tid), n_points, *elem);
+    if(_dirac_material_props.hasStatefulProperties())
+    {
+      if (_dirac_material_props.needInitialized(n_points, *elem))
+        _dirac_material_props.initStatefulProps(*_dirac_material_data[tid], _all_materials[Moose::DIRAC_MATERIAL_DATA].getActiveBlockObjects(blk_id, tid), n_points, *elem);
+    }
 
     if (swap_stateful && !_dirac_material_data[tid]->isSwapped())
       _dirac_material_data[tid]->swap(*elem);

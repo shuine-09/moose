@@ -22,8 +22,12 @@
 #include "XFEMPressure.h"
 #include "HeatFluxMaterial.h"
 #include "StatefulHeatFluxMaterial.h"
+#include "XFEMGapFluxMaterial.h"
 #include "XFEMHeatTransferConstraint.h"
 #include "XFEMDisplacementConstraint.h"
+
+#include "XFEMDirichletBC.h"
+#include "XFEMHeatSource.h"
 
 template<>
 InputParameters validParams<XFEMApp>()
@@ -81,12 +85,19 @@ XFEMApp::registerObjects(Factory & factory)
   registerUserObject(XFEMMarkerUserObject);
   registerUserObject(XFEMMaterialTensorMarkerUserObject);
 
+  //Kernels
+  registerKernel(XFEMHeatSource);
+
   //DiracKernels
   registerDiracKernel(XFEMPressure);
 
   //Materials
   registerMaterial(HeatFluxMaterial);
   registerMaterial(StatefulHeatFluxMaterial);
+  registerMaterial(XFEMGapFluxMaterial);
+
+  //Boundary conditions
+  registerBoundaryCondition(XFEMDirichletBC);
 }
 
 // External entry point for dynamic syntax association

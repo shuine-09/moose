@@ -11,29 +11,33 @@
 /*                                                              */
 /*            See COPYRIGHT for full restrictions               */
 /****************************************************************/
-#include "HeatFluxMaterial.h"
+
+#ifndef XFEMDIRICHLETBC_H
+#define XFEMDIRICHLETBC_H
+
+#include "NodalBC.h"
+
+class XFEMDirichletBC;
 
 template<>
-InputParameters validParams<HeatFluxMaterial>()
-{
-  InputParameters params = validParams<Material>();
-  params.addParam<Real>("heat_transfer_coef", 1.0, "heat transfer coefficient.");
-  params.addRequiredCoupledVar("temp", "Coupled Temperatrue");
-  params.set<Moose::MaterialDataType>("_material_data_type") = Moose::DIRAC_MATERIAL_DATA;
-  return params;
-}
+InputParameters validParams<XFEMDirichletBC>();
 
-HeatFluxMaterial::HeatFluxMaterial(const InputParameters & parameters) :
-    Material(parameters),
-    _mat_prop(declareProperty<Real>("heatflux")),
-    _heat_transfer_coef(getParam<Real>("heat_transfer_coef")),
-    _temp(coupledValue("temp")),
-    _temp_neighbor(coupledNeighborValue("temp"))
+/**
+ * Boundary condition of a Dirichlet type
+ *
+ * Sets the value in the node
+ */
+class XFEMDirichletBC : public NodalBC
 {
-}
+public:
+  XFEMDirichletBC(const InputParameters & parameters);
 
-void
-HeatFluxMaterial::computeQpProperties()
-{
-  _mat_prop[_qp] = _heat_transfer_coef * (_temp[_qp] - _temp_neighbor[_qp]);
-}
+protected:
+  virtual Real computeQpResidual();
+  virtual bool shouldApply();
+ 
+  /// The value for this BC
+  const Real & _value;
+};
+
+#endif /* XFEMDIRICHLETBC_H */

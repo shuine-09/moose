@@ -11,29 +11,39 @@
 /*                                                              */
 /*            See COPYRIGHT for full restrictions               */
 /****************************************************************/
-#include "HeatFluxMaterial.h"
+#ifndef XFEMGAPFLUXMATERIAL_H
+#define XFEMGAPFLUXMATERIAL_H
+
+#include "Material.h"
+#include "MaterialProperty.h"
+
+//Forward Declarations
+class XFEMGapFluxMaterial;
 
 template<>
-InputParameters validParams<HeatFluxMaterial>()
-{
-  InputParameters params = validParams<Material>();
-  params.addParam<Real>("heat_transfer_coef", 1.0, "heat transfer coefficient.");
-  params.addRequiredCoupledVar("temp", "Coupled Temperatrue");
-  params.set<Moose::MaterialDataType>("_material_data_type") = Moose::DIRAC_MATERIAL_DATA;
-  return params;
-}
+InputParameters validParams<XFEMGapFluxMaterial>();
 
-HeatFluxMaterial::HeatFluxMaterial(const InputParameters & parameters) :
-    Material(parameters),
-    _mat_prop(declareProperty<Real>("heatflux")),
-    _heat_transfer_coef(getParam<Real>("heat_transfer_coef")),
-    _temp(coupledValue("temp")),
-    _temp_neighbor(coupledNeighborValue("temp"))
+class XFEMGapFluxMaterial : public Material
 {
-}
+public:
+  XFEMGapFluxMaterial(const InputParameters & parameters);
 
-void
-HeatFluxMaterial::computeQpProperties()
-{
-  _mat_prop[_qp] = _heat_transfer_coef * (_temp[_qp] - _temp_neighbor[_qp]);
-}
+protected:
+  virtual void computeQpProperties();
+
+  MaterialProperty<Real> & _mat_prop;
+  //MaterialProperty<Real> & _mat_prop_old;
+
+  Real _heat_transfer_coef;
+  Real _gap_tolerance;
+
+  const VariableValue & _temp;
+  const VariableValue & _temp_neighbor;
+
+  const VariableValue & _disp_x;
+  const VariableValue & _disp_x_neighbor;
+  const VariableValue & _disp_y;
+  const VariableValue & _disp_y_neighbor;
+};
+
+#endif //XFEMGAPFLUXMATERIAL_H

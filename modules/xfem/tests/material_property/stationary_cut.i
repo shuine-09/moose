@@ -41,11 +41,12 @@
 []
 
 [Materials]
-  [./heat_cond]
+  [./heat_cond_dirac]
     type = HeatFluxMaterial 
     block = '0'
     temp = u
     heat_transfer_coef = 1000
+    dirac = true
   [../]
 []
 

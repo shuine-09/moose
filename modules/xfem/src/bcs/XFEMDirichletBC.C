@@ -11,29 +11,34 @@
 /*                                                              */
 /*            See COPYRIGHT for full restrictions               */
 /****************************************************************/
-#include "HeatFluxMaterial.h"
+
+#include "XFEMDirichletBC.h"
 
 template<>
-InputParameters validParams<HeatFluxMaterial>()
+InputParameters validParams<XFEMDirichletBC>()
 {
-  InputParameters params = validParams<Material>();
-  params.addParam<Real>("heat_transfer_coef", 1.0, "heat transfer coefficient.");
-  params.addRequiredCoupledVar("temp", "Coupled Temperatrue");
-  params.set<Moose::MaterialDataType>("_material_data_type") = Moose::DIRAC_MATERIAL_DATA;
-  return params;
+  InputParameters p = validParams<NodalBC>();
+  p.addRequiredParam<Real>("value", "Value of the BC");
+  return p;
 }
 
-HeatFluxMaterial::HeatFluxMaterial(const InputParameters & parameters) :
-    Material(parameters),
-    _mat_prop(declareProperty<Real>("heatflux")),
-    _heat_transfer_coef(getParam<Real>("heat_transfer_coef")),
-    _temp(coupledValue("temp")),
-    _temp_neighbor(coupledNeighborValue("temp"))
+
+XFEMDirichletBC::XFEMDirichletBC(const InputParameters & parameters) :
+  NodalBC(parameters),
+  _value(getParam<Real>("value"))
+{}
+
+Real
+XFEMDirichletBC::computeQpResidual()
 {
+  return _u[_qp] - _value;
 }
 
-void
-HeatFluxMaterial::computeQpProperties()
+bool 
+XFEMDirichletBC::shouldApply()
 {
-  _mat_prop[_qp] = _heat_transfer_coef * (_temp[_qp] - _temp_neighbor[_qp]);
+  if ((*_current_node)(1) <= 0.9)
+    return true;
+  else
+    return false;
 }

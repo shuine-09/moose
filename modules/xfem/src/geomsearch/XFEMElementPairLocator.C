@@ -49,7 +49,7 @@ XFEMElementPairLocator::reinit()
 
     if (!_use_displaced_mesh)
     {
-      ElementPairInfo new_elem_info(elem1, elem2, q_points1, q_points1, weights1, weights1, normal1, normal1);
+      ElementPairInfo new_elem_info(elem1, elem2, q_points1, q_points1, weights1, weights1, normal1, -normal1);
       _element_pair_info.insert(std::pair<std::pair<const Elem*, const Elem*>, ElementPairInfo>(*it, new_elem_info));
     }
     else
@@ -61,12 +61,14 @@ XFEMElementPairLocator::reinit()
 
       _xfem->getXFEMIntersectionInfo(elem2, plane_id, normal2, intersectionPoints2, _use_displaced_mesh);
 
+      std::reverse(std::begin(intersectionPoints2), std::end(intersectionPoints2));     
+
       if (intersectionPoints2.size() == 2)
         _xfem->getXFEMqRuleOnLine(intersectionPoints2, q_points2, weights2);
       else if (intersectionPoints2.size() > 2)
         _xfem->getXFEMqRuleOnSurface(intersectionPoints2, q_points2, weights2);
-
-      ElementPairInfo new_elem_info(elem1, elem2, q_points1, q_points2, weights1, weights2, normal1, normal2);
+         
+      ElementPairInfo new_elem_info(elem1, elem2, q_points1, q_points2, weights1, weights1, normal1, normal2);
       _element_pair_info.insert(std::pair<std::pair<const Elem*, const Elem*>, ElementPairInfo>(*it, new_elem_info));
     }
   }

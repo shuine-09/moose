@@ -23,8 +23,7 @@ InputParameters validParams<XFEMHeatTransferConstraint>()
 XFEMHeatTransferConstraint::XFEMHeatTransferConstraint(const InputParameters & parameters) :
     ElemElemConstraint(parameters),
     MaterialPropertyInterface(this),
-    _heat_flux(getMaterialProperty<Real>("heatflux")),
-    _heat_flux_old(getMaterialPropertyOld<Real>("heatflux"))
+    _heat_flux(getMaterialProperty<Real>("heatflux"))
 {
 }
 
@@ -44,9 +43,6 @@ XFEMHeatTransferConstraint::computeQpResidual(Moose::DGResidualType type)
 {
   Real r = 0;
 
-  std::cout << "heat_flux[" << _qp << "] = " << _heat_flux[_qp] << std::endl;
-  std::cout << "heat_flux_old[" << _qp << "] = " << _heat_flux_old[_qp] << std::endl;
-
   switch (type)
   {
     case Moose::Element:
@@ -64,31 +60,6 @@ Real
 XFEMHeatTransferConstraint::computeQpJacobian(Moose::DGJacobianType type)
 {
   Real r = 0;
-
-  /*
-  switch (type)
-  {
-    case Moose::ElementElement:
-      r += -0.5 * _grad_phi[_j][_qp] * _interface_normal * _test[_i][_qp] - _phi[_j][_qp] * 0.5 * _grad_test[_i][_qp] * _interface_normal;
-      r += _alpha * _phi[_j][_qp] * _test[_i][_qp];
-      break;
-
-    case Moose::ElementNeighbor:
-      r += -0.5 * _grad_phi_neighbor[_j][_qp] * _interface_normal * _test[_i][_qp] + _phi_neighbor[_j][_qp] * 0.5 * _grad_test[_i][_qp] * _interface_normal;
-      r -= _alpha * _phi_neighbor[_j][_qp] * _test[_i][_qp];
-      break;
-
-    case Moose::NeighborElement:
-      r += 0.5 * _grad_phi[_j][_qp] * _interface_normal * _test_neighbor[_i][_qp] - _phi[_j][_qp] * 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal;
-      r -= _alpha * _phi[_j][_qp] * _test_neighbor[_i][_qp];
-      break;
-
-    case Moose::NeighborNeighbor:
-      r += 0.5 * _grad_phi_neighbor[_j][_qp] * _interface_normal * _test_neighbor[_i][_qp] + _phi_neighbor[_j][_qp] * 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal;
-      r += _alpha * _phi_neighbor[_j][_qp] * _test_neighbor[_i][_qp];
-      break;
-  }
-  */
 
   return r;
 }

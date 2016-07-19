@@ -47,8 +47,6 @@ protected:
   Point _interface_normal;
 
   const MaterialProperty<Real> & _heat_flux;
-
-  const MaterialProperty<Real> & _heat_flux_old;
 };
 
 #endif /* XFEMHEATTRANSFERCONSTRAINT_H_ */
