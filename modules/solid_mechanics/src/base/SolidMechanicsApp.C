@@ -34,6 +34,7 @@
 #include "CrackFrontDefinition.h"
 #include "XFEMJIntegral.h"
 #include "XFEMConfigurationForce.h"
+#include "XFEMMaxHoopStress.h"
 #include "XFEMEnergyReleaseRate.h"
 #include "XFEMMeanStress.h"
 #include "XFEMMeanDirection.h"
@@ -179,6 +180,7 @@ SolidMechanicsApp::registerObjects(Factory & factory)
 
   registerUserObject(XFEMJIntegral);
   registerUserObject(XFEMConfigurationForce);
+  registerUserObject(XFEMMaxHoopStress);
   registerUserObject(XFEMEnergyReleaseRate);
   registerUserObject(XFEMMeanStress);
   registerUserObject(XFEMMeanDirection);
