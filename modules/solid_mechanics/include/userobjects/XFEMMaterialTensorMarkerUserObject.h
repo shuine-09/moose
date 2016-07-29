@@ -17,12 +17,13 @@ public:
 
 protected:
   bool _use_weibull;
-  VariableValue & _weibull;
   MaterialTensorCalculator _material_tensor_calculator;
   const MaterialProperty<SymmTensor> & _tensor;
   Real _threshold;
   bool _average;
   Real _random_range;
+
+  const MaterialProperty<Real> & _weibull_eta;
 
   virtual bool doesElementCrack(RealVectorValue &direction);
 };

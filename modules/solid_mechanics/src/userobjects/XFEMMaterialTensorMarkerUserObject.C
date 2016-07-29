@@ -24,19 +24,20 @@ InputParameters validParams<XFEMMaterialTensorMarkerUserObject>()
   params.addRequiredParam<bool>("average", "Should the tensor quantity be averaged over the quadruature points?");
   params.addParam<Real>("random_range",0.0,"Range of a uniform random distribution for the threshold");
   params.addParam<bool>("use_weibull", false,"Use weibull distribution to initiate crack?");
-  params.addCoupledVar("weibull","Weibull aux variable");
+  //params.addCoupledVar("weibull","Weibull aux variable");
   return params;
 }
 
 XFEMMaterialTensorMarkerUserObject::XFEMMaterialTensorMarkerUserObject(const InputParameters & parameters):
   XFEMMarkerUserObject(parameters),
   _use_weibull(getParam<bool>("use_weibull")),
-  _weibull(_use_weibull? coupledValue("weibull") : _zero),
+  //_weibull(_use_weibull? coupledValue("weibull") : _zero),
   _material_tensor_calculator(parameters),
   _tensor(getMaterialProperty<SymmTensor>(getParam<std::string>("tensor"))),
   _threshold(getParam<Real>("threshold")),
   _average(getParam<bool>("average")),
-  _random_range(getParam<Real>("random_range"))
+  _random_range(getParam<Real>("random_range")),
+  _weibull_eta(getMaterialProperty<Real>("weibull_eta"))
 {
   setRandomResetFrequency(EXEC_INITIAL);
 }
@@ -51,7 +52,7 @@ XFEMMaterialTensorMarkerUserObject::doesElementCrack(RealVectorValue &direction)
 
   Real perturbed_threshold = 0.0;
   if (_use_weibull) //use weibull 
-    perturbed_threshold = _weibull[0];
+    perturbed_threshold = _weibull_eta[0];
   else
     perturbed_threshold = _threshold * rnd_mult;
 

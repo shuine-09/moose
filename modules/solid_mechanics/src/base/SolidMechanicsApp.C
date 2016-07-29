@@ -38,6 +38,7 @@
 #include "XFEMEnergyReleaseRate.h"
 #include "XFEMMeanStress.h"
 #include "XFEMMeanDirection.h"
+#include "XFEMWeibullMaterial.h"
 #include "InteractionIntegral.h"
 #include "InteractionIntegralAuxFields.h"
 #include "MixedModeEquivalentK.h"
@@ -150,6 +151,7 @@ SolidMechanicsApp::registerObjects(Factory & factory)
   registerMaterial(TrussMaterial);
   registerMaterial(RateDepSmearCrackModel);
   registerMaterial(RateDepSmearIsoCrackModel);
+  registerMaterial(XFEMWeibullMaterial);
 
   registerKernel(HomogenizationKernel);
   registerKernel(SolidMechImplicitEuler);
