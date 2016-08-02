@@ -49,6 +49,7 @@ protected:
   unsigned int _crack_front_point_index;
   const MaterialProperty<ColumnMajorMatrix> & _Eshelby_tensor;
   const MaterialProperty<RealVectorValue> * _J_thermal_term_vec;
+  const MaterialProperty<Real> & _weibull_eta;
 
 private:
   unsigned int _qp;
@@ -62,6 +63,8 @@ private:
   std::vector<Point> _crack_front_points;
   std::vector<Point> _crack_directions;
   unsigned int _num_crack_front_points;
+  bool _use_weibull;
+  std::vector<Real> _weibull_at_tip;
 };
 
 template<>

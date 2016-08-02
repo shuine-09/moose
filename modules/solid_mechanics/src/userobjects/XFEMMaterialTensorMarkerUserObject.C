@@ -52,20 +52,24 @@ XFEMMaterialTensorMarkerUserObject::doesElementCrack(RealVectorValue &direction)
 
   Real perturbed_threshold = 0.0;
   if (_use_weibull) //use weibull 
-    perturbed_threshold = _weibull_eta[0];
+    perturbed_threshold = _threshold * _weibull_eta[0];
   else
     perturbed_threshold = _threshold * rnd_mult;
 
+  Real average_quantity = 0;
   if (_average)
   {
     SymmTensor average_tensor;
     for ( unsigned int qp = 0; qp < numqp; ++qp )
     {
       average_tensor += _tensor[qp];
+      average_quantity += _material_tensor_calculator.getTensorQuantity(_tensor[qp],&_q_point[0],direction);
     }
     average_tensor *= 1.0/(Real)numqp;
+    average_quantity *= 1.0/(Real)numqp;
     Real tensor_quantity = _material_tensor_calculator.getTensorQuantity(average_tensor,&_q_point[0],direction);
-    if(tensor_quantity > perturbed_threshold)
+    //if(tensor_quantity > perturbed_threshold)
+    if (average_quantity > perturbed_threshold)
       does_it_crack = true;
   }
   else

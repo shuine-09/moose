@@ -16,6 +16,7 @@ InputParameters validParams<XFEMEnergyReleaseRate>()
   params.addParam<Real>("radius_inner", "Inner radius for volume integral domain");
   params.addParam<Real>("radius_outer", "Outer radius for volume integral domain");
   params.addParam<Real>("critial_energy_release_rate", 0.0, "Critical energy release rate.");
+  params.addParam<bool>("use_weibull", false,"Use weibull distribution to initiate crack?");
   params.set<bool>("use_displaced_mesh") = false;
   return params;
 }
@@ -26,9 +27,11 @@ XFEMEnergyReleaseRate::XFEMEnergyReleaseRate(const InputParameters & parameters)
     _J_thermal_term_vec(hasMaterialProperty<RealVectorValue>("J_thermal_term_vec")?
                         &getMaterialProperty<RealVectorValue>("J_thermal_term_vec"):
                         NULL),
+    _weibull_eta(getMaterialProperty<Real>("weibull_eta")),
     _qp(0),
     _critical_energy_release_rate(getParam<Real>("critial_energy_release_rate")),
-    _mesh(_subproblem.mesh())
+    _mesh(_subproblem.mesh()),
+     _use_weibull(getParam<bool>("use_weibull"))
 {
   FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
   if (fe_problem == NULL)
@@ -54,12 +57,19 @@ XFEMEnergyReleaseRate::initialize()
   _elem_id_crack_tip.clear();
   _integral_values.clear();
 
+  _weibull_at_tip.clear();
+
   _num_crack_front_points = _xfem->num_crack_tips();
 
   _integral_values.resize(_num_crack_front_points);
+
+  _weibull_at_tip.resize(_num_crack_front_points);
   
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
+  {
     _integral_values[i] = 0.0;
+    _weibull_at_tip[i] = 0.0;
+  }
 
   _xfem->get_crack_tip_origin_and_direction(_elem_id_crack_tip, _crack_front_points, _crack_directions);
 }
@@ -143,8 +153,8 @@ XFEMEnergyReleaseRate::computeQpIntegrals(const std::vector<std::vector<Real> > 
       scalar_q += q_nodes[i] * N_shape_func[i][_qp];
     }
 
-    if (grad_of_scalar_q.size_sq() < 1.0e-10)
-      continue;
+    //if (grad_of_scalar_q.size_sq() < 1.0e-10)
+    //  continue;
 
     ColumnMajorMatrix grad_of_vector_q;
     Point crack_direction = _crack_directions[i];
@@ -180,7 +190,14 @@ XFEMEnergyReleaseRate::execute()
 {
   std::vector<Real> comp_integ = computeIntegrals();
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
+  {
     _integral_values[i] += comp_integ[i];
+    if (_current_elem == _elem_id_crack_tip[i])
+    {
+      _weibull_at_tip[i] = _weibull_eta[0];
+      break;
+    }
+  }
 }
 
 void
@@ -196,13 +213,19 @@ XFEMEnergyReleaseRate::finalize()
 {
   _xfem->clear_doesElemCrackEnergyReleaseRate();
   gatherSum(_integral_values);
+  gatherSum(_weibull_at_tip);
 
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
   {
-    std::cout << "crack front index (" << i << ") : J_Integral  = " << _integral_values[i] << std::endl;
-    std::cout << "crack extension direction =  " << _crack_directions[i] << std::endl;
-    bool does_elem_crack = _integral_values[i] > _critical_energy_release_rate;
-    //std::cout << "does elem crack = " << does_elem_crack << std::endl;
+    //std::cout << "crack front index (" << i << ") : J_Integral  = " << _integral_values[i] << std::endl;
+    //std::cout << "crack extension direction =  " << _crack_directions[i] << std::endl;
+    std::cout << "energy release rate = " << _integral_values[i] << std::endl;
+    bool does_elem_crack = false;
+    if (_use_weibull)
+      does_elem_crack = _integral_values[i] > _critical_energy_release_rate * _weibull_at_tip[i];
+    else
+      does_elem_crack = _integral_values[i] > _critical_energy_release_rate;
+    std::cout << "critical_energy_release_rate = " << _critical_energy_release_rate << ", weibull_tip = " << _weibull_at_tip[i] << " does elem crack = " << does_elem_crack << std::endl;
     _xfem->update_doesElemCrackEnergyReleaseRate(_elem_id_crack_tip[i], does_elem_crack);
   }
 }

@@ -630,20 +630,37 @@ XFEMMaxHoopStress::finalize()
     Real KII = _integral_values[i*2+1];
     std::cout << "KI = " << KI << std::endl;
     std::cout << "KII = " << KII << std::endl;
-    Real theta = 2*std::atan2(1.0/4.0*(KI/KII - std::abs(KII)/KII*std::sqrt(pow(KI/KII,2.0) + 8.0)), 1.0);
+    Real theta1 = 2*std::atan(0.25*(KI/KII + std::sqrt(pow(KI/KII,2.0) + 8.0)));
+    Real theta2 = 2*std::atan(0.25*(KI/KII - std::sqrt(pow(KI/KII,2.0) + 8.0)));
+
+    Real hoop_stress1 = KI * (3 * std::cos(theta1*0.5) + std::cos(theta1*1.5)) + KII * (-3.0*std::sin(theta1*0.5) - 3.0 * std::sin(1.5*theta1)); 
+    Real hoop_stress2 = KI * (3 * std::cos(theta2*0.5) + std::cos(theta2*1.5)) + KII * (-3.0*std::sin(theta2*0.5) - 3.0 * std::sin(1.5*theta2)); 
+
+    Real theta = 0.0;
+
+    std::cout << "hoop_stress1 = " << hoop_stress1 << ", theta1 = " << theta1 << std::endl;
+    std::cout << "hoop_stress2 = " << hoop_stress2 << ", theta2 = " << theta2 << std::endl;
+
+    if (hoop_stress1 > hoop_stress2)
+      theta = theta1;
+    else
+      theta = theta2;
 
     std::cout << "theta = " << theta << std::endl;
 
     Point crack_front_point = _crack_front_points[i];
     Point crack_direction = _crack_front_directions[i];
 
-    Real omega = std::atan2(crack_direction(1)/crack_direction(0), 1.0);
+    std::cout << "crack_direction = " << crack_direction << std::endl;
+
+    Real omega = std::atan2(crack_direction(1), crack_direction(0));
 
     std::cout << "omega = " << omega << std::endl;
 
     Point direction(std::cos(omega+theta), std::sin(omega+theta), 0.0);
     
     _xfem->update_crack_propagation_direction(_elem_id_crack_tip[i], direction);
+    std::cout << "crack front point = " << crack_front_point << std::endl;
     std::cout << "crack front index (" << i << ") : direction  = " << direction << std::endl; 
   } 
 }
