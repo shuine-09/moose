@@ -64,6 +64,7 @@ protected:
   VariableGradient & _grad_disp_x;
   VariableGradient & _grad_disp_y;
   VariableGradient & _grad_disp_z;
+  VariableGradient & _temp_grad;
 
   ColumnMajorMatrix  _aux_stress;
   ColumnMajorMatrix  _aux_disp;
@@ -83,6 +84,7 @@ private:
   std::vector<Real> _integral_values;
   Real _radius_inner;
   Real _radius_outer;
+  Real _thermal_expansion;
   MooseMesh & _mesh;
   XFEM *_xfem;
   std::map<unsigned int, const Elem* > _elem_id_crack_tip;

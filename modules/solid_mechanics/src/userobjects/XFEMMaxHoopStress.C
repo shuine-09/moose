@@ -16,12 +16,14 @@ InputParameters validParams<XFEMMaxHoopStress>()
   InputParameters params = validParams<ElementUserObject>();
   params.addParam<Real>("radius_inner", "Inner radius for volume integral domain");
   params.addParam<Real>("radius_outer", "Outer radius for volume integral domain");
+  params.addParam<Real>("thermal_expansion", 0.0, "Thermal expansion");
   params.set<bool>("use_displaced_mesh") = false;
   params.addParam<Real>("poissons_ratio", "Poisson's ratio for the material.");
   params.addParam<Real>("youngs_modulus", "Young's modulus of the material.");
   params.addCoupledVar("disp_x", "The x displacement");
   params.addCoupledVar("disp_y", "The y displacement");
   params.addCoupledVar("disp_z", "The z displacement");
+  params.addCoupledVar("temp", "Coupled Temperature");
   return params;
 }
 
@@ -36,7 +38,9 @@ XFEMMaxHoopStress::XFEMMaxHoopStress(const InputParameters & parameters):
     _grad_disp_x(coupledGradient("disp_x")),
     _grad_disp_y(coupledGradient("disp_y")),
     _grad_disp_z(parameters.get<SubProblem *>("_subproblem")->mesh().dimension() == 3 ? coupledGradient("disp_z") : _grad_zero), 
+    _temp_grad(coupledGradient("temp")),
     _qp(0),
+    _thermal_expansion(getParam<Real>("thermal_expansion")),
     _mesh(_subproblem.mesh()),
     _poissons_ratio(getParam<Real>("poissons_ratio")),
     _youngs_modulus(getParam<Real>("youngs_modulus"))
@@ -591,7 +595,20 @@ XFEMMaxHoopStress::computeQpIntegrals(const std::vector<std::vector<Real> > & N_
       // Term3 = aux stress * strain * dq_x   (= stress * aux strain * dq_x)
       Real term3 = dq(0,0) * _aux_stress.doubleContraction(strain_cf);
 
-      Real eq = term1 + term2 - term3;
+      RealVectorValue J_vec(0);
+
+      for (unsigned int j=0; j<3; ++j)
+      {
+        Real dthermstrain_dx = _temp_grad[_qp](j) * _thermal_expansion;
+        J_vec(j) = _aux_stress.tr()*dthermstrain_dx;
+      }
+
+      Real eq_thermal = 0.0;
+
+      for (unsigned int j = 0; j < 3; j++)
+        eq_thermal += crack_direction_local(j)*scalar_q*J_vec(j);
+
+      Real eq = term1 + term2 - term3 + eq_thermal;
 
       QpIntegrals[i*2 + int(*it)]   = eq;
     }
