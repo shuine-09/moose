@@ -422,6 +422,13 @@ Transient::solveStep(Real input_dt)
   {
     _console << COLOR_GREEN << " Solve Converged!" << COLOR_DEFAULT << std::endl;
 
+    if (_problem.get_xfem() != NULL)
+    {
+      _problem.computeUserObjects(EXEC_TIMESTEP_END, UserObjectWarehouse::PRE_AUX);
+      _problem.computeAuxiliaryKernels(EXEC_TIMESTEP_END);
+      _problem.computeUserObjects(EXEC_TIMESTEP_END, UserObjectWarehouse::POST_AUX);
+    }
+
     if ((_xfem_update_count < _max_xfem_update) &&
         _problem.xfemUpdateMesh())
     {
@@ -439,7 +446,8 @@ Transient::solveStep(Real input_dt)
 
       _solution_change_norm = _problem.solutionChangeNorm();
 
-      _problem.computeUserObjects(EXEC_TIMESTEP_END, UserObjectWarehouse::PRE_AUX);
+       if (_problem.get_xfem() == NULL)
+         _problem.computeUserObjects(EXEC_TIMESTEP_END, UserObjectWarehouse::PRE_AUX);
 #if 0
     // User definable callback
     if (_estimate_error)
@@ -448,8 +456,12 @@ Transient::solveStep(Real input_dt)
 
       _problem.onTimestepEnd();
 
-      _problem.computeAuxiliaryKernels(EXEC_TIMESTEP_END);
-      _problem.computeUserObjects(EXEC_TIMESTEP_END, UserObjectWarehouse::POST_AUX);
+      if (_problem.get_xfem() == NULL)
+      {
+        _problem.computeAuxiliaryKernels(EXEC_TIMESTEP_END);
+        _problem.computeUserObjects(EXEC_TIMESTEP_END, UserObjectWarehouse::POST_AUX);
+      }
+
       _problem.execTransfers(EXEC_TIMESTEP_END);
       _multiapps_converged = _problem.execMultiApps(EXEC_TIMESTEP_END, _picard_max_its == 1);
 
