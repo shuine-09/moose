@@ -122,8 +122,8 @@ XFEMEnergyReleaseRate::calcQValue(Point & node, Point & crack_front)
 std::vector<Real>
 XFEMEnergyReleaseRate::computeQpIntegrals(const std::vector<std::vector<Real> > & N_shape_func, const std::vector<std::vector<RealGradient> > & dN_shape_func)
 {
-  std::vector<Real> QpIntegrals(_num_crack_front_points*3);
-  for (unsigned int i = 0; i < _num_crack_front_points*3; i++)
+  std::vector<Real> QpIntegrals(_num_crack_front_points);
+  for (unsigned int i = 0; i < _num_crack_front_points; i++)
     QpIntegrals[i] = 0.0;
   
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
