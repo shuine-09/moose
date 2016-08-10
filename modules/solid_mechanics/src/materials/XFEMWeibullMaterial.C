@@ -38,18 +38,28 @@ XFEMWeibullMaterial::XFEMWeibullMaterial(const InputParameters & parameters)
   _xfem = fe_problem->get_xfem();
 
   // Setup the random number generation
-  setRandomResetFrequency(EXEC_TIMESTEP_BEGIN);
+  setRandomResetFrequency(EXEC_INITIAL);
 }
 
 void
 XFEMWeibullMaterial::initQpStatefulProperties()
 {
-  Real rn = getRandomReal();
   Real eta = -1.0;
-  if ( std::abs(_weibull_modulus) > 1.0e-5)
-    eta = _specimen_material_property * std::pow(_specimen_volume*std::log(rn)/(_current_elem->volume()*std::log(0.5)),1.0/(Real)_weibull_modulus);
-  _weibull_eta[_qp] = eta;
-  _weibull_eta_old[_qp] = eta;
+  if (_qp == 0)
+  {
+    if ( std::abs(_weibull_modulus) > 1.0e-5)
+    {
+      Real rn = getRandomReal();
+      _eta = _specimen_material_property * std::pow(_specimen_volume*std::log(rn)/(_current_elem->volume()*std::log(0.5)),1.0/(Real)_weibull_modulus);
+    }
+    _weibull_eta[_qp] = _eta;
+    _weibull_eta_old[_qp] = _eta;
+  }
+  else
+  {
+    _weibull_eta[_qp] = _eta;
+    _weibull_eta_old[_qp] = _eta;
+  }
 }
 
 void

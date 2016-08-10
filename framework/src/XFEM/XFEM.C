@@ -1088,12 +1088,13 @@ XFEM::mark_cut_edges_by_state(Real time)
         if (growth_direction * crack_tip_direction < 1.0e-10)
         {
           std::cout << "WJ : growth_direction = " << growth_direction << ", crack_tip_direction = " << crack_tip_direction << std::endl;
+          continue;
           growth_direction *= (-1.0);
         }
 
         Real x0 = crack_tip_origin(0);
         Real y0 = crack_tip_origin(1);
-        Real crack_growth_increment = 0.00012; //0.0001 TEST ONLY 
+        Real crack_growth_increment = 0.0001; //0.0001 TEST ONLY 
         Real x1 = x0 + crack_growth_increment * growth_direction(0);
         Real y1 = y0 + crack_growth_increment * growth_direction(1);
 

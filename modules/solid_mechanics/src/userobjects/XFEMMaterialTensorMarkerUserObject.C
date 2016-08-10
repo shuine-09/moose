@@ -67,7 +67,8 @@ XFEMMaterialTensorMarkerUserObject::doesElementCrack(RealVectorValue &direction)
     }
     average_tensor *= 1.0/(Real)numqp;
     average_quantity *= 1.0/(Real)numqp;
-    Real tensor_quantity = _material_tensor_calculator.getTensorQuantity(average_tensor,&_q_point[0],direction);
+    //std::cout << "average_quantity = " << average_quantity << ", perturbed_threshold = " << perturbed_threshold << std::endl;
+    //Real tensor_quantity = _material_tensor_calculator.getTensorQuantity(average_tensor,&_q_point[0],direction);
     //if(tensor_quantity > perturbed_threshold)
     if (average_quantity > perturbed_threshold)
       does_it_crack = true;

@@ -44,6 +44,7 @@ private:
   int _weibull_modulus;
   Real _specimen_volume;
   Real _specimen_material_property;
+  Real _eta;
 };
 
 #endif //XFEMWEIBULLMATERIAL_H

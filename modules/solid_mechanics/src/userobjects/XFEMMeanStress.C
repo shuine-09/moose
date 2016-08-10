@@ -17,13 +17,18 @@ InputParameters validParams<XFEMMeanStress>()
   params += validParams<MaterialTensorCalculator>();
   params.addRequiredParam<std::string>("tensor", "The material tensor name.");
   params.addParam<Real>("radius", "Radius for average out stress");
+  params.addParam<Real>("critical_stress", 0.0, "Critical stress.");
+  params.addParam<bool>("use_weibull", false,"Use weibull distribution to propagate crack?");
   return params;
 }
 
 XFEMMeanStress::XFEMMeanStress(const InputParameters & parameters):
     ElementUserObject(parameters),
     _material_tensor_calculator(parameters),
-    _tensor(getMaterialProperty<SymmTensor>(getParam<std::string>("tensor")))
+    _tensor(getMaterialProperty<SymmTensor>(getParam<std::string>("tensor"))),
+    _critical_stress(getParam<Real>("critical_stress")),
+    _weibull_eta(getMaterialProperty<Real>("weibull_eta")),
+    _use_weibull(getParam<bool>("use_weibull"))
 {
 
   _fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
@@ -49,7 +54,19 @@ XFEMMeanStress::initialize()
   _num_crack_front_points = _xfem->num_crack_tips();
 
   _stress_tensor.resize(_num_crack_front_points*9);
+
+  _weibull_at_tip.clear();
+  _weibull_at_tip.resize(_num_crack_front_points);
   
+  _weights.clear();
+  _weights.resize(_num_crack_front_points);
+
+  for (unsigned int i = 0; i < _num_crack_front_points; i++)
+  {  
+    _weibull_at_tip[i] = 0.0;
+    _weights[i] = 0;
+  }
+
   for (unsigned int i = 0; i < _num_crack_front_points*9; i++)
     _stress_tensor[i] = 0.0;
 
@@ -63,6 +80,7 @@ XFEMMeanStress::getStressTensor()
   std::vector<Real> StressTensor(_num_crack_front_points*9);
   for (unsigned int i = 0; i < _num_crack_front_points*9; i++)
     StressTensor[i] = 0.0;
+
 
   unsigned int numqp = _qrule->n_points();
 
@@ -81,8 +99,9 @@ XFEMMeanStress::getStressTensor()
       Real flag = _xfem->flag_qp_inside(undisplaced_elem, _q_point[qp]); //qp inside (flag = 1) or ouside (flag = 0) real domain
       Point dist_to_crack_front_vector = _q_point[qp] - crack_front;
       Real dist = std::pow(dist_to_crack_front_vector.size_sq(),0.5);
-      Real fact = (1.0-dist/_radius);
-      if (dist < _radius && flag > 0.5)
+      Real fact = 1.0/(pow(2*libMesh::pi, 1.5) * pow(_radius, 3.0)) * std::exp(-0.5 * pow(dist/_radius,2.0));
+      //Real fact = (1.0-dist/_radius);
+      if (dist < _radius * 3 && flag > 0.5)
       {
         StressTensor[i*9+0] += _tensor[qp](0,0) * fact;
         StressTensor[i*9+1] += _tensor[qp](0,1) * fact;
@@ -93,6 +112,7 @@ XFEMMeanStress::getStressTensor()
         StressTensor[i*9+6] += _tensor[qp](2,0) * fact;
         StressTensor[i*9+7] += _tensor[qp](2,1) * fact;
         StressTensor[i*9+8] += _tensor[qp](2,2) * fact;
+        _weights[i] += fact;
       }
     }
   }
@@ -105,6 +125,15 @@ XFEMMeanStress::execute()
   std::vector<Real> StressTensor = getStressTensor();
   for (unsigned int i = 0; i < _num_crack_front_points*9; i++)
     _stress_tensor[i] += StressTensor[i];
+
+  for (unsigned int i = 0; i < _num_crack_front_points; i++)
+  {
+    if (_current_elem == _elem_id_crack_tip[i])
+    {
+      _weibull_at_tip[i] = _weibull_eta[0];
+      break;
+    }
+  }
 }
 
 void
@@ -119,28 +148,42 @@ void
 XFEMMeanStress::finalize()
 {
   _xfem->clear_crack_propagation_direction();
+  _xfem->clear_doesElemCrackEnergyReleaseRate();
+
   gatherSum(_stress_tensor);
+  gatherSum(_weibull_at_tip);
+  gatherSum(_weights);
 
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
   {
     RealVectorValue direction;
     SymmTensor average_tensor;
-    average_tensor(0,0) = _stress_tensor[i*9+0];
-    average_tensor(0,1) = _stress_tensor[i*9+1];
-    average_tensor(0,2) = _stress_tensor[i*9+2];
-    average_tensor(1,0) = _stress_tensor[i*9+3];
-    average_tensor(1,1) = _stress_tensor[i*9+4];
-    average_tensor(1,2) = _stress_tensor[i*9+5];
-    average_tensor(2,0) = _stress_tensor[i*9+6];
-    average_tensor(2,1) = _stress_tensor[i*9+7];
-    average_tensor(2,2) = _stress_tensor[i*9+8];
+    std::cout << "total weight = " << _weights[i] << std::endl;
+    average_tensor(0,0) = _stress_tensor[i*9+0] / _weights[i];
+    average_tensor(0,1) = _stress_tensor[i*9+1] / _weights[i];
+    average_tensor(0,2) = _stress_tensor[i*9+2] / _weights[i];
+    average_tensor(1,0) = _stress_tensor[i*9+3] / _weights[i];
+    average_tensor(1,1) = _stress_tensor[i*9+4] / _weights[i];
+    average_tensor(1,2) = _stress_tensor[i*9+5] / _weights[i];
+    average_tensor(2,0) = _stress_tensor[i*9+6] / _weights[i];
+    average_tensor(2,1) = _stress_tensor[i*9+7] / _weights[i];
+    average_tensor(2,2) = _stress_tensor[i*9+8] / _weights[i];
     Real tensor_quantity = _material_tensor_calculator.getTensorQuantity(average_tensor,&_q_point[0],direction);
     direction /= pow(direction.size_sq(),0.5);
     Point normal(0.0,0.0,0.0);
-    normal(0) = direction(1);
-    normal(1) = -direction(0);
+    normal(0) = -direction(1);
+    normal(1) = direction(0);
+    bool does_elem_crack = false;
+    if (_use_weibull)
+      does_elem_crack = tensor_quantity > _critical_stress * _weibull_at_tip[i];
+    else
+      does_elem_crack = tensor_quantity > _critical_stress;
+
+    std::cout << "stress = " << tensor_quantity << ", weibull_tip = " << _weibull_at_tip[i] << " does elem crack = " << does_elem_crack << std::endl;
+    _xfem->update_doesElemCrackEnergyReleaseRate(_elem_id_crack_tip[i], does_elem_crack);
+
     _xfem->update_crack_propagation_direction(_elem_id_crack_tip[i], normal);
-    //std::cout << "crack front index (" << i << ") : average stress direction  = " << normal << std::endl; 
+    std::cout << "crack front index (" << i << ") : average stress direction  = " << normal << std::endl; 
   } 
 }
 
