@@ -63,7 +63,7 @@ XFEMMeanStress::initialize()
 
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
   {  
-    _weibull_at_tip[i] = 0.0;
+    _weibull_at_tip[i] = 9999.0;
     _weights[i] = 0;
   }
 
@@ -113,6 +113,15 @@ XFEMMeanStress::getStressTensor()
         StressTensor[i*9+7] += _tensor[qp](2,1) * fact;
         StressTensor[i*9+8] += _tensor[qp](2,2) * fact;
         _weights[i] += fact;
+        
+        if (dist < _radius)
+        {
+          if (_weibull_eta[qp] < _weibull_at_tip[i])
+          {
+            std::cout << "weillbull at tip = " << _weibull_at_tip[i] << ", weibull_eta[qp] = " << _weibull_eta[qp] << std::endl;
+            _weibull_at_tip[i] = _weibull_eta[qp];
+          }
+        }
       }
     }
   }
@@ -126,14 +135,14 @@ XFEMMeanStress::execute()
   for (unsigned int i = 0; i < _num_crack_front_points*9; i++)
     _stress_tensor[i] += StressTensor[i];
 
-  for (unsigned int i = 0; i < _num_crack_front_points; i++)
-  {
-    if (_current_elem == _elem_id_crack_tip[i])
-    {
-      _weibull_at_tip[i] = _weibull_eta[0];
-      break;
-    }
-  }
+//  for (unsigned int i = 0; i < _num_crack_front_points; i++)
+//  {
+//    if (_current_elem == _elem_id_crack_tip[i])
+//    {
+//      _weibull_at_tip[i] = _weibull_eta[0];
+//      break;
+//    }
+//  }
 }
 
 void
@@ -151,7 +160,7 @@ XFEMMeanStress::finalize()
   _xfem->clear_doesElemCrackEnergyReleaseRate();
 
   gatherSum(_stress_tensor);
-  gatherSum(_weibull_at_tip);
+  gatherMin(_weibull_at_tip);
   gatherSum(_weights);
 
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
@@ -175,9 +184,9 @@ XFEMMeanStress::finalize()
     normal(1) = direction(0);
     bool does_elem_crack = false;
     if (_use_weibull)
-      does_elem_crack = tensor_quantity > _critical_stress * _weibull_at_tip[i];
+      does_elem_crack = (tensor_quantity > _critical_stress * _weibull_at_tip[i]);
     else
-      does_elem_crack = tensor_quantity > _critical_stress;
+      does_elem_crack = (tensor_quantity > _critical_stress);
 
     std::cout << "stress = " << tensor_quantity << ", weibull_tip = " << _weibull_at_tip[i] << " does elem crack = " << does_elem_crack << std::endl;
     _xfem->update_doesElemCrackEnergyReleaseRate(_elem_id_crack_tip[i], does_elem_crack);

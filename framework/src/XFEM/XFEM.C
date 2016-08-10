@@ -579,7 +579,7 @@ XFEM::correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, E
   crack_direction_normal(0) = -crack_tip_direction(1);
   crack_direction_normal(1) = crack_tip_direction(0);
 
-  Real angle_min = 0.0;
+  Real angle_min = 9999.0;
   Real distance = 0.0;
   unsigned int nsides = CEMElem->num_edges();
 
@@ -605,14 +605,15 @@ XFEM::correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, E
       Real angle_edge1_normal = edge1_to_tip_normal * normal;
       Real angle_edge2_normal = edge2_to_tip_normal * normal;
 
-      if(std::abs(angle_edge1_normal) > std::abs(angle_min) && (edge1_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
+      if(std::abs(angle_edge1_normal) < std::abs(angle_min) && (edge1_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
       {
         edge_id_keep = i;
         distance_keep = 0.05;
         normal_keep = edge1_to_tip_normal;
         angle_min = angle_edge1_normal;
       }
-      else if (std::abs(angle_edge2_normal) > std::abs(angle_min) && (edge2_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
+      
+      if (std::abs(angle_edge2_normal) < std::abs(angle_min) && (edge2_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
       {
         edge_id_keep = i;
         distance_keep = 0.95;
@@ -622,7 +623,7 @@ XFEM::correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, E
 
       if (init_crack_intersect_edge(crack_tip_origin,left_angle_normal,edge_ends[0],edge_ends[1],distance) &&  (!CEMElem->is_edge_phantom(i)) )
       {
-        if(std::abs(left_angle_normal*normal) > std::abs(angle_min) && (edge1_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
+        if(std::abs(left_angle_normal*normal) < std::abs(angle_min) && (edge1_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
         {
           edge_id_keep = i;
           distance_keep = distance;
@@ -630,9 +631,10 @@ XFEM::correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, E
           angle_min = left_angle_normal*normal;
         }
       }
-      else if (init_crack_intersect_edge(crack_tip_origin,right_angle_normal,edge_ends[0],edge_ends[1],distance) && (!CEMElem->is_edge_phantom(i)))
+      
+      if (init_crack_intersect_edge(crack_tip_origin,right_angle_normal,edge_ends[0],edge_ends[1],distance) && (!CEMElem->is_edge_phantom(i)))
       {
-        if(std::abs(right_angle_normal*normal) > std::abs(angle_min) && (edge2_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
+        if(std::abs(right_angle_normal*normal) < std::abs(angle_min) && (edge2_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
         {
           edge_id_keep = i;
           distance_keep = distance;
@@ -640,9 +642,10 @@ XFEM::correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, E
           angle_min = right_angle_normal*normal;
         }
       }
-      else if (init_crack_intersect_edge(crack_tip_origin,crack_direction_normal,edge_ends[0],edge_ends[1],distance) && (!CEMElem->is_edge_phantom(i)))
+      
+      if (init_crack_intersect_edge(crack_tip_origin,crack_direction_normal,edge_ends[0],edge_ends[1],distance) && (!CEMElem->is_edge_phantom(i)))
       {
-        if(std::abs(crack_direction_normal*normal) > std::abs(angle_min) && (crack_tip_direction*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
+        if(std::abs(crack_direction_normal*normal) < std::abs(angle_min) && (crack_tip_direction*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
         {
           edge_id_keep = i;
           distance_keep = distance;
@@ -1066,7 +1069,11 @@ XFEM::mark_cut_edges_by_state(Real time)
     }
 
     if (!find_compatible_direction && edge_cut)
+    {
       correct_crack_extension_angle(elem, CEMElem, orig_edge, normal, crack_tip_origin, crack_tip_direction, distance_keep, edge_id_keep, normal_keep);
+      std::cout << "WJ : direction is fixed" << std::endl;
+    }
+
 
     if (edge_cut)
     {
@@ -1088,7 +1095,7 @@ XFEM::mark_cut_edges_by_state(Real time)
         if (growth_direction * crack_tip_direction < 1.0e-10)
         {
           std::cout << "WJ : growth_direction = " << growth_direction << ", crack_tip_direction = " << crack_tip_direction << std::endl;
-          continue;
+          //continue;
           growth_direction *= (-1.0);
         }
 
