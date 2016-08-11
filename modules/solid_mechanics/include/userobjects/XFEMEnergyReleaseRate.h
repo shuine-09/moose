@@ -56,9 +56,11 @@ private:
   std::vector<Real> _integral_values;
   Real _radius_inner;
   Real _radius_outer;
+  Real _weibull_radius;
   Real _critical_energy_release_rate;
   MooseMesh & _mesh;
   XFEM *_xfem;
+  FEProblem *_fe_problem;
   std::map<unsigned int, const Elem* > _elem_id_crack_tip;
   std::vector<Point> _crack_front_points;
   std::vector<Point> _crack_directions;

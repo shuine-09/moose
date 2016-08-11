@@ -17,6 +17,7 @@ InputParameters validParams<XFEMMeanStress>()
   params += validParams<MaterialTensorCalculator>();
   params.addRequiredParam<std::string>("tensor", "The material tensor name.");
   params.addParam<Real>("radius", "Radius for average out stress");
+  params.addParam<Real>("weibull_radius", "Radius for weibull distrbution");
   params.addParam<Real>("critical_stress", 0.0, "Critical stress.");
   params.addParam<bool>("use_weibull", false,"Use weibull distribution to propagate crack?");
   return params;
@@ -42,6 +43,14 @@ XFEMMeanStress::XFEMMeanStress(const InputParameters & parameters):
   }
   else
     mooseError("MeanStress error: must set radius.");
+
+  if (isParamValid("weibull_radius"))
+  {
+    _weibull_radius = getParam<Real>("weibull_radius");
+  }
+  else
+    mooseError("MeanStress error: must set weibull radius.");
+
 }
 
 void
@@ -60,7 +69,7 @@ XFEMMeanStress::initialize()
   
   _weights.clear();
   _weights.resize(_num_crack_front_points);
-
+  
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
   {  
     _weibull_at_tip[i] = 9999.0;
@@ -101,7 +110,7 @@ XFEMMeanStress::getStressTensor()
       Real dist = std::pow(dist_to_crack_front_vector.size_sq(),0.5);
       Real fact = 1.0/(pow(2*libMesh::pi, 1.5) * pow(_radius, 3.0)) * std::exp(-0.5 * pow(dist/_radius,2.0));
       //Real fact = (1.0-dist/_radius);
-      if (dist < _radius * 3 && flag > 0.5)
+      if (dist < _radius * 2 && flag > 0.5)
       {
         StressTensor[i*9+0] += _tensor[qp](0,0) * fact;
         StressTensor[i*9+1] += _tensor[qp](0,1) * fact;
@@ -114,7 +123,7 @@ XFEMMeanStress::getStressTensor()
         StressTensor[i*9+8] += _tensor[qp](2,2) * fact;
         _weights[i] += fact;
         
-        if (dist < _radius)
+        if (dist < _weibull_radius)
         {
           if (_weibull_eta[qp] < _weibull_at_tip[i])
           {

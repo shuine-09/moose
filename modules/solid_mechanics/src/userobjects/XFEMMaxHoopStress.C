@@ -577,6 +577,8 @@ XFEMMaxHoopStress::computeQpIntegrals(const std::vector<std::vector<Real> > & N_
       ColumnMajorMatrix stress_cf = rotateToCrackFrontCoords(stress);
       ColumnMajorMatrix strain_cf = rotateToCrackFrontCoords(strain);
 
+      RealVectorValue grad_temp_cf = rotateToCrackFrontCoords(_temp_grad[_qp]);
+
       ColumnMajorMatrix dq;
       dq(0,0) = crack_direction_local(0)*grad_q_cf(0);
       dq(0,1) = crack_direction_local(0)*grad_q_cf(1);
@@ -595,18 +597,7 @@ XFEMMaxHoopStress::computeQpIntegrals(const std::vector<std::vector<Real> > & N_
       // Term3 = aux stress * strain * dq_x   (= stress * aux strain * dq_x)
       Real term3 = dq(0,0) * _aux_stress.doubleContraction(strain_cf);
 
-      RealVectorValue J_vec(0);
-
-      for (unsigned int j=0; j<3; ++j)
-      {
-        Real dthermstrain_dx = _temp_grad[_qp](j) * _thermal_expansion;
-        J_vec(j) = _aux_stress.tr()*dthermstrain_dx;
-      }
-
-      Real eq_thermal = 0.0;
-
-      for (unsigned int j = 0; j < 3; j++)
-        eq_thermal += crack_direction_local(j)*scalar_q*J_vec(j);
+      Real eq_thermal = scalar_q * _aux_stress.tr() * _thermal_expansion * grad_temp_cf(0); 
 
       Real eq = term1 + term2 - term3 + eq_thermal;
 

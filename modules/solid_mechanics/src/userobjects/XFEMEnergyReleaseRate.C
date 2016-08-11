@@ -8,6 +8,7 @@
 //
 #include "XFEMEnergyReleaseRate.h"
 #include "libmesh/fe_interface.h"
+#include "DisplacedProblem.h"
 
 template<>
 InputParameters validParams<XFEMEnergyReleaseRate>()
@@ -15,6 +16,7 @@ InputParameters validParams<XFEMEnergyReleaseRate>()
   InputParameters params = validParams<ElementUserObject>();
   params.addParam<Real>("radius_inner", "Inner radius for volume integral domain");
   params.addParam<Real>("radius_outer", "Outer radius for volume integral domain");
+  params.addParam<Real>("weibull_radius", "Weibull radius");
   params.addParam<Real>("critial_energy_release_rate", 0.0, "Critical energy release rate.");
   params.addParam<bool>("use_weibull", false,"Use weibull distribution to initiate crack?");
   params.set<bool>("use_displaced_mesh") = false;
@@ -33,10 +35,10 @@ XFEMEnergyReleaseRate::XFEMEnergyReleaseRate(const InputParameters & parameters)
     _mesh(_subproblem.mesh()),
      _use_weibull(getParam<bool>("use_weibull"))
 {
-  FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
-  if (fe_problem == NULL)
+  _fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
+  if (_fe_problem == NULL)
     mooseError("Problem casting _subproblem to FEProblem in XFEMMarkerUserObject");
-  _xfem = fe_problem->get_xfem();
+  _xfem = _fe_problem->get_xfem();
 
   if (isParamValid("radius_inner") && isParamValid("radius_outer"))
   {
@@ -45,6 +47,14 @@ XFEMEnergyReleaseRate::XFEMEnergyReleaseRate(const InputParameters & parameters)
   }
   else
     mooseError("DomainIntegral error: must set radius_inner and radius_outer.");
+
+  if (isParamValid("weibull_radius"))
+  {
+    _weibull_radius = getParam<Real>("weibull_radius");
+  }
+  else
+    mooseError("DomainIntegral error: must set weibull  radius.");
+
 }
 
 void
@@ -68,7 +78,7 @@ XFEMEnergyReleaseRate::initialize()
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
   {
     _integral_values[i] = 0.0;
-    _weibull_at_tip[i] = 0.0;
+    _weibull_at_tip[i] = 9999.0;
   }
 
   _xfem->get_crack_tip_origin_and_direction(_elem_id_crack_tip, _crack_front_points, _crack_directions);
@@ -180,6 +190,25 @@ XFEMEnergyReleaseRate::computeQpIntegrals(const std::vector<std::vector<Real> > 
     }
 
     QpIntegrals[i] = -eq + eq_thermal;
+
+    const Elem * undisplaced_elem  = NULL;
+    if(_fe_problem->getDisplacedProblem() != NULL)
+      undisplaced_elem = _fe_problem->getDisplacedProblem()->refMesh().elem(_current_elem->id());
+    else
+      undisplaced_elem = _current_elem;
+
+    Real flag = _xfem->flag_qp_inside(undisplaced_elem, _q_point[_qp]); //qp inside (flag = 1) or ouside (flag = 0) real domain
+    Point dist_to_crack_front_vector = _q_point[_qp] - crack_front;
+    Real dist = std::pow(dist_to_crack_front_vector.size_sq(),0.5);
+
+    if (dist < _weibull_radius)
+    {
+      if (_weibull_eta[_qp] < _weibull_at_tip[i])
+      {
+        std::cout << "weillbull at tip = " << _weibull_at_tip[i] << ", weibull_eta[qp] = " << _weibull_eta[_qp] << std::endl;
+        _weibull_at_tip[i] = _weibull_eta[_qp];
+      }
+    }
   }
 
   return QpIntegrals;
@@ -213,7 +242,7 @@ XFEMEnergyReleaseRate::finalize()
 {
   _xfem->clear_doesElemCrackEnergyReleaseRate();
   gatherSum(_integral_values);
-  gatherSum(_weibull_at_tip);
+  gatherMin(_weibull_at_tip);
 
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
   {

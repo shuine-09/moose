@@ -52,6 +52,7 @@ private:
   const MaterialProperty<SymmTensor> & _tensor;
   std::vector<Real> _stress_tensor;
   Real _radius;
+  Real _weibull_radius;
   XFEM *_xfem;
   std::map<unsigned int, const Elem* > _elem_id_crack_tip;
   std::vector<Point> _crack_front_points;
