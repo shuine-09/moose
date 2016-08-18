@@ -29,6 +29,8 @@ EqualValueBoundaryConstraint::EqualValueBoundaryConstraint(const InputParameters
     _penalty(getParam<Real>("penalty"))
 {
 
+  _connected_nodes.clear();
+
   std::vector<dof_id_type> nodelist;
   std::vector<boundary_id_type> boundary_id_list;
   _mesh.getMesh().boundary_info->build_node_list(nodelist,boundary_id_list);
@@ -56,6 +58,36 @@ EqualValueBoundaryConstraint::EqualValueBoundaryConstraint(const InputParameters
 
 EqualValueBoundaryConstraint::~EqualValueBoundaryConstraint()
 {
+}
+
+void
+EqualValueBoundaryConstraint::meshChanged()
+{
+  _connected_nodes.clear();
+  
+  std::vector<dof_id_type> nodelist;
+  std::vector<boundary_id_type> boundary_id_list;
+  _mesh.getMesh().boundary_info->build_node_list(nodelist,boundary_id_list);
+
+  std::vector<dof_id_type>::iterator in;
+  std::vector<boundary_id_type>::iterator ib;
+
+  for (in = nodelist.begin(), ib = boundary_id_list.begin();
+       in != nodelist.end() && ib != boundary_id_list.end();
+       ++in, ++ib)
+  {
+    bool slave_local(_mesh.node(*in).processor_id() == _subproblem.processor_id());
+    if (*ib == _slave_boundary_id &&
+        *in != _master_node_id &&
+        slave_local)
+    {
+      _connected_nodes.push_back(*in);
+
+      std::vector<dof_id_type> & elems = _mesh.nodeToElemMap()[_master_node_id];
+      for (unsigned int i = 0; i < elems.size(); ++i)
+        _subproblem.addGhostedElem(elems[i]);
+    }
+  }
 }
 
 Real

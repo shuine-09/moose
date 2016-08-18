@@ -12,41 +12,41 @@
 /*            See COPYRIGHT for full restrictions               */
 /****************************************************************/
 
-#ifndef EQUALVALUEBOUNDARYCONSTRAINT_H
-#define EQUALVALUEBOUNDARYCONSTRAINT_H
+#ifndef RadialDispAux_H
+#define RadialDispAux_H
 
-#include "NodalConstraint.h"
+#include "AuxKernel.h"
 
-class EqualValueBoundaryConstraint;
+//Forward Declarations
+class RadialDispAux;
 
 template<>
-InputParameters validParams<EqualValueBoundaryConstraint>();
+InputParameters validParams<RadialDispAux>();
 
-class EqualValueBoundaryConstraint : public NodalConstraint
+/**
+ * Constant auxiliary value
+ */
+class RadialDispAux : public AuxKernel
 {
 public:
-  EqualValueBoundaryConstraint(const InputParameters & parameters);
-  virtual ~EqualValueBoundaryConstraint();
+  RadialDispAux(const InputParameters & parameters);
 
-  /**
-   * Called on this object when the mesh changes
-   */
-  virtual void meshChanged();
+  virtual ~RadialDispAux() {}
 
 protected:
-
   /**
-   * Computes the residual for the current slave node
+   * AuxKernels MUST override computeValue.  computeValue() is called on
+   * every quadrature point.  For Nodal Auxiliary variables those quadrature
+   * points coincide with the nodes.
    */
-  virtual Real computeQpResidual(Moose::ConstraintType type);
+  virtual Real computeValue();
 
-  /**
-   * Computes the jacobian for the constraint
-   */
-  virtual Real computeQpJacobian(Moose::ConstraintJacobianType type);
+  std::vector<Real> _center;
+  const VariableValue & _disp_x;
+  const VariableValue & _disp_y;
 
-  short _slave_boundary_id;
-  Real _penalty;
+
+
 };
 
-#endif /* EQUALVALUEBOUNDARYCONSTRAINT_H */
+#endif //RadialDispAux_H

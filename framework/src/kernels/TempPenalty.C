@@ -51,7 +51,7 @@ TempPenalty::computeQpResidual()
 
   Real cf = _t * _velocity + _cold_bdry;
   Real hf = _t * _velocity + _hot_bdry;
-  Real x = _q_point[0](0);
+  Real x = _q_point[_qp](0);
 
   Real u0 = 0.0;
   if (x <= cf)
@@ -75,7 +75,7 @@ TempPenalty::computeQpJacobian()
 {
   Real cf = _t * _velocity + _cold_bdry;
   Real hf = _t * _velocity + _hot_bdry;
-  Real x = _q_point[0](0);
+  Real x = _q_point[_qp](0);
 
   Real u0 = 0.0;
   if (x <= cf)

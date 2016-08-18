@@ -51,7 +51,7 @@ public:
    * Constructor
    */
   explicit
-  XFEM(std::vector<MaterialData *> & material_data, MeshBase* mesh, MeshBase* mesh2=NULL);
+  XFEM(FEProblem * fe_problem, std::vector<MaterialData *> & material_data, std::vector<MaterialData *> & bnd_material_data, MeshBase* mesh, MeshBase* mesh2=NULL);
 
   /**
    * Destructor
@@ -141,7 +141,9 @@ private:
                       std::vector<std::vector<Point> > &frag_faces) const;
 
 private:
+  FEProblem * _fe_problem;
   std::vector<MaterialData *> & _material_data;
+  std::vector<MaterialData *> & _bnd_material_data;
 
   /**
    * XFEM cut type and data

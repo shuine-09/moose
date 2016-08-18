@@ -127,7 +127,7 @@ FEProblem::FEProblem(const InputParameters & parameters) :
 #ifdef LIBMESH_ENABLE_AMR
     _adaptivity(*this),
 #endif
-    _xfem(_material_data, &_mesh.getMesh()),
+    _xfem(this, _material_data, _bnd_material_data, &_mesh.getMesh()),
     _displaced_mesh(NULL),
     _geometric_search_data(*this, _mesh),
     _reinit_displaced_elem(false),

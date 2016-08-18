@@ -37,6 +37,8 @@
 #include "XFEM_geometric_cut_2d.h"
 #include "EFAfuncs.h"
 
+#include "FEProblem.h"
+
 #ifdef DEBUG
 // Some extra validation for ParallelMesh
 #include "libmesh/mesh_tools.h"
@@ -44,8 +46,10 @@
 #endif // DEBUG
 
 // XFEM mesh modification methods
-XFEM::XFEM (std::vector<MaterialData *> & material_data, MeshBase* m, MeshBase* m2) :
+XFEM::XFEM (FEProblem * fe_problem, std::vector<MaterialData *> & material_data, std::vector<MaterialData *> & bnd_material_data, MeshBase* m, MeshBase* m2) :
+  _fe_problem(fe_problem),
   _material_data(material_data),
+  _bnd_material_data(bnd_material_data),
   _mesh(m),
   _mesh2(m2)
 {
@@ -579,7 +583,7 @@ XFEM::correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, E
   crack_direction_normal(0) = -crack_tip_direction(1);
   crack_direction_normal(1) = crack_tip_direction(0);
 
-  Real angle_min = 9999.0;
+  Real angle_min = 0.0;
   Real distance = 0.0;
   unsigned int nsides = CEMElem->num_edges();
 
@@ -605,7 +609,7 @@ XFEM::correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, E
       Real angle_edge1_normal = edge1_to_tip_normal * normal;
       Real angle_edge2_normal = edge2_to_tip_normal * normal;
 
-      if(std::abs(angle_edge1_normal) < std::abs(angle_min) && (edge1_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
+      if(std::abs(angle_edge1_normal) > std::abs(angle_min) && (edge1_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
       {
         edge_id_keep = i;
         distance_keep = 0.05;
@@ -613,7 +617,7 @@ XFEM::correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, E
         angle_min = angle_edge1_normal;
       }
       
-      if (std::abs(angle_edge2_normal) < std::abs(angle_min) && (edge2_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
+      if (std::abs(angle_edge2_normal) > std::abs(angle_min) && (edge2_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
       {
         edge_id_keep = i;
         distance_keep = 0.95;
@@ -623,7 +627,7 @@ XFEM::correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, E
 
       if (init_crack_intersect_edge(crack_tip_origin,left_angle_normal,edge_ends[0],edge_ends[1],distance) &&  (!CEMElem->is_edge_phantom(i)) )
       {
-        if(std::abs(left_angle_normal*normal) < std::abs(angle_min) && (edge1_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
+        if(std::abs(left_angle_normal*normal) > std::abs(angle_min) && (edge1_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
         {
           edge_id_keep = i;
           distance_keep = distance;
@@ -634,7 +638,7 @@ XFEM::correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, E
       
       if (init_crack_intersect_edge(crack_tip_origin,right_angle_normal,edge_ends[0],edge_ends[1],distance) && (!CEMElem->is_edge_phantom(i)))
       {
-        if(std::abs(right_angle_normal*normal) < std::abs(angle_min) && (edge2_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
+        if(std::abs(right_angle_normal*normal) > std::abs(angle_min) && (edge2_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
         {
           edge_id_keep = i;
           distance_keep = distance;
@@ -645,7 +649,7 @@ XFEM::correct_crack_extension_angle(const Elem * elem, EFAelement2D * CEMElem, E
       
       if (init_crack_intersect_edge(crack_tip_origin,crack_direction_normal,edge_ends[0],edge_ends[1],distance) && (!CEMElem->is_edge_phantom(i)))
       {
-        if(std::abs(crack_direction_normal*normal) < std::abs(angle_min) && (crack_tip_direction*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
+        if(std::abs(crack_direction_normal*normal) > std::abs(angle_min) && (crack_tip_direction*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
         {
           edge_id_keep = i;
           distance_keep = distance;
@@ -1385,8 +1389,20 @@ XFEM::cut_mesh_with_efa()
 
     //TODO: The 0 here is the thread ID.  Need to sort out how to do this correctly
     //TODO: Also need to copy surface and neighbor material data
-    if (parent_elem->processor_id() == _mesh->processor_id())
-      _material_data[0]->copy(*libmesh_elem, *parent_elem, 0);
+    if (parent_elem->processor_id() == _mesh->processor_id()) 
+    { 
+      (_material_data)[0]->copy(*libmesh_elem, *parent_elem, 0); 
+      for (unsigned int side = 0; side < parent_elem->n_sides(); ++side) 
+      {
+        std::vector<boundary_id_type> parent_elem_boundary_ids = _mesh->boundary_info->boundary_ids(parent_elem, side);
+        std::vector<boundary_id_type>::iterator it_bd = parent_elem_boundary_ids.begin();
+        for (; it_bd != parent_elem_boundary_ids.end(); ++it_bd)
+        {
+          if (_fe_problem->needMaterialOnSide(*it_bd, 0))
+            (_bnd_material_data)[0]->copy(*libmesh_elem, *parent_elem, side);
+        }
+      }
+    }
 
     // The crack tip origin map is stored before cut, thus the elem should be updated with new element.
     std::map<const Elem*, std::vector<Point> >::iterator mit = _elem_crack_origin_direction_map.find(parent_elem);

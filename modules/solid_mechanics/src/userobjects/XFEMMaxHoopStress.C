@@ -627,7 +627,10 @@ void
 XFEMMaxHoopStress::finalize()
 {
   _xfem->clear_crack_propagation_direction();
+  _xfem->clear_doesElemCrackEnergyReleaseRate();
+
   gatherSum(_integral_values);
+
 
   for (unsigned int i = 0; i < _num_crack_front_points*2; i++)
     _integral_values[i] *= _K_factor;
@@ -669,7 +672,21 @@ XFEMMaxHoopStress::finalize()
     
     _xfem->update_crack_propagation_direction(_elem_id_crack_tip[i], direction);
     std::cout << "crack front point = " << crack_front_point << std::endl;
-    std::cout << "crack front index (" << i << ") : direction  = " << direction << std::endl; 
+    std::cout << "crack front index (" << i << ") : direction  = " << direction << std::endl;
+
+    //Real ERR = (KI*KI + KII*KII)/75e9;
+    //bool does_elem_crack = ERR > 0.1452;
+    
+    Real ERR = (KI*KI + KII*KII)/2.e11;
+    bool does_elem_crack = ERR > 4.0;
+
+    //Real ERR = 0.0;
+    //bool does_elem_crack = true;
+
+    if (KI < 0)
+      does_elem_crack = false;
+
+    std::cout << "energy_release_rate(KI and KII) = " << ERR << " does elem crack = " << does_elem_crack << std::endl;
+    _xfem->update_doesElemCrackEnergyReleaseRate(_elem_id_crack_tip[i], does_elem_crack);
   } 
 }
-
