@@ -89,7 +89,7 @@ XFEMCrackTipMeanStress::getStressTensor()
 
     for ( unsigned int qp = 0; qp < numqp; ++qp )
     {
-      Real flag = _xfem->flagQpointsInside(undisplaced_elem, _q_point[qp]); //qp inside (flag = 1) or ouside (flag = 0) real domain
+      Real flag = _xfem->flagQpointInside(undisplaced_elem, _q_point[qp]); //qp inside (flag = 1) or ouside (flag = 0) real domain
       Point dist_to_crack_front_vector = _q_point[qp] - crack_front;
       Real dist = std::pow(dist_to_crack_front_vector.size_sq(),0.5);
       Real fact = 1.0/(pow(2*libMesh::pi, 1.5) * pow(_radius, 3.0)) * std::exp(-0.5 * pow(dist/_radius,2.0));

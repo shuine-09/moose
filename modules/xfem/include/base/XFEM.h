@@ -104,6 +104,8 @@ public:
    */
   Real getPhysicalVolumeFraction(const Elem* elem) const;
 
+  Real flagQpointInside(const Elem* elem, const Point & p) const;
+
   /**
    * Get specified component of normal or origin for cut plane for a given element
    */
