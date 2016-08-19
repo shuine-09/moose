@@ -128,8 +128,12 @@ public:
                                       Point & normal_keep);
 
   void getCrackTipOrigin(std::map<unsigned int, const Elem*> & elem_id_crack_tip, std::vector<Point> &  crack_front_points);
-  //void update_crack_propagation_direction(const Elem* elem, Point direction);
-  //void clear_crack_propagation_direction();
+  void getCrackTipOriginAndDirection(std::map<unsigned int, const Elem* > & elem_id_crack_tip, std::vector<Point> & crack_front_points, std::vector<Point> & crack_directions);
+  void updateCrackPropagationDirection(const Elem* elem, Point direction);
+  void clearCrackPropagationDirection();
+  void updateDoesCrackPropagate(const Elem* elem, bool does_crack_propagate);
+  void clearDoesCrackPropagate();
+  unsigned int numberCrackTips();
   /**
    * Set and get xfem cut data and type
    */
@@ -188,7 +192,9 @@ private:
 
   std::map<const Elem*, std::vector<Point> > _elem_crack_origin_direction_map;
 
-  //std::map<const Elem*, Point> _crack_propagation_direction_map;
+  std::map<const Elem*, Point> _crack_propagation_direction_map;
+
+  std::map<const Elem*, bool> _does_crack_propagate_map;
 
   std::map<const Elem*, RealVectorValue> _state_marked_elems;
   std::set<const Elem*> _state_marked_frags;

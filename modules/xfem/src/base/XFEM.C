@@ -94,6 +94,51 @@ XFEM::getCrackTipOrigin(std::map<unsigned int, const Elem* > & elem_id_crack_tip
 }
 
 void
+XFEM::getCrackTipOriginAndDirection(std::map<unsigned int, const Elem* > & elem_id_crack_tip, std::vector<Point> & crack_front_points, std::vector<Point> & crack_directions)
+{
+  elem_id_crack_tip.clear();
+  crack_front_points.clear();
+  crack_front_points.resize(_elem_crack_origin_direction_map.size());
+  crack_directions.clear();
+  crack_directions.resize(_elem_crack_origin_direction_map.size());
+
+  std::map<const Elem*, std::vector<Point> >::iterator mit1 = _elem_crack_origin_direction_map.begin();
+  unsigned int crack_tip_index = 0;
+  // This map is used to sort the order in _elem_crack_origin_direction_map such that every process has same order
+  std::map<unsigned int, const Elem*> elem_id_map;
+
+  int m = -1;
+  for (mit1 = _elem_crack_origin_direction_map.begin(); mit1 != _elem_crack_origin_direction_map.end(); mit1++)
+  {
+    unsigned int elem_id = mit1->first->id();
+    if (elem_id > 999999)
+    {
+      elem_id_map[m] = mit1->first;
+      m--;
+    }
+    else
+    {
+      elem_id_map[elem_id] = mit1->first;
+    }
+  }
+
+  std::map<unsigned int, const Elem*> ::iterator mit2 = elem_id_map.begin();
+
+  for (; mit2 != elem_id_map.end(); mit2++)
+  {
+    const Elem* elem = mit2->second;
+    mit1 = _elem_crack_origin_direction_map.find(elem);
+    if (mit1 != _elem_crack_origin_direction_map.end())
+    {
+      elem_id_crack_tip[crack_tip_index] = mit1->first;
+      crack_front_points[crack_tip_index] = (mit1->second)[0]; // [0] stores origin coordinates and [1] stores direction
+      crack_directions[crack_tip_index] = (mit1->second)[1];
+      crack_tip_index++;
+    }
+  }
+}
+
+void
 XFEM::addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal)
 {
   Elem *elem = _mesh->elem(elem_id);
@@ -140,6 +185,48 @@ XFEM::clearStateMarkedElems()
   _state_marked_elems.clear();
   _state_marked_frags.clear();
   _state_marked_elem_sides.clear();
+}
+
+void
+XFEM::clearCrackPropagationDirection()
+{
+    _crack_propagation_direction_map.clear();
+}
+
+void
+XFEM::clearDoesCrackPropagate()
+{
+    _does_crack_propagate_map.clear();
+}
+
+void
+XFEM::updateCrackPropagationDirection(const Elem* elem, Point direction)
+{
+  std::map<const Elem*, Point>::iterator mit;
+  mit = _crack_propagation_direction_map.find(elem);
+  if (mit != _crack_propagation_direction_map.end())
+  {
+    libMesh::err << " ERROR: element "<<elem->id()<<" already marked for crack growth direction."<<std::endl;
+  }
+  _crack_propagation_direction_map[elem] = direction;
+}
+
+void
+XFEM::updateDoesCrackPropagate(const Elem* elem, bool does_crack_propagate)
+{
+  std::map<const Elem*, bool>::iterator mit;
+  mit = _does_crack_propagate_map.find(elem);
+  if (mit != _does_crack_propagate_map.end())
+  {
+    libMesh::err << " ERROR: element "<<elem->id()<<" already marked for crack propagation"<<std::endl;
+  }
+  _does_crack_propagate_map[elem] = does_crack_propagate;
+}
+
+unsigned int
+XFEM::numberCrackTips()
+{
+  return _elem_crack_origin_direction_map.size();
 }
 
 void
