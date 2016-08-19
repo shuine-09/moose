@@ -160,6 +160,6 @@ XFEMCrackTipMeanStress::finalize()
     _xfem->updateCrackPropagationDirection(_elem_id_crack_tip[i], normal);
 
     std::cout << "stress = " << tensor_quantity << " crack propagate ? = " << does_crack_propagate << std::endl;
-    std::cout << "crack front index (" << i << ") : average stress direction  = " << normal << std::endl; 
+    std::cout << "crack front index (" << i << ") " <<  _crack_front_points[i] << ", average stress direction  = " << normal << std::endl; 
   } 
 }
