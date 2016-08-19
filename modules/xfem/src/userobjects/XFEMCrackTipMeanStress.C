@@ -83,7 +83,7 @@ XFEMCrackTipMeanStress::getStressTensor()
     const Elem * undisplaced_elem  = NULL;
     FEProblem * _fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
     if(_fe_problem->getDisplacedProblem() != NULL)
-      undisplaced_elem = _fe_problem->getDisplacedProblem()->refMesh().elem(_current_elem->id());
+      undisplaced_elem = _fe_problem->getDisplacedProblem()->refMesh().elemPtr(_current_elem->id());
     else
       undisplaced_elem = _current_elem;
 

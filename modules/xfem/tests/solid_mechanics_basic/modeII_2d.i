@@ -15,8 +15,8 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 51
-  ny = 50
+  nx = 50
+  ny = 51
   xmin = 0.0
   xmax = 1.0
   ymin = 0.0
@@ -41,7 +41,7 @@
 
 [UserObjects]
   [./xfem_mean_stress]
-    type = XFEMMeanStress
+    type = XFEMCrackTipMeanStress
     tensor = stress
     quantity = MaxPrincipal
     execute_on = timestep_end
@@ -118,8 +118,8 @@
 
 # controls for nonlinear iterations
   nl_max_its = 15
-  nl_rel_tol = 1e-14
-  nl_abs_tol = 1e-12
+  nl_rel_tol = 1e-13
+  nl_abs_tol = 1e-11
 
 # time control
   start_time = 0.0
