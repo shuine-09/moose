@@ -417,6 +417,7 @@ XFEM::markCuts(Real time)
   {
     marked_sides = markCutEdgesByGeometry(time);
     marked_sides |= markCutEdgesByState(time);
+    marked_sides |= markCutEdgesByTipState(time);
   }
   else if (_mesh->mesh_dimension() == 3)
   {
