@@ -85,6 +85,7 @@ public:
   bool markCuts(Real time);
   bool markCutEdgesByGeometry(Real time);
   bool markCutEdgesByState(Real time);
+  bool markCutEdgesByTipState(Real time);
   bool markCutFacesByGeometry(Real time);
   bool markCutFacesByState();
   bool initCutIntersectionEdge(Point cut_origin,
