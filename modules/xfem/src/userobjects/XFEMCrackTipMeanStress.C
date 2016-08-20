@@ -18,7 +18,8 @@ InputParameters validParams<XFEMCrackTipMeanStress>()
   params += validParams<MaterialTensorCalculator>();
   params.addRequiredParam<std::string>("tensor", "The material tensor name.");
   params.addParam<Real>("radius", "Radius of gaussian weight function to average out stress");
-  params.addParam<Real>("critical_stress", 0.0, "Critical stress.");
+  params.addRequiredParam<Real>("critical_stress", "Critical stress for crack propagation.");
+  params.addParam<bool>("use_weibull", false,"Use weibull distribution to randomize critial strength");
   return params;
 }
 
@@ -26,7 +27,9 @@ XFEMCrackTipMeanStress::XFEMCrackTipMeanStress(const InputParameters & parameter
   ElementUserObject(parameters),
   _material_tensor_calculator(parameters),
   _tensor(getMaterialProperty<SymmTensor>(getParam<std::string>("tensor"))),
-  _critical_stress(getParam<Real>("critical_stress"))
+  _critical_stress(getParam<Real>("critical_stress")),
+  _use_weibull(getParam<bool>("use_weibull")),
+  _weibull_eta(getMaterialProperty<Real>("weibull_eta"))
 {
   FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
   if (fe_problem == NULL)
@@ -57,11 +60,17 @@ XFEMCrackTipMeanStress::initialize()
   _weights.clear();
   _weights.resize(_num_crack_front_points);
 
+  _weibull_at_tip.clear();
+  _weibull_at_tip.resize(_num_crack_front_points);
+
   for (unsigned int i = 0; i < _num_crack_front_points*9; i++)
     _stress_tensor[i] = 0.0;
 
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
+  { 
+    _weibull_at_tip[i] = 9999.0;
     _weights[i] = 0;
+  }
 
   _xfem->getCrackTipOrigin(_elem_id_crack_tip, _crack_front_points);
 
@@ -117,6 +126,15 @@ XFEMCrackTipMeanStress::execute()
   std::vector<Real> StressTensor = getStressTensor();
   for (unsigned int i = 0; i < _num_crack_front_points*9; i++)
     _stress_tensor[i] += StressTensor[i];
+  
+  for (unsigned int i = 0; i < _num_crack_front_points; i++)
+  {
+    if (_current_elem == _elem_id_crack_tip[i])
+    {
+      _weibull_at_tip[i] = _weibull_eta[0];
+      break;
+    }
+  }
 }
 
 void
@@ -154,8 +172,14 @@ XFEMCrackTipMeanStress::finalize()
     Point normal(0.0,0.0,0.0);
     normal(0) = -direction(1);
     normal(1) = direction(0);
-    bool does_crack_propagate = (tensor_quantity > _critical_stress);
     
+    bool does_crack_propagate = false;
+
+    if (_use_weibull)
+      does_crack_propagate = (tensor_quantity > _critical_stress * _weibull_at_tip[i]);
+    else
+      does_crack_propagate = (tensor_quantity > _critical_stress);
+
     _xfem->updateDoesCrackPropagate(_elem_id_crack_tip[i], does_crack_propagate);
     _xfem->updateCrackPropagationDirection(_elem_id_crack_tip[i], normal);
 

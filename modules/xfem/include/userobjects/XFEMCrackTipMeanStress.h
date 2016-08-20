@@ -54,6 +54,10 @@ class XFEMCrackTipMeanStress : public ElementUserObject
     std::vector<Real> _weights;
     unsigned int _num_crack_front_points;
     Real _critical_stress;
+    
+    bool _use_weibull;
+    const MaterialProperty<Real> & _weibull_eta;
+    std::vector<Real> _weibull_at_tip;
 };
 
 template<>

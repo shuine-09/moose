@@ -29,6 +29,9 @@ protected:
   bool _average;
   Real _random_range;
 
+  bool _use_weibull;
+  const MaterialProperty<Real> & _weibull_eta;
+
   virtual bool doesElementCrack(RealVectorValue &direction);
 };
 
