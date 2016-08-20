@@ -571,7 +571,8 @@ XFEM::correctCrackExtensionDirection(const Elem * elem,
         normal_keep = edge1_to_tip_normal;
         angle_min = angle_edge1_normal;
       }
-      else if (std::abs(angle_edge2_normal) > std::abs(angle_min) && (edge2_to_tip*crack_tip_direction) > std::cos(45.0/180.0*3.14159))
+      
+      if (std::abs(angle_edge2_normal) > std::abs(angle_min) && (edge2_to_tip*crack_tip_direction) > std::cos(45.0/180.0*3.14159))
       {
         edge_id_keep = i;
         distance_keep = 0.95;
@@ -589,7 +590,8 @@ XFEM::correctCrackExtensionDirection(const Elem * elem,
           angle_min = left_angle_normal*normal;
         }
       }
-      else if (initCutIntersectionEdge(crack_tip_origin,right_angle_normal,edge_ends[0],edge_ends[1],distance) && (!CEMElem->isEdgePhantom(i)))
+      
+      if (initCutIntersectionEdge(crack_tip_origin,right_angle_normal,edge_ends[0],edge_ends[1],distance) && (!CEMElem->isEdgePhantom(i)))
       {
         if (std::abs(right_angle_normal*normal) > std::abs(angle_min) && (edge2_to_tip*crack_tip_direction) > std::cos(45.0/180.0*3.14159))
         {
@@ -599,7 +601,8 @@ XFEM::correctCrackExtensionDirection(const Elem * elem,
           angle_min = right_angle_normal*normal;
         }
       }
-      else if (initCutIntersectionEdge(crack_tip_origin,crack_direction_normal,edge_ends[0],edge_ends[1],distance) && (!CEMElem->isEdgePhantom(i)))
+      
+      if (initCutIntersectionEdge(crack_tip_origin,crack_direction_normal,edge_ends[0],edge_ends[1],distance) && (!CEMElem->isEdgePhantom(i)))
       {
         if (std::abs(crack_direction_normal*normal) > std::abs(angle_min) && (crack_tip_direction*crack_tip_direction) > std::cos(45.0/180.0*3.14159))
         {
