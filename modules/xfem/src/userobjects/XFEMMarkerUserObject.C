@@ -72,6 +72,17 @@ XFEMMarkerUserObject::execute()
     }
   }
 
+  if (isOnBoundary && doesElementCrack(direction))
+  {
+    if (mit != _marked_elems.end())
+    {
+      mooseError("ERROR: element "<<_current_eid<<" already marked for crack growth.");
+    }
+    _marked_elems[_current_eid] = direction;
+    _marked_elem_sides[_current_eid] = boundarySide;
+  }
+
+  /*
   if (isCTE && doesElementCrack(direction))
   {
     if (mit != _marked_elems.end())
@@ -98,6 +109,7 @@ XFEMMarkerUserObject::execute()
     _marked_elems[_current_eid] = direction;
     _marked_frags.insert(_current_eid);
   }
+  */
 }
 
 void
