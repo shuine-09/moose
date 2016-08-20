@@ -19,6 +19,8 @@
 #include "XFEMMaterialTensorMarkerUserObject.h"
 #include "XFEMCrackTipMeanStress.h"
 
+#include "XFEMWeibullRandom.h"
+
 #include "XFEMAction.h"
 #include "XFEMSingleVariableConstraint.h"
 #include "XFEMPressure.h"
@@ -80,6 +82,9 @@ XFEMApp::registerObjects(Factory & factory)
 
   //DiracKernels
   registerDiracKernel(XFEMPressure);
+
+  //Materials
+  registerMaterial(XFEMWeibullRandom);
 }
 
 // External entry point for dynamic syntax association
