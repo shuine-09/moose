@@ -35,7 +35,21 @@ ComputeElasticityTensorCP::assignEulerAngles()
     _Euler_angles_mat_prop[_qp](2) = _read_prop_user_object->getData(_current_elem, 2);
   }
   else
-    _Euler_angles_mat_prop[_qp] = _Euler_angles;
+  {
+    if( 0.5 * ((_current_elem->point(0))(0) + (_current_elem->point(7)(0)) ) < 499.9)
+    {
+      _Euler_angles_mat_prop[_qp](0) = 0;
+      _Euler_angles_mat_prop[_qp](1) = 0;
+      _Euler_angles_mat_prop[_qp](2) = 0;
+    }
+    else
+    {
+      _Euler_angles_mat_prop[_qp](0) = 45;
+      _Euler_angles_mat_prop[_qp](1) = 0;
+      _Euler_angles_mat_prop[_qp](2) = 0;
+    }
+    //_Euler_angles_mat_prop[_qp] = _Euler_angles;
+  }
 }
 
 void
