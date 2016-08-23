@@ -102,7 +102,7 @@ XFEMCrackTipMeanStress::getStressTensor()
       Point dist_to_crack_front_vector = _q_point[qp] - crack_front;
       Real dist = std::pow(dist_to_crack_front_vector.size_sq(),0.5);
       Real fact = 1.0/(pow(2*libMesh::pi, 1.5) * pow(_radius, 3.0)) * std::exp(-0.5 * pow(dist/_radius,2.0));
-      if (dist < _radius * 2 && flag > 0.5)
+      if (dist < _radius && flag > 0.5)
       {
         StressTensor[i*9+0] += _tensor[qp](0,0) * fact;
         StressTensor[i*9+1] += _tensor[qp](0,1) * fact;
@@ -114,6 +114,10 @@ XFEMCrackTipMeanStress::getStressTensor()
         StressTensor[i*9+7] += _tensor[qp](2,1) * fact;
         StressTensor[i*9+8] += _tensor[qp](2,2) * fact;
         _weights[i] += fact;
+
+        if (dist < _radius * 0.5)
+          if (_weibull_eta[qp] < _weibull_at_tip[i])
+            _weibull_at_tip[i] = _weibull_eta[qp];
       }
     }
   }
@@ -126,15 +130,6 @@ XFEMCrackTipMeanStress::execute()
   std::vector<Real> StressTensor = getStressTensor();
   for (unsigned int i = 0; i < _num_crack_front_points*9; i++)
     _stress_tensor[i] += StressTensor[i];
-  
-  for (unsigned int i = 0; i < _num_crack_front_points; i++)
-  {
-    if (_current_elem == _elem_id_crack_tip[i])
-    {
-      _weibull_at_tip[i] = _weibull_eta[0];
-      break;
-    }
-  }
 }
 
 void
@@ -153,6 +148,7 @@ XFEMCrackTipMeanStress::finalize()
 
   gatherSum(_stress_tensor);
   gatherSum(_weights);
+  gatherMin(_weibull_at_tip);
 
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
   {
