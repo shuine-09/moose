@@ -15,6 +15,9 @@
 #include "XFEMVolFracAux.h"
 #include "XFEMCutPlaneAux.h"
 #include "XFEMMarkerAux.h"
+#include "RadialDispAux.h"
+#include "RadialDisplacementAux.h"
+
 #include "XFEMMarkerUserObject.h"
 #include "XFEMMaterialTensorMarkerUserObject.h"
 #include "XFEMCrackTipMeanStress.h"
@@ -71,6 +74,8 @@ XFEMApp::registerObjects(Factory & factory)
   registerAux(XFEMVolFracAux);
   registerAux(XFEMCutPlaneAux);
   registerAux(XFEMMarkerAux);
+  registerAux(RadialDispAux);
+  registerAux(RadialDisplacementAux);
 
   //Constraints
   registerConstraint(XFEMSingleVariableConstraint);

@@ -772,6 +772,8 @@ XFEM::markCutEdgesByTipState(Real time)
         Real x1 = x0 + crack_growth_increment * growth_direction(0);
         Real y1 = y0 + crack_growth_increment * growth_direction(1);
 
+        std::cout << "WJ : crack tip direction = " << crack_tip_origin << ", crack growth direction = " << growth_direction << std::endl;
+
         XFEMGeometricCut2D geometric_cut(x0, y0, x1, y1, time * 0.9, time * 0.9);
 
         for ( ; elem_it != elem_end; ++elem_it)

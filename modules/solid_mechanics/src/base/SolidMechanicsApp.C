@@ -54,7 +54,6 @@
 #include "StressDivergenceRSpherical.h"
 #include "RateDepSmearCrackModel.h"
 #include "RateDepSmearIsoCrackModel.h"
-#include "RadialDispAux.h"
 
 
 template<>
@@ -138,7 +137,6 @@ SolidMechanicsApp::registerObjects(Factory & factory)
   registerPostprocessor(InteractionIntegral);
   registerPostprocessor(MaterialTensorIntegralSM);
   registerPostprocessor(MixedModeEquivalentK);
-  registerPostprocessor(RadialDispAux);
 
   registerVectorPostprocessor(CrackDataSampler);
   registerVectorPostprocessor(LineMaterialSymmTensorSampler);
