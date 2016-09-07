@@ -45,14 +45,6 @@
   [../]
 []
 
-
-[Functions]
-  [./tempfunc]
-    type = ParsedFunction
-    value = 50.0*(2*x/10)
-  [../]
-[]
-
 [SolidMechanics]
   [./solid]
     temp = temp
