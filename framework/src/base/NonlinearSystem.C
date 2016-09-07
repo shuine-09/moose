@@ -1202,16 +1202,21 @@ NonlinearSystem::constraintResiduals(NumericVector<Number> & residual, bool disp
         // for each element process constraints on the
         for (const auto & ec : _element_constraints)
         {
-          _fe_problem.reinitElemPhys(elem1, info._elem1_constraint_q_point, tid);
-          _fe_problem.reinitNeighborPhys(elem2, info._elem2_constraint_q_point, tid);
+          bool ec_displaced = ec->parameters().have_parameter<bool>("use_displaced_mesh") && ec->getParam<bool>("use_displaced_mesh");
+          
+          if (ec_displaced && displaced)
+          {
+            _fe_problem.reinitElemPhys(elem1, info._elem1_constraint_q_point, tid);
+            _fe_problem.reinitNeighborPhys(elem2, info._elem2_constraint_q_point, tid);
 
-          ec->subProblem().prepareShapes(ec->variable().number(), tid);
-          ec->subProblem().prepareNeighborShapes(ec->variable().number(), tid);
+            ec->subProblem().prepareShapes(ec->variable().number(), tid);
+            ec->subProblem().prepareNeighborShapes(ec->variable().number(), tid);
 
-          ec->reinit(info);
-          ec->computeResidual();
-          _fe_problem.cacheResidual(tid);
-          _fe_problem.cacheResidualNeighbor(tid);
+            ec->reinit(info);
+            ec->computeResidual();
+            _fe_problem.cacheResidual(tid);
+            _fe_problem.cacheResidualNeighbor(tid);
+          }
         }
         _fe_problem.addCachedResidual(tid);
       }
@@ -1803,16 +1808,21 @@ NonlinearSystem::constraintJacobians(SparseMatrix<Number> & jacobian, bool displ
         // for each element process constraints on the
         for (const auto & ec : _element_constraints)
         {
-          _fe_problem.reinitElemPhys(elem1, info._elem1_constraint_q_point, tid);
-          _fe_problem.reinitNeighborPhys(elem2, info._elem2_constraint_q_point, tid);
+          bool ec_displaced = ec->parameters().have_parameter<bool>("use_displaced_mesh") && ec->getParam<bool>("use_displaced_mesh");
 
-          ec->subProblem().prepareShapes(ec->variable().number(), tid);
-          ec->subProblem().prepareNeighborShapes(ec->variable().number(), tid);
+          if (ec_displaced && displaced)
+          {
+            _fe_problem.reinitElemPhys(elem1, info._elem1_constraint_q_point, tid);
+            _fe_problem.reinitNeighborPhys(elem2, info._elem2_constraint_q_point, tid);
 
-          ec->reinit(info);
-          ec->computeJacobian();
-          _fe_problem.cacheJacobian(tid);
-          _fe_problem.cacheJacobianNeighbor(tid);
+            ec->subProblem().prepareShapes(ec->variable().number(), tid);
+            ec->subProblem().prepareNeighborShapes(ec->variable().number(), tid);
+
+            ec->reinit(info);
+            ec->computeJacobian();
+            _fe_problem.cacheJacobian(tid);
+            _fe_problem.cacheJacobianNeighbor(tid);
+          }
         }
         _fe_problem.addCachedJacobian(jacobian, tid);
       }
