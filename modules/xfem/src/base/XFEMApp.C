@@ -18,6 +18,7 @@
 #include "XFEMLevelSet.h"
 #include "XFEMMarkerUserObject.h"
 #include "XFEMMaterialTensorMarkerUserObject.h"
+#include "XFEMMeshCutByLevelSet.h"
 #include "XFEMAction.h"
 #include "XFEMSingleVariableConstraint.h"
 #include "XFEMPressure.h"
@@ -76,6 +77,7 @@ XFEMApp::registerObjects(Factory & factory)
   //UserObjects
   registerUserObject(XFEMMarkerUserObject);
   registerUserObject(XFEMMaterialTensorMarkerUserObject);
+  registerUserObject(XFEMMeshCutByLevelSet);
 
   //DiracKernels
   registerDiracKernel(XFEMPressure);

@@ -26,6 +26,35 @@ XFEMMeshCutByLevelSet::XFEMMeshCutByLevelSet(const InputParameters & parameters)
 {
 }
 
+void
+XFEMMeshCutByLevelSet::execute()
+{
+  unsigned int _current_eid = _current_elem->id();
+  std::map<unsigned int, RealVectorValue>::iterator mit1, mit2;
+  mit1 = _marked_elems_host_id.find(_current_eid);
+  mit2 = _marked_elems_distance.find(_current_eid);
+
+  std::vector<CutEdge> cut_edges;
+  if (cutElementByGeometry(_current_elem, cut_edges))
+  {
+    if (mit1 != _marked_elems_host_id.end())
+    {
+      mooseError("ERROR: element "<<_current_eid<<" already marked for cut.");
+    }
+
+    RealVectorValue distance(0.0, 0.0, 0.0);
+    RealVectorValue host_id(0.0, 0.0, 0.0);
+
+    for (unsigned int i = 0; i < cut_edges.size(); ++i)
+    {
+      distance(i) = cut_edges[i].distance;
+      host_id(i) = cut_edges[i].host_side_id;
+    }
+    _marked_elems_distance[_current_eid] = distance;
+    _marked_elems_host_id[_current_eid] = host_id;
+  }
+}
+
 bool
 XFEMMeshCutByLevelSet::cutElementByGeometry(const Elem* elem, std::vector<CutEdge> & cut_edges)
 {
@@ -50,7 +79,7 @@ XFEMMeshCutByLevelSet::cutElementByGeometry(const Elem* elem, std::vector<CutEdg
     Number ls_node_1 = (*_aux_solution)(ls_dof_id_1);
     Number ls_node_2 = (*_aux_solution)(ls_dof_id_2);
 
-    if (ls_node_1 * ls_node_2 <= 0)
+    if (ls_node_1 * ls_node_2 < 0)
     {
       cut_elem = true;
       CutEdge mycut;
