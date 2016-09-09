@@ -26,6 +26,8 @@ class XFEMMeshCutByLevelSet : public XFEMMeshCutUserObject
                                      std::vector<CutEdge> & cut_edges);
   virtual bool cutFragmentByGeometry(std::vector<std::vector<Point> > & frag_faces,
                                      std::vector<CutFace> & cut_faces);
+  
+  virtual void execute(); 
 
  protected:
   
