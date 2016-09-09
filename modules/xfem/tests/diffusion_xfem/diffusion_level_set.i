@@ -6,13 +6,21 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 5
-  ny = 6
-  xmin = 0.0
-  xmax = 1.0
-  ymin = 0.0
-  ymax = 1.0
+  nx = 40
+  ny = 40
+  xmin = -1.05
+  xmax = 1.05
+  ymin = -1.05
+  ymax = 1.05
   elem_type = QUAD4
+[]
+
+[MeshModifiers]
+  [./middle_node]
+    type = AddExtraNodeset
+    new_boundary = 'middle_node'
+    coord = '0.0 0.0'
+  [../]
 []
 
 [XFEM]
@@ -30,6 +38,14 @@
   [./ls]
     order = FIRST
     family = LAGRANGE
+  [../]
+[]
+
+[UserObjects]
+  [./xfem_marker_uo]
+    type = XFEMMeshCutByLevelSet
+    execute_on = linear
+    level_set_var = ls
   [../]
 []
 
@@ -58,10 +74,10 @@
 [BCs]
 # Define boundary conditions
   [./left_u]
-    type = FunctionPresetBC
+    type = DirichletBC
     variable = u
     boundary = 3
-    function = u_left
+    value = 3
   [../]
 
   [./right_u]
@@ -70,6 +86,12 @@
     boundary = 1
     value = 0
   [../]
+
+  [./middle_u]
+    type = DirichletBC
+    variable = u
+    boundary = middle_node
+    value = 5
 []
 
 [Executioner]
