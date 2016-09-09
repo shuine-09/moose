@@ -42,6 +42,7 @@ class EFAEdge;
 class EFAElement;
 class EFAElement2D;
 class EFAElement3D;
+struct CutEdge;
 
 /**
  * This is the \p XFEM class.  This class implements
@@ -65,9 +66,12 @@ public:
 
   void addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal);
   void addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal, unsigned int marked_side);
-  void addStateMarkedFrag(unsigned int elem_id, RealVectorValue & normal);
+  void addStateMarkedFrag(unsigned int elem_id, RealVectorValue & normal);  
+  void addUOMarkedElemHostID(unsigned int elem_id, RealVectorValue & host_id);
+  void addUOMarkedElemDistance(unsigned int elem_id, RealVectorValue & distance);
 
   void clearStateMarkedElems();
+  void clearUOMarkedElems();
 
   /**
    * Method to update the mesh due to modified cut planes
@@ -85,6 +89,7 @@ public:
   bool markCuts(Real time);
   bool markCutEdgesByGeometry(Real time);
   bool markCutEdgesByState(Real time);
+  bool markCutEdgesByUO();
   bool markCutFacesByGeometry(Real time);
   bool markCutFacesByState();
   bool initCutIntersectionEdge(Point cut_origin,
@@ -193,7 +198,8 @@ private:
   std::map<const Elem*, RealVectorValue> _state_marked_elems;
   std::set<const Elem*> _state_marked_frags;
   std::map<const Elem*, unsigned int> _state_marked_elem_sides;
-
+  std::map<const Elem*, RealVectorValue > _uo_marked_elems_distance;
+  std::map<const Elem*, RealVectorValue > _uo_marked_elems_host_id;
   std::map<unique_id_type, unique_id_type> _new_node_to_parent_node;
 
   ElementFragmentAlgorithm _efa_mesh;

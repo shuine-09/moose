@@ -135,11 +135,41 @@ XFEM::addStateMarkedFrag(unsigned int elem_id, RealVectorValue & normal)
 }
 
 void
+XFEM::addUOMarkedElemHostID(unsigned int elem_id, RealVectorValue & host_id)
+{
+  Elem *elem = _mesh->elem(elem_id);
+  std::map<const Elem*, RealVectorValue >::iterator mit;
+  mit = _uo_marked_elems_host_id.find(elem);
+  if (mit != _uo_marked_elems_host_id.end())
+    mooseError(" ERROR: element "<<elem->id()<<" already marked for cut.");
+  _uo_marked_elems_host_id[elem] = host_id;
+}
+
+void
+XFEM::addUOMarkedElemDistance(unsigned int elem_id, RealVectorValue & distance)
+{
+  Elem *elem = _mesh->elem(elem_id);
+  std::map<const Elem*, RealVectorValue >::iterator mit;
+  mit = _uo_marked_elems_distance.find(elem);
+  if (mit != _uo_marked_elems_distance.end())
+    mooseError(" ERROR: element "<<elem->id()<<" already marked for cut.");
+  _uo_marked_elems_distance[elem] = distance;
+}
+
+
+void
 XFEM::clearStateMarkedElems()
 {
   _state_marked_elems.clear();
   _state_marked_frags.clear();
   _state_marked_elem_sides.clear();
+}
+
+void
+XFEM::clearUOMarkedElems()
+{
+  _uo_marked_elems_host_id.clear();
+  _uo_marked_elems_distance.clear();
 }
 
 void
@@ -328,8 +358,9 @@ XFEM::markCuts(Real time)
   bool marked_sides = false;
   if (_mesh->mesh_dimension() == 2)
   {
-    marked_sides = markCutEdgesByGeometry(time);
-    marked_sides |= markCutEdgesByState(time);
+    //marked_sides = markCutEdgesByGeometry(time);
+    //marked_sides |= markCutEdgesByState(time);
+    marked_sides = markCutEdgesByUO();
   }
   else if (_mesh->mesh_dimension() == 3)
   {
@@ -338,6 +369,45 @@ XFEM::markCuts(Real time)
   }
   return marked_sides;
 }
+
+bool
+XFEM::markCutEdgesByUO()
+{
+  bool marked_edges = false;
+  for (std::map<const Elem*, RealVectorValue>::iterator pmeit = _uo_marked_elems_distance.begin();
+       pmeit != _uo_marked_elems_distance.end(); ++pmeit)
+  {
+    const Elem *elem = pmeit->first;
+    RealVectorValue distance = pmeit->second;
+    RealVectorValue host_id = _uo_marked_elems_host_id.find(elem)->second;
+
+    EFAElement * EFAelem = _efa_mesh.getElemByID(elem->id());
+    EFAElement2D * CEMElem = dynamic_cast<EFAElement2D*>(EFAelem);
+
+    if (!CEMElem)
+      mooseError("EFAelem is not of EFAelement2D type");
+
+    // continue if elem has been already cut twice - IMPORTANT
+    if (CEMElem->isFinalCut())
+      continue;
+
+    for (unsigned int i = 0; i < 3; i++)
+    {
+      if (std::abs(distance(i)) > 1.0e-10)
+      {
+        if (!CEMElem->isEdgePhantom((unsigned int)host_id(i))) // must not be phantom edge
+        {
+          _efa_mesh.addElemEdgeIntersection(elem->id(), (unsigned int)host_id(i),
+                                            distance(i));
+          marked_edges = true;
+        }
+      }
+    }
+  }
+
+  return marked_edges;
+}
+
 
 bool
 XFEM::markCutEdgesByGeometry(Real time)
