@@ -6,22 +6,22 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 40
-  ny = 40
-  xmin = -1.05
-  xmax = 1.05
-  ymin = -1.05
-  ymax = 1.05
+  nx = 3
+  ny = 3
+  xmin = 0
+  xmax = 1
+  ymin = 0
+  ymax = 1
   elem_type = QUAD4
 []
 
-[MeshModifiers]
-  [./middle_node]
-    type = AddExtraNodeset
-    new_boundary = 'middle_node'
-    coord = '0.0 0.0'
-  [../]
-[]
+#[MeshModifiers]
+#  [./middle_node]
+#    type = AddExtraNodeset
+#    new_boundary = 'middle_node'
+#    coord = '0.0 0.0'
+#  [../]
+#[]
 
 [XFEM]
   cut_data = '0.5 1.0 0.5 0.5 0 0'
@@ -44,7 +44,7 @@
 [UserObjects]
   [./xfem_marker_uo]
     type = XFEMMeshCutByLevelSet
-    execute_on = linear
+    execute_on = 'timestep_end'
     level_set_var = ls
   [../]
 []
@@ -60,7 +60,7 @@
   [./u_left]
     type = PiecewiseLinear
     x = '0   2'
-    y = '0  0.1'
+    y = '3   5'
   [../]
 []
 
@@ -87,11 +87,12 @@
     value = 0
   [../]
 
-  [./middle_u]
-    type = DirichletBC
-    variable = u
-    boundary = middle_node
-    value = 5
+#  [./middle_u]
+#    type = DirichletBC
+#    variable = u
+#    boundary = middle_node
+#    value = 5
+#  [../]
 []
 
 [Executioner]
@@ -107,8 +108,9 @@
   nl_abs_tol = 1e-10
 
   start_time = 0.0
-  dt = 1.0
-  end_time = 2.0
+  dt = 1.5
+  end_time = 6.0
+  max_xfem_update = 1
 []
 
 [Outputs]
