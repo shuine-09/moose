@@ -163,6 +163,8 @@ public:
                                   std::vector<Real> & quad_wts) const;
   bool has_secondary_cut(){return _has_secondary_cut;}
 
+  Real flagQpointInside(const Elem* elem, const Point & p) const;
+
 private:
 
   void getFragmentEdges(const Elem* elem,

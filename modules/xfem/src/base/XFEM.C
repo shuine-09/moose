@@ -1423,6 +1423,33 @@ XFEM::getPhysicalVolumeFraction(const Elem* elem) const
 }
 
 Real
+XFEM::flagQpointInside(const Elem* elem, const Point & p) const
+{
+  // get the flag indicating if a QP is inside the physical domain of a partial element
+  Real flag = 1.0; // default value - qp inside physical domain
+  std::map<unique_id_type, XFEMCutElem*>::const_iterator it;
+  it = _cut_elem_map.find(elem->unique_id());
+  if (it != _cut_elem_map.end())
+  {
+    XFEMCutElem *xfce = it->second;
+    unsigned int n_cut_planes = xfce->numCutPlanes();
+    for (unsigned int plane_id = 0; plane_id < n_cut_planes; ++plane_id)
+    {
+      Point origin = xfce->getCutPlaneOrigin(plane_id);
+      Point normal = xfce->getCutPlaneNormal(plane_id);
+      Point origin2qp = p - origin;
+      Xfem::normalizePoint(origin2qp);
+      if (origin2qp*normal > 0.0)
+      {
+        flag = 0.0; // QP outside pysical domain
+        break;
+      }
+    } // plane_id
+  }
+  return flag;
+}
+
+Real
 XFEM::getCutPlane(const Elem* elem,
                   const Xfem::XFEM_CUTPLANE_QUANTITY quantity,
                   unsigned int plane_id) const
