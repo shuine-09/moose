@@ -35,9 +35,9 @@ XFEMLevelSet::computeValue()
 
   if (isNodal())
   {
-    //return std::sqrt(x * x + y * y) - 0.5;
+    return std::sqrt(x * x + y * y) - 0.11 * (_t + 1);
     //return x - 0.5;
-    return pow(2*((x+0.5)*(x+0.5)+y*y)-x-0.5,2.0) - ((x+0.5)*(x+0.5)+y*y) + 0.1; 
+    //return pow(2*((x+0.5)*(x+0.5)+y*y)-x-0.5,2.0) - ((x+0.5)*(x+0.5)+y*y) + 0.1; 
   }
   else
     mooseError("XFEMLevelSet only supports Nodal AuxVariable");
