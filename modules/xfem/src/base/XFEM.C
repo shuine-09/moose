@@ -210,6 +210,43 @@ XFEM::storeCrackTipOriginAndDirection()
 }
 
 bool
+XFEM::updateHeal(Real time)
+{
+  bool mesh_changed = false;
+
+  buildEFAMesh();
+
+  mesh_changed = healMesh();
+
+  if (mesh_changed)
+  {
+    _mesh->update_parallel_id_counts();
+    MeshCommunication().make_elems_parallel_consistent(*_mesh);
+    MeshCommunication().make_nodes_parallel_consistent(*_mesh);
+//    _mesh->find_neighbors();
+//    _mesh->contract();
+    _mesh->allow_renumbering(false);
+    _mesh->skip_partitioning(true);
+    _mesh->prepare_for_use();
+//    _mesh->prepare_for_use(true,true); //doing this preserves the numbering, but generates warning
+
+    if (_mesh2)
+    {
+      _mesh2->update_parallel_id_counts();
+      MeshCommunication().make_elems_parallel_consistent(*_mesh2);
+      MeshCommunication().make_nodes_parallel_consistent(*_mesh2);
+      _mesh2->allow_renumbering(false);
+      _mesh2->skip_partitioning(true);
+      _mesh2->prepare_for_use();
+//      _mesh2->prepare_for_use(true,true);
+    }
+  }
+
+  return mesh_changed;
+}
+
+
+bool
 XFEM::update(Real time)
 {
   bool mesh_changed = false;
@@ -217,7 +254,7 @@ XFEM::update(Real time)
   buildEFAMesh();
 
   storeCrackTipOriginAndDirection();
-
+  
   if (markCuts(time))
     mesh_changed = cutMeshWithEFA();
 
@@ -950,6 +987,79 @@ XFEM::initCutIntersectionEdge(Point cut_origin,
     does_intersect = true;
   }
   return does_intersect;
+}
+
+bool
+XFEM::healMesh()
+{
+  bool mesh_changed = false;
+
+  std::set<Node *> nodes_to_delete;
+
+  for (ElementPairLocator::ElementPairList::iterator it = _sibling_elems.begin();
+       it != _sibling_elems.end(); ++it)
+  {
+    Elem * elem1 = const_cast<Elem *>(it->first);
+    Elem * elem2 = const_cast<Elem *>(it->second);
+
+    std::map<unique_id_type, XFEMCutElem*>::iterator cemit = _cut_elem_map.find(elem1->unique_id());
+    if (cemit != _cut_elem_map.end())
+    {
+      const XFEMCutElem *xfce = cemit->second;
+
+      for (unsigned int in = 0; in < elem1->n_nodes(); ++in)
+      {
+        Node * e1node = elem1->get_node(in);
+        Node * e2node = elem2->get_node(in);
+        if (!xfce->isPointPhysical(*e1node) &&
+            e1node != e2node) // This would happen at the crack tip
+        {
+          elem1->set_node(in) = e2node;
+          nodes_to_delete.insert(e1node);
+          //HACKS:
+          //elem2->get_node(in)->set_old_dof_object();
+          //elem1->set_refinement_flag(Elem::JUST_REFINED);
+          //elem2->set_refinement_flag(Elem::JUST_REFINED);
+          //elem1->set_n_systems(1);
+          //elem2->set_n_systems(1);
+        }
+        else if (e1node != e2node)
+          nodes_to_delete.insert(e2node);
+      }
+    }
+    else
+      mooseError("Could not find XFEMCutElem for element to be kept in healing");
+
+    elem2->nullify_neighbors();
+    _mesh->boundary_info->remove(elem2);
+    unsigned int deleted_elem_id = elem2->id();
+    _mesh->delete_elem(elem2);
+    _console << "XFEM healing deleted element: " << deleted_elem_id << "\n";
+    mesh_changed = true;
+  }
+
+  for (std::set<Node *>::iterator sit = nodes_to_delete.begin();
+       sit != nodes_to_delete.end(); ++sit)
+  {
+    Node * node_to_delete = *sit;
+    unsigned int deleted_node_id = node_to_delete->id();
+    _mesh->boundary_info->remove(node_to_delete);
+    _mesh->delete_node(node_to_delete);
+    _console << "XFEM healing deleted node: " << deleted_node_id << "\n";
+  }
+  _console << std::flush;
+
+  for (std::map<unique_id_type, XFEMCutElem*>::iterator cemit = _cut_elem_map.begin();
+       cemit != _cut_elem_map.end(); ++cemit)
+    delete cemit->second;
+
+  _cut_elem_map.clear();
+  _crack_tip_elems.clear();
+  _sibling_elems.clear();
+  _elem_crack_origin_direction_map.clear();
+  _new_node_to_parent_node.clear();
+
+  return mesh_changed;
 }
 
 bool
