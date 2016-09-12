@@ -21,6 +21,7 @@
 #include "XFEMMeshCutByLevelSet.h"
 #include "XFEMAction.h"
 #include "XFEMSingleVariableConstraint.h"
+#include "XFEMSingleVariableConstraintLS.h"
 #include "XFEMPressure.h"
 
 template<>
@@ -73,6 +74,7 @@ XFEMApp::registerObjects(Factory & factory)
 
   //Constraints
   registerConstraint(XFEMSingleVariableConstraint);
+  registerConstraint(XFEMSingleVariableConstraintLS);
 
   //UserObjects
   registerUserObject(XFEMMarkerUserObject);
