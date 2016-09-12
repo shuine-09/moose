@@ -1003,7 +1003,7 @@ NonlinearSystem::constraintResiduals(NumericVector<Number> & residual, bool disp
         {
           bool ec_displaced = ec->parameters().have_parameter<bool>("use_displaced_mesh") && ec->getParam<bool>("use_displaced_mesh");
           
-          if (ec_displaced && displaced)
+          if (ec_displaced == displaced)
           {
             _fe_problem.reinitElemPhys(elem1, info._elem1_constraint_q_point, tid);
             _fe_problem.reinitNeighborPhys(elem2, info._elem2_constraint_q_point, tid);
@@ -1609,7 +1609,7 @@ NonlinearSystem::constraintJacobians(SparseMatrix<Number> & jacobian, bool displ
         {
           bool ec_displaced = ec->parameters().have_parameter<bool>("use_displaced_mesh") && ec->getParam<bool>("use_displaced_mesh");
 
-          if (ec_displaced && displaced)
+          if (ec_displaced == displaced)
           {
             _fe_problem.reinitElemPhys(elem1, info._elem1_constraint_q_point, tid);
             _fe_problem.reinitNeighborPhys(elem2, info._elem2_constraint_q_point, tid);
