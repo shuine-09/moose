@@ -103,6 +103,8 @@ public:
    */
   virtual bool update(Real time) = 0;
 
+  virtual bool updateHeal(Real time) = 0;
+
   /**
    * Initialize the solution on newly created nodes
    */

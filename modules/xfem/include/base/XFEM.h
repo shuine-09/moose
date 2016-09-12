@@ -78,6 +78,8 @@ public:
    */
   virtual bool update(Real time);
 
+  virtual bool updateHeal(Real time);
+
   /**
    * Initialize the solution on newly created nodes
    */
@@ -97,6 +99,7 @@ public:
                                Point &edge_p1,
                                Point &edge_p2,
                                Real &dist);
+  bool healMesh();
   bool cutMeshWithEFA();
   Point getEFANodeCoords(EFANode* CEMnode,
                          EFAElement* CEMElem,
