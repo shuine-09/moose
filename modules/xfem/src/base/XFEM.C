@@ -174,6 +174,13 @@ XFEM::clearStateMarkedElems()
 void
 XFEM::clearUOMarkedElems()
 {
+  for (unsigned int i = 0; i < _uo_marked_elems_host_id.size(); ++i)
+    _uo_marked_elems_host_id[i].clear();
+
+  for (unsigned int i = 0; i < _uo_marked_elems_distance.size(); ++i)
+    _uo_marked_elems_distance[i].clear();
+
+
   _uo_marked_elems_host_id.clear();
   _uo_marked_elems_distance.clear();
 }
@@ -407,8 +414,9 @@ XFEM::markCuts(Real time)
   }
   else if (_mesh->mesh_dimension() == 3)
   {
-    marked_sides = markCutFacesByGeometry(time);
-    marked_sides |= markCutFacesByState();
+    //marked_sides = markCutFacesByGeometry(time);
+    //marked_sides |= markCutFacesByState();
+    marked_sides = markCutFacesByUO();
   }
   return marked_sides;
 }
@@ -454,7 +462,6 @@ XFEM::markCutEdgesByUO()
 
   return marked_edges;
 }
-
 
 bool
 XFEM::markCutEdgesByGeometry(Real time)
@@ -898,6 +905,72 @@ XFEM::markCutEdgesByState(Real time)
   }// loop over all state_marked_elems
 
   return marked_edges;
+}
+
+bool
+XFEM::markCutFacesByUO()
+{
+  bool marked_faces = false;
+  
+  if (_uo_marked_elems_distance.size() == 0) // _uo_marked_elems_distance has not been filled
+    return marked_faces;
+
+  std::map<const Elem*, std::vector<CutFace> > elem_cutface_map;
+  for (unsigned int k = 0; k < 6; ++k)
+  {
+    for (std::map<const Elem*, RealVectorValue>::iterator pmeit = _uo_marked_elems_distance[k].begin();
+         pmeit != _uo_marked_elems_distance[k].end(); ++pmeit)
+    {
+      const Elem *elem = pmeit->first;
+
+      RealVectorValue distance = pmeit->second;
+      RealVectorValue host_id = _uo_marked_elems_host_id[k].find(elem)->second;
+
+      CutFace mycut;
+      bool intersected = false;
+      for (unsigned int i = 0; i < 3; i++)
+      {
+        if (std::abs(distance(i)) > 1.0e-10)
+        {
+          mycut.face_id = k;
+          mycut.face_edge.push_back((unsigned int)host_id(i));
+          mycut.position.push_back(distance(i));
+          intersected = true;
+        }
+      }
+      if (intersected)
+        elem_cutface_map[elem].push_back(mycut);
+    }
+  }
+
+  for (std::map<const Elem*, std::vector<CutFace> >::iterator pmeit = elem_cutface_map.begin();
+       pmeit != elem_cutface_map.end(); ++pmeit)
+  {
+    const Elem *elem = pmeit->first;
+    EFAElement * EFAelem = _efa_mesh.getElemByID(elem->id());
+    EFAElement3D * CEMElem = dynamic_cast<EFAElement3D*>(EFAelem);
+
+    if (!CEMElem)
+      mooseError("EFAelem is not of EFAelement3D type");
+
+    // continue if elem has been already cut twice - IMPORTANT
+    if (CEMElem->isFinalCut())
+      continue;
+
+    for (unsigned int i = 0; i < (pmeit->second).size(); ++i) // mark element faces
+    {
+      if (!CEMElem->isFacePhantom((pmeit->second)[i].face_id)) // must not be phantom face
+      {
+        _efa_mesh.addElemFaceIntersection(elem->id(), (pmeit->second)[i].face_id,
+                                          (pmeit->second)[i].face_edge, (pmeit->second)[i].position);
+        marked_faces = true;
+      }
+    }
+  }
+
+  return marked_faces;
+
+  elem_cutface_map.clear();
 }
 
 bool
