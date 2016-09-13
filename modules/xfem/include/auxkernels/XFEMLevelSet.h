@@ -17,6 +17,8 @@
 
 #include "AuxKernel.h"
 
+class Function;
+
 //Forward Declarations
 class XFEMLevelSet;
 
@@ -33,6 +35,8 @@ public:
 
 protected:
   virtual Real computeValue();
+
+  Function & _func;
 };
 
 #endif // XFEMLEVELSET_H
