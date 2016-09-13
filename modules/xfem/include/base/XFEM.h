@@ -67,8 +67,8 @@ public:
   void addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal);
   void addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal, unsigned int marked_side);
   void addStateMarkedFrag(unsigned int elem_id, RealVectorValue & normal);  
-  void addUOMarkedElemHostID(unsigned int elem_id, RealVectorValue & host_id);
-  void addUOMarkedElemDistance(unsigned int elem_id, RealVectorValue & distance);
+  void addUOMarkedElemHostID(unsigned int elem_id, RealVectorValue & host_id, unsigned int k = 0);
+  void addUOMarkedElemDistance(unsigned int elem_id, RealVectorValue & distance, unsigned int k = 0);
 
   void clearStateMarkedElems();
   void clearUOMarkedElems();
@@ -203,8 +203,8 @@ private:
   std::map<const Elem*, RealVectorValue> _state_marked_elems;
   std::set<const Elem*> _state_marked_frags;
   std::map<const Elem*, unsigned int> _state_marked_elem_sides;
-  std::map<const Elem*, RealVectorValue > _uo_marked_elems_distance;
-  std::map<const Elem*, RealVectorValue > _uo_marked_elems_host_id;
+  std::vector<std::map<const Elem*, RealVectorValue > > _uo_marked_elems_distance;
+  std::vector<std::map<const Elem*, RealVectorValue > > _uo_marked_elems_host_id;
   std::map<unique_id_type, unique_id_type> _new_node_to_parent_node;
 
   ElementFragmentAlgorithm _efa_mesh;
