@@ -23,6 +23,7 @@
 #include "XFEMSingleVariableConstraint.h"
 #include "XFEMSingleVariableConstraintLS.h"
 #include "XFEMPressure.h"
+#include "TwoSidedDiffusion.h"
 
 template<>
 InputParameters validParams<XFEMApp>()
@@ -83,6 +84,9 @@ XFEMApp::registerObjects(Factory & factory)
 
   //DiracKernels
   registerDiracKernel(XFEMPressure);
+
+  //Kernels
+  registerKernel(TwoSidedDiffusion);
 }
 
 // External entry point for dynamic syntax association

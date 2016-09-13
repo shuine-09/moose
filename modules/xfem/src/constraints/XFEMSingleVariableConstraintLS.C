@@ -23,6 +23,8 @@ InputParameters validParams<XFEMSingleVariableConstraintLS>()
   params.addParam<Real>("jump", 0, "Jump at the interface.");
   params.addParam<Real>("jump_flux", 0, "Flux jump at the interface.");
   params.addRequiredParam<NonlinearVariableName>("level_set_var", "The name of level set variable used to represent the interface");
+  params.addParam<Real>("diffusivity_ls_plus", 1.0, "Diffusivity Coefficient for domain of positive level set");
+  params.addParam<Real>("diffusivity_ls_minus", 1.0, "Diffusivity Coefficient for domain of minus level set");
   return params;
 }
 
@@ -34,7 +36,9 @@ XFEMSingleVariableConstraintLS::XFEMSingleVariableConstraintLS(const InputParame
     _ls_var_name(parameters.get<NonlinearVariableName>("level_set_var")),
     _ls_var(_fe_problem.getVariable(_tid, _ls_var_name)),
     _aux_system(_fe_problem.getAuxiliarySystem()),
-    _aux_solution(_aux_system.currentSolution())
+    _aux_solution(_aux_system.currentSolution()),
+    _diffusivity_ls_plus(getParam<Real>("diffusivity_ls_plus")),
+    _diffusivity_ls_minus(getParam<Real>("diffusivity_ls_minus"))
 {
   FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
   if (fe_problem == NULL)
@@ -92,25 +96,35 @@ XFEMSingleVariableConstraintLS::computeQpResidual(Moose::DGResidualType type)
   Real jump = _jump;
   Real jump_flux = _jump_flux;
 
+  Real diffusivity_plus = 0.0;
+  Real diffusivity_minus = 0.0;
+
   if  (shouldReverseSign())
   {
     jump *= -1.0;
     jump_flux *= -1.0;
+    diffusivity_plus = _diffusivity_ls_minus;
+    diffusivity_minus = _diffusivity_ls_plus;
+  }
+  else
+  {
+    diffusivity_plus = _diffusivity_ls_plus;
+    diffusivity_minus = _diffusivity_ls_minus;
   }
 
   switch (type)
   {
     case Moose::Element:
-      r -= (0.5 * _grad_u[_qp] * _interface_normal + 0.5 * _grad_u_neighbor[_qp] * _interface_normal) * _test[_i][_qp];
-      r -= (_u[_qp] - _u_neighbor[_qp]) * 0.5 * _grad_test[_i][_qp] * _interface_normal;
-      r += 0.5 * _grad_test[_i][_qp] * _interface_normal * jump + 0.5 * _test[_i][_qp] * jump_flux;
+      r -= (0.5 * _grad_u[_qp] * diffusivity_plus * _interface_normal + 0.5 * _grad_u_neighbor[_qp] * diffusivity_minus * _interface_normal) * _test[_i][_qp];
+      r -= (_u[_qp] - _u_neighbor[_qp]) * 0.5 * _grad_test[_i][_qp] * diffusivity_plus * _interface_normal;
+      r += 0.5 * _grad_test[_i][_qp] * diffusivity_plus * _interface_normal * jump + 0.5 * _test[_i][_qp] * jump_flux;
       r += _alpha * (_u[_qp] - _u_neighbor[_qp] - jump) * _test[_i][_qp];
       break;
 
     case Moose::Neighbor:
-      r += (0.5 * _grad_u[_qp] * _interface_normal + 0.5 * _grad_u_neighbor[_qp] * _interface_normal) * _test_neighbor[_i][_qp];
-      r -= (_u[_qp] - _u_neighbor[_qp]) * 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal;
-      r += 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal * jump + 0.5 * _test_neighbor[_i][_qp] * jump_flux;
+      r += (0.5 * _grad_u[_qp] * diffusivity_plus * _interface_normal + 0.5 * _grad_u_neighbor[_qp] * diffusivity_minus * _interface_normal) * _test_neighbor[_i][_qp];
+      r -= (_u[_qp] - _u_neighbor[_qp]) * 0.5 * _grad_test_neighbor[_i][_qp] * diffusivity_minus * _interface_normal;
+      r += 0.5 * _grad_test_neighbor[_i][_qp] * diffusivity_minus * _interface_normal * jump + 0.5 * _test_neighbor[_i][_qp] * jump_flux;
       r -= _alpha * (_u[_qp] - _u_neighbor[_qp] - jump) * _test_neighbor[_i][_qp];
       break;
   }
@@ -122,25 +136,40 @@ XFEMSingleVariableConstraintLS::computeQpJacobian(Moose::DGJacobianType type)
 {
   Real r = 0;
 
+  Real diffusivity_plus = 0.0;
+  Real diffusivity_minus = 0.0;
+
+  if  (shouldReverseSign())
+  {
+    diffusivity_plus = _diffusivity_ls_minus;
+    diffusivity_minus = _diffusivity_ls_plus;
+  }
+  else
+  {
+    diffusivity_plus = _diffusivity_ls_plus;
+    diffusivity_minus = _diffusivity_ls_minus;
+  }
+
+
   switch (type)
   {
     case Moose::ElementElement:
-      r += -0.5 * _grad_phi[_j][_qp] * _interface_normal * _test[_i][_qp] - _phi[_j][_qp] * 0.5 * _grad_test[_i][_qp] * _interface_normal;
+      r += -0.5 * _grad_phi[_j][_qp] * diffusivity_plus * _interface_normal * _test[_i][_qp] - _phi[_j][_qp] * 0.5 * _grad_test[_i][_qp] * diffusivity_plus * _interface_normal;
       r += _alpha * _phi[_j][_qp] * _test[_i][_qp];
       break;
 
     case Moose::ElementNeighbor:
-      r += -0.5 * _grad_phi_neighbor[_j][_qp] * _interface_normal * _test[_i][_qp] + _phi_neighbor[_j][_qp] * 0.5 * _grad_test[_i][_qp] * _interface_normal;
+      r += -0.5 * _grad_phi_neighbor[_j][_qp] * diffusivity_minus * _interface_normal * _test[_i][_qp] + _phi_neighbor[_j][_qp] * 0.5 * _grad_test[_i][_qp] * diffusivity_plus * _interface_normal;
       r -= _alpha * _phi_neighbor[_j][_qp] * _test[_i][_qp];
       break;
 
     case Moose::NeighborElement:
-      r += 0.5 * _grad_phi[_j][_qp] * _interface_normal * _test_neighbor[_i][_qp] - _phi[_j][_qp] * 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal;
+      r += 0.5 * _grad_phi[_j][_qp] * diffusivity_plus * _interface_normal * _test_neighbor[_i][_qp] - _phi[_j][_qp] * 0.5 * _grad_test_neighbor[_i][_qp] * diffusivity_minus * _interface_normal;
       r -= _alpha * _phi[_j][_qp] * _test_neighbor[_i][_qp];
       break;
 
     case Moose::NeighborNeighbor:
-      r += 0.5 * _grad_phi_neighbor[_j][_qp] * _interface_normal * _test_neighbor[_i][_qp] + _phi_neighbor[_j][_qp] * 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal;
+      r += 0.5 * _grad_phi_neighbor[_j][_qp] * diffusivity_minus * _interface_normal * _test_neighbor[_i][_qp] + _phi_neighbor[_j][_qp] * 0.5 * _grad_test_neighbor[_i][_qp] * diffusivity_minus * _interface_normal;
       r += _alpha * _phi_neighbor[_j][_qp] * _test_neighbor[_i][_qp];
       break;
   }

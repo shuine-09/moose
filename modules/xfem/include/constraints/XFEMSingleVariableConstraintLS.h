@@ -66,6 +66,9 @@ protected:
 
   SystemBase & _aux_system;
   const NumericVector<Number> * _aux_solution;
+  
+  Real _diffusivity_ls_plus;
+  Real _diffusivity_ls_minus;
 
 };
 
