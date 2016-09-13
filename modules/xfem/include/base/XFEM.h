@@ -94,6 +94,7 @@ public:
   bool markCutEdgesByUO();
   bool markCutFacesByGeometry(Real time);
   bool markCutFacesByState();
+  bool markCutFacesByUO();
   bool initCutIntersectionEdge(Point cut_origin,
                                RealVectorValue cut_normal,
                                Point &edge_p1,
