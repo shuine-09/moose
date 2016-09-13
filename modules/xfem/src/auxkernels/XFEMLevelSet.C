@@ -19,27 +19,22 @@ template<>
 InputParameters validParams<XFEMLevelSet>()
 {
   InputParameters params = validParams<AuxKernel>();
+  params.addRequiredParam<FunctionName>("function", "The level set function.");
   return params;
 }
 
 XFEMLevelSet::XFEMLevelSet(const InputParameters & parameters) :
-    AuxKernel(parameters)
+    AuxKernel(parameters),
+    _func(getFunction("function"))
 {
 }
 
 Real
 XFEMLevelSet::computeValue()
 {
-  Real x = (*_current_node)(0);
-  Real y = (*_current_node)(1);
-
-  if (isNodal())
-  {
-    //return std::sqrt(x * x + y * y) - 0.11 * (_t + 1);
-    return x - 0.1 * (_t + 1);
-    //return pow(2*((x+0.5)*(x+0.5)+y*y)-x-0.5,2.0) - ((x+0.5)*(x+0.5)+y*y) + 0.1; 
-  }
-  else
+  if (!isNodal())
     mooseError("XFEMLevelSet only supports Nodal AuxVariable");
+  
+  return _func.value(_t,*_current_node);
 }
 

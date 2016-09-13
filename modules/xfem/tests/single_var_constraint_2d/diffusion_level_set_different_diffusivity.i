@@ -65,6 +65,7 @@
   [./ls_function]
     type = XFEMLevelSet
     variable = ls
+    function = ls_func
   [../]
 []
 
@@ -73,6 +74,10 @@
     type = PiecewiseLinear
     x = '0   2'
     y = '3   5'
+  [../]
+  [./ls_func]
+    type = ParsedFunction
+    value = 'x-0.1*(t+1)'
   [../]
 []
 
