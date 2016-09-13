@@ -135,25 +135,31 @@ XFEM::addStateMarkedFrag(unsigned int elem_id, RealVectorValue & normal)
 }
 
 void
-XFEM::addUOMarkedElemHostID(unsigned int elem_id, RealVectorValue & host_id)
+XFEM::addUOMarkedElemHostID(unsigned int elem_id, RealVectorValue & host_id, unsigned k)
 {
+  if (_uo_marked_elems_host_id.size() != 6)
+    _uo_marked_elems_host_id.resize(6);
+
   Elem *elem = _mesh->elem(elem_id);
   std::map<const Elem*, RealVectorValue >::iterator mit;
-  mit = _uo_marked_elems_host_id.find(elem);
-  if (mit != _uo_marked_elems_host_id.end())
+  mit = _uo_marked_elems_host_id[k].find(elem);
+  if (mit != _uo_marked_elems_host_id[k].end())
     mooseError(" ERROR: element "<<elem->id()<<" already marked for cut.");
-  _uo_marked_elems_host_id[elem] = host_id;
+  _uo_marked_elems_host_id[k][elem] = host_id;
 }
 
 void
-XFEM::addUOMarkedElemDistance(unsigned int elem_id, RealVectorValue & distance)
+XFEM::addUOMarkedElemDistance(unsigned int elem_id, RealVectorValue & distance, unsigned k)
 {
+  if (_uo_marked_elems_distance.size() != 6)
+    _uo_marked_elems_distance.resize(6);
+
   Elem *elem = _mesh->elem(elem_id);
   std::map<const Elem*, RealVectorValue >::iterator mit;
-  mit = _uo_marked_elems_distance.find(elem);
-  if (mit != _uo_marked_elems_distance.end())
+  mit = _uo_marked_elems_distance[k].find(elem);
+  if (mit != _uo_marked_elems_distance[k].end())
     mooseError(" ERROR: element "<<elem->id()<<" already marked for cut.");
-  _uo_marked_elems_distance[elem] = distance;
+  _uo_marked_elems_distance[k][elem] = distance;
 }
 
 
@@ -411,12 +417,16 @@ bool
 XFEM::markCutEdgesByUO()
 {
   bool marked_edges = false;
-  for (std::map<const Elem*, RealVectorValue>::iterator pmeit = _uo_marked_elems_distance.begin();
-       pmeit != _uo_marked_elems_distance.end(); ++pmeit)
+  
+  if (_uo_marked_elems_distance.size() == 0) // _uo_marked_elems_distance has not been filled
+    return marked_edges;
+
+  for (std::map<const Elem*, RealVectorValue>::iterator pmeit = _uo_marked_elems_distance[0].begin();
+       pmeit != _uo_marked_elems_distance[0].end(); ++pmeit)
   {
     const Elem *elem = pmeit->first;
     RealVectorValue distance = pmeit->second;
-    RealVectorValue host_id = _uo_marked_elems_host_id.find(elem)->second;
+    RealVectorValue host_id = _uo_marked_elems_host_id[0].find(elem)->second;
 
     EFAElement * EFAelem = _efa_mesh.getElemByID(elem->id());
     EFAElement2D * CEMElem = dynamic_cast<EFAElement2D*>(EFAelem);

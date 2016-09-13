@@ -45,7 +45,16 @@ private:
 protected:
   std::map<unsigned int, RealVectorValue > _marked_elems_distance;
   std::map<unsigned int, RealVectorValue > _marked_elems_host_id;
-
+  std::map<unsigned int, RealVectorValue > _marked_elems_host_id2;
+  std::map<unsigned int, RealVectorValue > _marked_elems_host_id3;
+  std::map<unsigned int, RealVectorValue > _marked_elems_host_id4;
+  std::map<unsigned int, RealVectorValue > _marked_elems_host_id5;
+  std::map<unsigned int, RealVectorValue > _marked_elems_host_id6;
+  std::map<unsigned int, RealVectorValue > _marked_elems_distance2;
+  std::map<unsigned int, RealVectorValue > _marked_elems_distance3;
+  std::map<unsigned int, RealVectorValue > _marked_elems_distance4;
+  std::map<unsigned int, RealVectorValue > _marked_elems_distance5;
+  std::map<unsigned int, RealVectorValue > _marked_elems_distance6;
 };
 
 #endif // XFEMMESHCUTUSEROBJECT_H
