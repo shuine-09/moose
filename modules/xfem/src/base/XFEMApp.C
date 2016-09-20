@@ -22,6 +22,7 @@
 #include "XFEMAction.h"
 #include "XFEMSingleVariableConstraint.h"
 #include "XFEMSingleVariableConstraintLS.h"
+#include "XFEMSingleVariableConstraintPts.h"
 #include "XFEMPressure.h"
 #include "TwoSidedDiffusion.h"
 
@@ -76,6 +77,7 @@ XFEMApp::registerObjects(Factory & factory)
   //Constraints
   registerConstraint(XFEMSingleVariableConstraint);
   registerConstraint(XFEMSingleVariableConstraintLS);
+  registerConstraint(XFEMSingleVariableConstraintPts);
 
   //UserObjects
   registerUserObject(XFEMMarkerUserObject);

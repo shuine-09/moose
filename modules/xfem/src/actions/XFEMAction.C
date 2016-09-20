@@ -33,6 +33,7 @@ InputParameters validParams<XFEMAction>()
 
   params.addParam<std::string>("cut_type", "line_segment_2d", "The type of XFEM cuts");
   params.addParam<std::vector<Real> >("cut_data","Data for XFEM geometric cuts");
+  params.addParam<std::vector<Point> >("interface_points", "Discrete points on the interface");
   params.addParam<std::vector<Real> >("cut_scale","X,Y scale factors for XFEM geometric cuts");
   params.addParam<std::vector<Real> >("cut_translate","X,Y translations for XFEM geometric cuts");
   params.addParam<std::string>("qrule", "volfrac", "XFEM quadrature rule to use");
@@ -83,6 +84,15 @@ XFEMAction::act()
 
     MooseSharedPointer<XFEMElementPairLocator> new_xfem_epl (new XFEMElementPairLocator(xfem, 0));
     _problem->geomSearchData().addElementPairLocator(0, new_xfem_epl);
+
+    if( isParamValid("cut_data"))
+    {
+      _interface_points = getParam<std::vector<Point> >("interface_points");
+      xfem->resizeInterfacePoints(_interface_points.size());
+      xfem->resizeInterfaceQuantities(_interface_points.size());
+      for (unsigned int i = 0; i < _interface_points.size(); ++i)
+        xfem->setInterfacePoint(i, _interface_points[i]);
+    }
 
     if (_problem->getDisplacedProblem() != NULL)
     {

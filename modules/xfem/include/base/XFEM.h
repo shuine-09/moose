@@ -63,6 +63,7 @@ public:
   ~XFEM();
 
   void addGeometricCut(XFEMGeometricCut* geometric_cut);
+  void clearGeometricCuts();
 
   void addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal);
   void addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal, unsigned int marked_side);
@@ -72,6 +73,20 @@ public:
 
   void clearStateMarkedElems();
   void clearUOMarkedElems();
+
+  Real numberInterfacePoints() { return _interface_points.size(); };
+
+  Point getInterfacePoint(unsigned int i) { return _interface_points[i]; };
+
+  Real getInterfaceQuantity(unsigned int i) { return _interface_quantities[i]; };
+
+  void setInterfacePoint(unsigned int i, Point & point){ _interface_points[i] = point; };
+
+  void setInterfaceQuantity(unsigned int i, Real value) { _interface_quantities[i] = value; };
+
+  void resizeInterfacePoints(unsigned int n) { _interface_points.resize(n); };
+
+  void resizeInterfaceQuantities(unsigned int n) { _interface_quantities.resize(n); };
 
   /**
    * Method to update the mesh due to modified cut planes
@@ -90,6 +105,7 @@ public:
   void buildEFAMesh();
   bool markCuts(Real time);
   bool markCutEdgesByGeometry(Real time);
+  bool markCutEdgesByGeometry();
   bool markCutEdgesByState(Real time);
   bool markCutEdgesByUO();
   bool markCutFacesByGeometry(Real time);
@@ -208,6 +224,8 @@ private:
   std::vector<std::map<const Elem*, RealVectorValue > > _uo_marked_elems_host_id;
   std::map<unique_id_type, unique_id_type> _new_node_to_parent_node;
 
+  std::vector<Point> _interface_points; 
+  std::vector<Real> _interface_quantities;
   ElementFragmentAlgorithm _efa_mesh;
 };
 
