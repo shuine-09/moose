@@ -52,6 +52,15 @@ XFEM::addGeometricCut(XFEMGeometricCut* geometric_cut)
 }
 
 void
+XFEM::clearGeometricCuts()
+{
+  for (unsigned int i=0; i < _geometric_cuts.size(); ++i)
+    delete _geometric_cuts[i];
+
+  _geometric_cuts.clear();
+}
+
+void
 XFEM::getCrackTipOrigin(std::map<unsigned int, const Elem* > & elem_id_crack_tip, std::vector<Point> & crack_front_points)
 {
   elem_id_crack_tip.clear();
@@ -410,7 +419,8 @@ XFEM::markCuts(Real time)
   {
     //marked_sides = markCutEdgesByGeometry(time);
     //marked_sides |= markCutEdgesByState(time);
-    marked_sides = markCutEdgesByUO();
+    //marked_sides = markCutEdgesByUO();
+    marked_sides = markCutEdgesByGeometry();
   }
   else if (_mesh->mesh_dimension() == 3)
   {
@@ -524,6 +534,79 @@ XFEM::markCutEdgesByGeometry(Real time)
             if (!isElemAtCrackTip(elem))
               _has_secondary_cut = true;
           }
+        }
+      }
+    }
+  }
+
+  return marked_edges;
+}
+
+bool
+XFEM::markCutEdgesByGeometry()
+{
+  bool marked_edges = false;
+
+  clearGeometricCuts();
+
+  for (unsigned int i = 0; i < _interface_quantities.size(); ++i)
+    std::cout << "interface_quantities[ " << i << "] = " << _interface_quantities[i] << std::endl;
+
+  for (unsigned int i = 0; i < _interface_points.size(); ++i)
+  {
+    _interface_points[i](0) += _interface_quantities[i] * 0.01;
+    if (i > 3 && i < 7)
+      _interface_points[i](0) += _interface_quantities[i] * 0.0025;
+  }
+
+  for (unsigned int i = 0; i < _interface_points.size() - 1; ++i)
+  {
+    Real x0 = _interface_points[i](0);
+    Real y0 = _interface_points[i](1);
+    Real x1 = _interface_points[i+1](0);
+    Real y1 = _interface_points[i+1](1);
+    Real t0 = 0.0;
+    Real t1 = 0.0;
+    addGeometricCut(new XFEMGeometricCut2D( x0, y0, x1, y1, t0, t1));
+  }
+
+  if (_geometric_cuts.size() > 0)
+  {
+    for (MeshBase::element_iterator elem_it = _mesh->elements_begin();
+         elem_it != _mesh->elements_end(); ++elem_it)
+    {
+      const Elem *elem = *elem_it;
+      std::vector<CutEdge> elem_cut_edges;
+      std::vector<CutEdge> frag_cut_edges;
+      std::vector<std::vector<Point> > frag_edges;
+      EFAElement * EFAelem = _efa_mesh.getElemByID(elem->id());
+      EFAElement2D * CEMElem = dynamic_cast<EFAElement2D*>(EFAelem);
+
+      if (!CEMElem)
+        mooseError("EFAelem is not of EFAelement2D type");
+
+      // continue if elem has been already cut twice - IMPORTANT
+      if (CEMElem->isFinalCut())
+        continue;
+
+      // get fragment edges
+      getFragmentEdges(elem, CEMElem, frag_edges);
+
+      // mark cut edges for the element and its fragment
+      for (unsigned int i = 0; i < _geometric_cuts.size(); ++i)
+      {
+        _geometric_cuts[i]->cutElementByGeometry(elem, elem_cut_edges, 1.0);
+        if (CEMElem->numFragments() > 0)
+          _geometric_cuts[i]->cutFragmentByGeometry(frag_edges, frag_cut_edges, 1.0);
+      }
+
+      for (unsigned int i = 0; i < elem_cut_edges.size(); ++i) // mark element edges
+      {
+        if (!CEMElem->isEdgePhantom(elem_cut_edges[i].host_side_id)) // must not be phantom edge
+        {
+          _efa_mesh.addElemEdgeIntersection(elem->id(), elem_cut_edges[i].host_side_id,
+                                            elem_cut_edges[i].distance);
+          marked_edges = true;
         }
       }
     }
@@ -1155,7 +1238,7 @@ XFEM::cutMeshWithEFA()
   std::map<unsigned int, Elem*> efa_id_to_new_elem;
   _new_node_to_parent_node.clear();
 
-  _efa_mesh.updatePhysicalLinksAndFragments();
+  _efa_mesh.updatePhysicalLinksAndFragments(); 
   // DEBUG
 //  _efa_mesh.printMesh();
 

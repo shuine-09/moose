@@ -26,6 +26,7 @@ public:
 protected:
   std::string _xfem_cut_type;
   std::vector<Real> _xfem_cut_data;
+  std::vector<Point> _interface_points;
   std::vector<Real> _xfem_cut_scale;
   std::vector<Real> _xfem_cut_translate;
   std::string _xfem_qrule;
