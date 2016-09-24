@@ -502,19 +502,19 @@ XFEMMaxHoopStress::computeQpIntegrals(const std::vector<std::vector<Real> > & N_
     calcRTheta(p, crack_front_point, crack_direction);
 
     // calculate Q function at finite element node
-    for (unsigned i = 0; i < n_nodes; i++)
+    for (unsigned int j = 0; j < n_nodes; j++)
     {
-      Real q = calcQValue((*_current_elem->get_node(i)), crack_front_point);
-      q_nodes[i] = q;
+      Real q = calcQValue((*_current_elem->get_node(j)), crack_front_point);
+      q_nodes[j] = q;
     }
 
     // calcuate the Q function and its gradient at quadrature point
-    for (unsigned i = 0; i < n_nodes; i++)
+    for (unsigned int j = 0; j < n_nodes; j++)
     {
-      grad_of_scalar_q(0) += q_nodes[i] * dN_shape_func[i][_qp](0);
-      grad_of_scalar_q(1) += q_nodes[i] * dN_shape_func[i][_qp](1);
-      grad_of_scalar_q(2) += q_nodes[i] * dN_shape_func[i][_qp](2);
-      scalar_q += q_nodes[i] * N_shape_func[i][_qp];
+      grad_of_scalar_q(0) += q_nodes[j] * dN_shape_func[j][_qp](0);
+      grad_of_scalar_q(1) += q_nodes[j] * dN_shape_func[j][_qp](1);
+      grad_of_scalar_q(2) += q_nodes[j] * dN_shape_func[j][_qp](2);
+      scalar_q += q_nodes[j] * N_shape_func[j][_qp];
     }
 
     RealVectorValue grad_q = grad_of_scalar_q;
@@ -635,7 +635,7 @@ XFEMMaxHoopStress::threadJoin(const UserObject & y)
 void 
 XFEMMaxHoopStress::finalize()
 {
-  _xfem->clear_crack_propagation_direction();
+  //_xfem->clear_crack_propagation_direction();
   gatherSum(_integral_values);
 
   for (unsigned int i = 0; i < _num_crack_front_points*2; i++)
@@ -676,9 +676,9 @@ XFEMMaxHoopStress::finalize()
 
     Point direction(std::cos(omega+theta), std::sin(omega+theta), 0.0);
     
-    _xfem->update_crack_propagation_direction(_elem_id_crack_tip[i], direction);
-    std::cout << "crack front point = " << crack_front_point << std::endl;
-    std::cout << "crack front index (" << i << ") : direction  = " << direction << std::endl; 
+    //_xfem->update_crack_propagation_direction(_elem_id_crack_tip[i], direction);
+    std::cout << "MAXHOOPSTRESS crack front point = " << crack_front_point << std::endl;
+    std::cout << "MAXHOOPSTRESS crack front index (" << i << ") : direction  = " << direction << std::endl; 
   } 
 }
 

@@ -114,7 +114,7 @@ XFEMMeanStress::getStressTensor()
         StressTensor[i*9+8] += _tensor[qp](2,2) * fact;
         _weights[i] += fact;
         
-        if (dist < _radius)
+        if (dist < 0.00015)
         {
           if (_weibull_eta[qp] < _weibull_at_tip[i])
           {
@@ -178,10 +178,12 @@ XFEMMeanStress::finalize()
     average_tensor(2,1) = _stress_tensor[i*9+7] / _weights[i];
     average_tensor(2,2) = _stress_tensor[i*9+8] / _weights[i];
     Real tensor_quantity = _material_tensor_calculator.getTensorQuantity(average_tensor,&_q_point[0],direction);
+    std::cout << "WJ: average_tensor " << average_tensor << std::endl;
     direction /= pow(direction.size_sq(),0.5);
+    std::cout << "WJ direction = " << direction << std::endl;
     Point normal(0.0,0.0,0.0);
-    normal(0) = -direction(1);
-    normal(1) = direction(0);
+    normal(0) = direction(1); // rotate -90 degree
+    normal(1) = -direction(0);
     bool does_elem_crack = false;
     if (_use_weibull)
       does_elem_crack = (tensor_quantity > _critical_stress * _weibull_at_tip[i]);
