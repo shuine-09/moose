@@ -19,6 +19,7 @@
 #include "XFEMMarkerUserObject.h"
 #include "XFEMMaterialTensorMarkerUserObject.h"
 #include "XFEMMeshCutByLevelSet.h"
+#include "XFEMMovingInterfacePoints.h"
 #include "XFEMAction.h"
 #include "XFEMSingleVariableConstraint.h"
 #include "XFEMSingleVariableConstraintLS.h"
@@ -83,6 +84,7 @@ XFEMApp::registerObjects(Factory & factory)
   registerUserObject(XFEMMarkerUserObject);
   registerUserObject(XFEMMaterialTensorMarkerUserObject);
   registerUserObject(XFEMMeshCutByLevelSet);
+  registerUserObject(XFEMMovingInterfacePoints);
 
   //DiracKernels
   registerDiracKernel(XFEMPressure);

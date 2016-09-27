@@ -6,8 +6,8 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 41
-  ny = 41
+  nx = 81
+  ny = 81
   xmin = 0
   xmax = 1.0
   ymin = 0
@@ -25,17 +25,17 @@
 
 [XFEM]
   cut_data = '0.5 1.0 0.5 0.5 0 0'
-  interface_points = '0.3 1.0 0
-                      0.3 0.9 0
-                      0.3 0.8 0
-                      0.3 0.7 0
-                      0.3 0.6 0
-                      0.3 0.5 0
-                      0.3 0.4 0
-                      0.3 0.3 0
-                      0.3 0.2 0
-                      0.3 0.1 0
-                      0.3 0   0'
+  interface_points = '0.05 1.0 0
+                      0.05 0.9 0
+                      0.05 0.8 0
+                      0.05 0.7 0
+                      0.05 0.6 0
+                      0.05 0.5 0
+                      0.05 0.4 0
+                      0.05 0.3 0
+                      0.05 0.2 0
+                      0.05 0.1 0
+                      0.05 0   0'
   qrule = volfrac
   output_cut_plane = true
 []
@@ -46,6 +46,13 @@
     variable = u
     jump = 0
     jump_flux = 0
+  [../]
+[]
+
+[UserObjects]
+  [./xfem_moving_points]
+    type = XFEMMovingInterfacePoints
+    execute_on = timestep_end
   [../]
 []
 
@@ -67,6 +74,10 @@
     x = '0   2'
     y = '3   5'
   [../]
+  [./u_left2]
+    type = ParsedFunction
+    value = '-2 * (y-0.5) * (y-0.5) + 1.0'
+  [../]
 []
 
 [Kernels]
@@ -78,13 +89,20 @@
 
 [BCs]
 # Define boundary conditions
-  [./left_u]
-    type = DirichletBC
+#  [./left_u]
+#    type = DirichletBC
+#    variable = u
+#    boundary = 3
+#    value = 3
+#  [../]
+  
+  [./left_u2]
+    type = FunctionDirichletBC
     variable = u
     boundary = 3
-    value = 3
+    function = u_left2
   [../]
-
+  
   [./right_u]
     type = DirichletBC
     variable = u
@@ -115,13 +133,13 @@
   nl_abs_tol = 1e-10
 
   start_time = 0.0
-  dt = 1.5
-  end_time = 20
+  dt = 1.0
+  end_time = 30
   max_xfem_update = 1
 []
 
 [Outputs]
-  file_base = diffusion_cut_points_out
+  file_base = diffusion_cut_points_out2
   interval = 1
   execute_on = timestep_end
   exodus = true

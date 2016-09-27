@@ -549,16 +549,6 @@ XFEM::markCutEdgesByGeometry()
 
   clearGeometricCuts();
 
-  for (unsigned int i = 0; i < _interface_quantities.size(); ++i)
-    std::cout << "interface_quantities[ " << i << "] = " << _interface_quantities[i] << std::endl;
-
-  for (unsigned int i = 0; i < _interface_points.size(); ++i)
-  {
-    _interface_points[i](0) += _interface_quantities[i] * 0.01;
-    if (i > 3 && i < 7)
-      _interface_points[i](0) += _interface_quantities[i] * 0.0025;
-  }
-
   for (unsigned int i = 0; i < _interface_points.size() - 1; ++i)
   {
     Real x0 = _interface_points[i](0);
