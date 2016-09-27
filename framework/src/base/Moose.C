@@ -64,6 +64,8 @@
 #include "BodyForce.h"
 #include "Reaction.h"
 #include "MassEigenKernel.h"
+#include "PoreContinuity.h"
+#include "NeutronHeatSource.h"
 
 // bcs
 #include "ConvectiveFluxBC.h"
@@ -116,6 +118,8 @@
 #include "ElementLpNormAux.h"
 #include "ElementL2ErrorFunctionAux.h"
 #include "ElementH1ErrorFunctionAux.h"
+#include "FissionRateAuxLWR.h"
+#include "BurnupAux.h"
 
 // dirac kernels
 #include "ConstantPointSource.h"
@@ -154,11 +158,14 @@
 #include "PiecewiseMultilinear.h"
 #include "LinearCombinationFunction.h"
 #include "ImageFunction.h"
+#include "BurnupFunction.h"
 
 // materials
 #include "GenericConstantMaterial.h"
 #include "GenericConstantRankTwoTensor.h"
 #include "GenericFunctionMaterial.h"
+#include "ThermalMAMOX.h"
+#include "MOXVelocity.h"
 
 // PPS
 #include "AverageElementSize.h"
@@ -218,6 +225,7 @@
 #include "RelativeSolutionDifferenceNorm.h"
 #include "AxisymmetricCenterlineAverageValue.h"
 #include "VariableInnerProduct.h"
+#include "ElementIntegralPower.h"
 
 // vector PPS
 #include "ConstantVectorPostprocessor.h"
@@ -245,6 +253,7 @@
 #include "NodalNormalsCorner.h"
 #include "NodalNormalsPreprocessor.h"
 #include "SolutionUserObject.h"
+#include "FuelPinGeometry.h"
 #ifdef LIBMESH_HAVE_FPARSER
 #include "Terminator.h"
 #endif
@@ -486,6 +495,8 @@ registerObjects(Factory & factory)
   registerKernel(BodyForce);
   registerKernel(Reaction);
   registerKernel(MassEigenKernel);
+  registerKernel(PoreContinuity);
+  registerKernel(NeutronHeatSource);
 
   // bcs
   registerBoundaryCondition(ConvectiveFluxBC);
@@ -543,6 +554,8 @@ registerObjects(Factory & factory)
   registerAux(ElementLpNormAux);
   registerAux(ElementL2ErrorFunctionAux);
   registerAux(ElementH1ErrorFunctionAux);
+  registerAux(BurnupAux);
+  registerAux(FissionRateAuxLWR);
 
   // Initial Conditions
   registerInitialCondition(ConstantIC);
@@ -574,11 +587,14 @@ registerObjects(Factory & factory)
   registerFunction(PiecewiseMultilinear);
   registerFunction(LinearCombinationFunction);
   registerFunction(ImageFunction);
+  registerFunction(BurnupFunction);
 
   // materials
   registerMaterial(GenericConstantMaterial);
   registerMaterial(GenericConstantRankTwoTensor);
   registerMaterial(GenericFunctionMaterial);
+  registerMaterial(ThermalMAMOX);
+  registerMaterial(MOXVelocity); 
 
   // PPS
   registerPostprocessor(AverageElementSize);
@@ -638,6 +654,7 @@ registerObjects(Factory & factory)
   registerPostprocessor(RelativeSolutionDifferenceNorm);
   registerPostprocessor(AxisymmetricCenterlineAverageValue);
   registerPostprocessor(VariableInnerProduct);
+  registerPostprocessor(ElementIntegralPower);
 
   // vector PPS
   registerVectorPostprocessor(ConstantVectorPostprocessor);
@@ -665,6 +682,7 @@ registerObjects(Factory & factory)
   registerUserObject(NodalNormalsCorner);
   registerUserObject(NodalNormalsEvaluator);
   registerUserObject(SolutionUserObject);
+  registerUserObject(FuelPinGeometry);
 #ifdef LIBMESH_HAVE_FPARSER
   registerUserObject(Terminator);
 #endif
