@@ -2331,7 +2331,7 @@ FEProblem::updateMeshXFEM()
     if (_xfem->updateHeal(_time))
     {
       meshChanged();
-      execute(EXEC_TIMESTEP_END);
+      execute(EXEC_NONLINEAR);
     }
 
     updated = _xfem->update(_time);

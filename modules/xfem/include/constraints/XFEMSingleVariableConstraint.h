@@ -51,6 +51,8 @@ protected:
 
   /// Vector normal to the internal interface
   Real _jump_flux;
+
+  bool _use_penalty;
 };
 
 #endif /* XFEMEQUALVALUECONSTRAINT_H_ */
