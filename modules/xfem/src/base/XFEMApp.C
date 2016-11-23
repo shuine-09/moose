@@ -17,6 +17,8 @@
 #include "XFEMMarkerAux.h"
 #include "XFEMMarkerUserObject.h"
 #include "XFEMMaterialTensorMarkerUserObject.h"
+#include "XFEMCrackTipMeanStress.h"
+#include "CrackFrontRTheta.h"
 
 #include "XFEMCrackTipMeanStress.h"
 #include "CrackFrontRTheta.h"
