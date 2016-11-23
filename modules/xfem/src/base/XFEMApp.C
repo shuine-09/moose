@@ -21,6 +21,7 @@
 #include "XFEMMarkerUserObject.h"
 #include "XFEMMaterialTensorMarkerUserObject.h"
 #include "XFEMCrackTipMeanStress.h"
+#include "CrackFrontRTheta.h"
 
 #include "XFEMWeibullRandom.h"
 
@@ -84,6 +85,7 @@ XFEMApp::registerObjects(Factory & factory)
   registerUserObject(XFEMMarkerUserObject);
   registerUserObject(XFEMMaterialTensorMarkerUserObject);
   registerUserObject(XFEMCrackTipMeanStress);
+  registerUserObject(CrackFrontRTheta);
 
   //DiracKernels
   registerDiracKernel(XFEMPressure);
