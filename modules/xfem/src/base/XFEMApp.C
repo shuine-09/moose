@@ -12,9 +12,14 @@
 #include "AppFactory.h"
 #include "MooseSyntax.h"
 
+#include "SingleVariableEnrichmentDiffusion.h"
+#include "EnrichStressDivergenceTensors.h"
+
 #include "XFEMVolFracAux.h"
 #include "XFEMCutPlaneAux.h"
 #include "XFEMMarkerAux.h"
+
+#include "PresetBCNearTipEnrichment.h"
 #include "XFEMMarkerUserObject.h"
 #include "XFEMMaterialTensorMarkerUserObject.h"
 #include "XFEMCrackTipMeanStress.h"
@@ -22,6 +27,7 @@
 
 #include "XFEMCrackTipMeanStress.h"
 #include "CrackFrontRTheta.h"
+#include "ComputeEnrichStrain.h"
 
 #include "XFEMAction.h"
 #include "XFEMSingleVariableConstraint.h"
@@ -80,6 +86,15 @@ void
 XFEMApp::registerObjects(Factory & factory)
 {
   // AuxKernels
+  
+  //Kernels
+  registerKernel(SingleVariableEnrichmentDiffusion);
+  registerKernel(EnrichStressDivergenceTensors);
+
+  //BCs
+  registerBoundaryCondition(PresetBCNearTipEnrichment);
+
+  //AuxKernels
   registerAux(XFEMVolFracAux);
   registerAux(XFEMCutPlaneAux);
   registerAux(XFEMMarkerAux);
@@ -102,6 +117,9 @@ XFEMApp::registerObjects(Factory & factory)
 
   // DiracKernels
   registerDiracKernel(XFEMPressure);
+  
+  //Materials
+  registerMaterial(ComputeEnrichStrain);
 }
 
 // External entry point for dynamic syntax association
