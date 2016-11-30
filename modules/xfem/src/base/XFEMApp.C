@@ -12,11 +12,16 @@
 #include "AppFactory.h"
 #include "MooseSyntax.h"
 
+#include "SingleVariableEnrichmentDiffusion.h"
+#include "EnrichStressDivergenceTensors.h"
+
 #include "XFEMVolFracAux.h"
 #include "XFEMCutPlaneAux.h"
 #include "XFEMMarkerAux.h"
 #include "RadialDispAux.h"
 #include "RadialDisplacementAux.h"
+
+#include "PresetBCNearTipEnrichment.h"
 
 #include "XFEMMarkerUserObject.h"
 #include "XFEMMaterialTensorMarkerUserObject.h"
@@ -24,6 +29,7 @@
 #include "CrackFrontRTheta.h"
 
 #include "XFEMWeibullRandom.h"
+#include "ComputeEnrichStrain.h"
 
 #include "XFEMAction.h"
 #include "XFEMSingleVariableConstraint.h"
@@ -71,6 +77,13 @@ extern "C" void XFEMApp__registerObjects(Factory & factory) { XFEMApp::registerO
 void
 XFEMApp::registerObjects(Factory & factory)
 {
+  //Kernels
+  registerKernel(SingleVariableEnrichmentDiffusion);
+  registerKernel(EnrichStressDivergenceTensors);
+
+  //BCs
+  registerBoundaryCondition(PresetBCNearTipEnrichment);
+
   //AuxKernels
   registerAux(XFEMVolFracAux);
   registerAux(XFEMCutPlaneAux);
@@ -92,6 +105,7 @@ XFEMApp::registerObjects(Factory & factory)
 
   //Materials
   registerMaterial(XFEMWeibullRandom);
+  registerMaterial(ComputeEnrichStrain);
 }
 
 // External entry point for dynamic syntax association
