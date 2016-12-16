@@ -82,6 +82,9 @@ CPDislocationBasedClimbRate::calcSlipRate(unsigned int qp, Real dt, std::vector<
 
     val[i] = _prefactor * (_rho_m[qp][i] + _rho_i[qp][i]) * _b * vc;
 
+    std::cout << "slip system(" << i << ") : climb velocity = " << vc << ", climb rate = " << val[i] << ", resolved stress = " << tau(i) 
+                                             << " Pk2 yy = " << _pk2[qp](1,1) << ", vac con = " << _cv[qp][0] << ", eq van con = " << ceq << std::endl; 
+
     if (std::abs(val[i] * dt) > _slip_incr_tol)
     {
 #ifdef DEBUG
@@ -99,7 +102,7 @@ CPDislocationBasedClimbRate::calcSlipRateDerivative(unsigned int qp, Real dt, st
   DenseVector<Real> tau(_variable_size);
   
   for (unsigned int i = 0; i < _variable_size; ++i)
-    tau(i) = _pk2[qp].doubleContraction(_flow_direction[qp][i]);
+    tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]);
 
   Real rho = 0.0;
   for (unsigned int i = 0; i < _variable_size; ++i)
@@ -113,7 +116,8 @@ CPDislocationBasedClimbRate::calcSlipRateDerivative(unsigned int qp, Real dt, st
     Real dceq_dtau = -_c0 * std::exp(-tau(i) * _molar_volume/(_gas_constant * _temp)) * _molar_volume/(_gas_constant * _temp);
     Real dvc_dtau = pre_factor * dceq_dtau;
 
-    val[i] = _prefactor * (_rho_m[qp][i] + _rho_i[qp][i]) * _b * dvc_dtau;
+    val[i] = _prefactor * (_rho_m[qp][i] + _rho_i[qp][i]) * _b * dvc_dtau * (-1.0);
   }
+  
   return true;
 }

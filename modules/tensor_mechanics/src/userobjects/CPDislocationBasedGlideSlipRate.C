@@ -109,6 +109,8 @@ CPDislocationBasedGlideSlipRate::calcSlipRate(unsigned int qp, Real dt, std::vec
     Real b = _enthal/ (_k * _temp);
 
     val[i] = _prefactor * a * std::exp(-b * c2) * sgn_tau;
+
+    //std::cout << "glide rate [ " << i << "] = " << val[i] << ", prefactor = " << _prefactor << ", a = " << a << ", c2 = " << c2 << ", b = " << b << ", sgn_tau = " << sgn_tau << std::endl; 
   }
 
   return true;

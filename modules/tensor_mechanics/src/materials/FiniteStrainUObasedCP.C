@@ -295,8 +295,12 @@ FiniteStrainUObasedCP::solveStatevar()
       return;
     postSolveStress();
 
+   // std::cout << "before update state variable = " << _err_tol << std::endl;
+
     // Update slip system resistance and state variable
     updateSlipSystemResistanceAndStateVariable();
+
+   // std::cout << "after update state variable = " << _err_tol << std::endl;
 
     if (_err_tol)
       return;
@@ -325,6 +329,9 @@ FiniteStrainUObasedCP::isStateVariablesConverged()
     for (unsigned j = 0; j < n; j++)
     {
       diff = std::abs((*_mat_prop_state_vars[i])[_qp][j] - _state_vars_prev[i][j]);// Calculate increment size
+      
+      //std::cout << "i = " << i << ", j = " << j << ", diff = " << diff << ", std::abs((*_mat_prop_state_vars_old[i])[_qp][j] = " << std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) << ", zero_tol = " << _zero_tol << std::endl;
+
       if (std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) < _zero_tol && diff > _zero_tol)
         return true;
       if (std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) >  _zero_tol && diff > _stol * std::abs((*_mat_prop_state_vars_old[i])[_qp][j]))
@@ -369,7 +376,8 @@ FiniteStrainUObasedCP::solveStress()
   rnorm0 = rnorm;
 
   // Check for stress residual tolerance
-  while (rnorm > _rtol * rnorm0 && rnorm0 > _abs_tol && iter <  _maxiter)
+  //std::cout << "rnorm0 = " << rnorm0 << ", abs_tol = " << _abs_tol << std::endl;
+  while (rnorm > _rtol * rnorm0 && rnorm > _abs_tol && iter <  _maxiter)
   {
     // Calculate stress increment
     dpk2 = - _jac.invSymm() * _resid;
@@ -402,6 +410,10 @@ FiniteStrainUObasedCP::solveStress()
     iter++;
   }
 
+  //std::cout << "rnorm = " << rnorm << ", _rtol = " << _rtol << ", rnorm0 = " << rnorm0 << ", _abs_tol " << _abs_tol << ", iter = " << iter << ", maxiter = " << _maxiter <<  std::endl;
+
+  //std::cout << "error = " << _err_tol << std::endl;
+
   if (iter >= _maxiter)
   {
 #ifdef DEBUG
@@ -429,7 +441,10 @@ FiniteStrainUObasedCP::updateSlipSystemResistanceAndStateVariable()
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
   {
     if (!_uo_state_vars[i]->updateStateVariable(_qp, _dt, (*_mat_prop_state_vars[i])[_qp]))
+    {
+      //std::cout << "i = " << i << std::endl;
       _err_tol = true;
+    }
   }
 
   for (unsigned int i = 0; i < _num_uo_slip_resistances; ++i)
@@ -456,6 +471,8 @@ FiniteStrainUObasedCP::getSlipRates()
       _err_tol = true;
       return;
     }
+    //for (unsigned int j = 0; j < 12; ++j)
+    //  std::cout << "i = " << i << ", j = " << j << ", slip rate = " << (*_mat_prop_slip_rates[i])[_qp][j] << std::endl;
   }
 }
 
