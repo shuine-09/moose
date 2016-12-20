@@ -10,6 +10,7 @@
 #include "MooseMesh.h"
 #include "ElasticityTensorTools.h"
 #include "libmesh/quadrature.h"
+#include "XFEM.h"
 
 template<>
 InputParameters validParams<EnrichStressDivergenceTensors>()
@@ -38,6 +39,100 @@ EnrichStressDivergenceTensors::EnrichStressDivergenceTensors(const InputParamete
   _enrich_disp_var.resize(_nl_vnames.size());
   for (unsigned int i = 0; i < _nl_vnames.size(); ++i)
     _enrich_disp_var[i] = coupled("enrichment_displacement_var", i);
+
+  FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
+
+  if (fe_problem == NULL)
+    mooseError("Problem casting _subproblem to FEProblem in EnrichStressDivergenceTensors");
+  _xfem = MooseSharedNamespace::dynamic_pointer_cast<XFEM>(fe_problem->getXFEM());
+  if (_xfem == NULL)
+    mooseError("Problem casting to XFEM in EnrichStressDivergenceTensors");
+}
+
+void
+EnrichStressDivergenceTensors::computeResidual()
+{
+  Point tip_edge((_current_elem->point(0))(0), 0.5, 0);
+  Point tip(0.5, 0.5, 0);
+  if(_current_elem->contains_point(tip))
+  {
+    DenseVector<Number> & re = _assembly.residualBlock(_var.number());
+    _local_re.resize(re.size());
+    _local_re.zero();
+
+    std::vector<Point> intersectionPoints;
+
+    intersectionPoints.push_back(_current_elem->point(0));
+    intersectionPoints.push_back(_current_elem->point(1));
+    intersectionPoints.push_back(_current_elem->point(2));
+    intersectionPoints.push_back(_current_elem->point(3));
+    intersectionPoints.push_back(tip_edge);
+    
+    std::vector<Point> q_points;
+    std::vector<Real> weights;
+
+    _xfem->getXFEMqRuleOnSurface(intersectionPoints, tip, q_points, weights);
+
+    FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
+
+    fe_problem->reinitElemPhys(_current_elem, q_points, 0);
+
+    _subproblem.prepareShapes(_var.number(), 0);
+
+    fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
+
+    for (_i = 0; _i < _test.size(); _i++)
+      for (_qp = 0; _qp < q_points.size(); _qp++)
+        _local_re(_i) += weights[_qp] * computeQpResidual();
+
+    re += _local_re;
+  }
+  else
+    Kernel::computeResidual();
+}
+
+void
+EnrichStressDivergenceTensors::computeJacobian()
+{
+  Point tip_edge((_current_elem->point(0))(0), 0.5, 0);
+  Point tip(0.5, 0.5, 0);
+  if(_current_elem->contains_point(tip))
+  {
+    DenseMatrix<Number> & ke = _assembly.jacobianBlock(_var.number(), _var.number());
+    _local_ke.resize(ke.m(), ke.n());
+    _local_ke.zero();
+
+    std::vector<Point> intersectionPoints;
+
+    intersectionPoints.push_back(_current_elem->point(0));
+    intersectionPoints.push_back(_current_elem->point(1));
+    intersectionPoints.push_back(_current_elem->point(2));
+    intersectionPoints.push_back(_current_elem->point(3));
+    intersectionPoints.push_back(tip_edge);
+
+    std::vector<Point> q_points;
+    std::vector<Real> weights;
+
+    _xfem->getXFEMqRuleOnSurface(intersectionPoints, tip, q_points, weights);
+
+    FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
+
+    fe_problem->reinitElemPhys(_current_elem, q_points, 0);
+
+    _subproblem.prepareShapes(_var.number(), 0);
+
+    fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
+
+
+    for (_i = 0; _i < _test.size(); _i++)
+      for (_j = 0; _j < _phi.size(); _j++)
+        for (_qp = 0; _qp < q_points.size(); _qp++)
+          _local_ke(_i, _j) += _JxW[_qp] * computeQpJacobian();
+
+    ke += _local_ke;
+  }
+  else
+    Kernel::computeJacobian();
 }
 
 Real

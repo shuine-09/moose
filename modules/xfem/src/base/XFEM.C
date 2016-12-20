@@ -1829,3 +1829,41 @@ XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, std::vecto
     }
   }
 }
+
+void
+XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, Point & tip_point, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts) const
+{
+  unsigned int nnd_pe = intersection_points.size();
+  unsigned int num_pts = 6;
+  quad_pts.resize(nnd_pe * num_pts);
+  quad_wts.resize(nnd_pe * num_pts);
+
+  Real jac = 0.0;
+
+  for (unsigned int j = 0; j < nnd_pe; ++j) // loop all sub-trigs
+  {
+    std::vector<std::vector<Real> > shape(3, std::vector<Real>(3,0.0));
+    std::vector<Point> subtrig_points(3, Point(0.0, 0.0, 0.0)); // sub-trig nodal coords
+
+    int jplus1 = j < nnd_pe - 1 ? j + 1 : 0;
+    subtrig_points[0] = tip_point;
+    subtrig_points[1] = intersection_points[j];
+    subtrig_points[2] = intersection_points[jplus1];
+
+    std::vector<std::vector<Real> > sg2;
+    Xfem::stdQuadr2D(3, 4, sg2); // get sg2
+    for (unsigned int l = 0; l < sg2.size(); ++l) // loop all int pts on a sub-trig
+    {
+      Xfem::shapeFunc2D(3, sg2[l], subtrig_points, shape, jac, true); // Get shape
+      std::vector<Real> tsg_line(3,0.0);
+      for (unsigned int k = 0; k < 3; ++k) // loop sub-trig nodes
+      {
+        tsg_line[0] += shape[k][2] * subtrig_points[k](0);
+        tsg_line[1] += shape[k][2] * subtrig_points[k](1);
+        tsg_line[2] += shape[k][2] * subtrig_points[k](2);
+      }
+      quad_pts[j * num_pts + l] = Point(tsg_line[0], tsg_line[1], tsg_line[2]);
+      quad_wts[j * num_pts + l] = sg2[l][3] * jac;
+    }
+  }
+}
