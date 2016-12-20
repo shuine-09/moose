@@ -162,9 +162,12 @@ public:
                                   std::vector<Point> & quad_pts,
                                   std::vector<Real> & quad_wts) const;
   virtual void getXFEMqRuleOnSurface(std::vector<Point> & intersection_points,
-                                     std::vector<Point> & quad_pts,
-                                     std::vector<Real> & quad_wts) const;
-  bool has_secondary_cut() { return _has_secondary_cut; }
+                                  std::vector<Point> & quad_pts,
+                                  std::vector<Real> & quad_wts) const;
+  virtual void getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, Point & tip_point, 
+                                  std::vector<Point> & quad_pts,
+                                  std::vector<Real> & quad_wts) const;
+  bool has_secondary_cut(){return _has_secondary_cut;}
 
 private:
   void getFragmentEdges(const Elem * elem,

@@ -15,6 +15,7 @@
 class EnrichStressDivergenceTensors;
 class RankTwoTensor;
 class RankFourTensor;
+class XFEM;
 
 template<>
 InputParameters validParams<EnrichStressDivergenceTensors>();
@@ -34,6 +35,9 @@ protected:
   virtual Real computeQpJacobian();
   virtual Real computeQpOffDiagJacobian(unsigned int jvar);
 
+  virtual void computeResidual();
+  virtual void computeJacobian();
+
   std::string _base_name;
 
   const MaterialProperty<RankTwoTensor> & _stress;
@@ -50,6 +54,9 @@ protected:
   unsigned int _ndisp;
   const std::vector<NonlinearVariableName> & _nl_vnames;
   std::vector<unsigned int> _enrich_disp_var;
+
+private:
+   MooseSharedPointer<XFEM> _xfem;
 };
 
 #endif //ENRICHSTRESSDIVERGENCETENSORS_H
