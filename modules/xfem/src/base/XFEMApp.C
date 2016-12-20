@@ -18,6 +18,7 @@
 #include "XFEMVolFracAux.h"
 #include "XFEMCutPlaneAux.h"
 #include "XFEMMarkerAux.h"
+#include "RankTwoAuxXFEM.h"
 
 #include "PresetBCNearTipEnrichment.h"
 #include "XFEMMarkerUserObject.h"
@@ -98,6 +99,7 @@ XFEMApp::registerObjects(Factory & factory)
   registerAux(XFEMVolFracAux);
   registerAux(XFEMCutPlaneAux);
   registerAux(XFEMMarkerAux);
+  registerAux(RankTwoAuxXFEM);
 
   // Constraints
   registerConstraint(XFEMSingleVariableConstraint);
