@@ -20,6 +20,7 @@
 #include "XFEMMarkerAux.h"
 #include "RadialDispAux.h"
 #include "RadialDisplacementAux.h"
+#include "RankTwoAuxXFEM.h"
 
 #include "PresetBCNearTipEnrichment.h"
 
@@ -90,6 +91,7 @@ XFEMApp::registerObjects(Factory & factory)
   registerAux(XFEMMarkerAux);
   registerAux(RadialDispAux);
   registerAux(RadialDisplacementAux);
+  registerAux(RankTwoAuxXFEM);
 
   //Constraints
   registerConstraint(XFEMSingleVariableConstraint);
