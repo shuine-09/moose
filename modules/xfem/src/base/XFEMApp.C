@@ -36,6 +36,8 @@
 #include "XFEMSingleVariableConstraint.h"
 #include "XFEMPressure.h"
 
+#include "MaterialTensorIntegralXFEM.h"
+
 template<>
 InputParameters validParams<XFEMApp>()
 {
@@ -108,6 +110,9 @@ XFEMApp::registerObjects(Factory & factory)
   //Materials
   registerMaterial(XFEMWeibullRandom);
   registerMaterial(ComputeEnrichStrain);
+
+  //Postprocessors
+  registerPostprocessor(MaterialTensorIntegralXFEM);
 }
 
 // External entry point for dynamic syntax association

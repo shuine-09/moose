@@ -52,8 +52,8 @@ EnrichStressDivergenceTensors::EnrichStressDivergenceTensors(const InputParamete
 void
 EnrichStressDivergenceTensors::computeResidual()
 {
-  Point tip_edge((_current_elem->point(0))(0), 0.5, 0);
-  Point tip(0.5, 0.5, 0);
+  Point tip_edge((_current_elem->point(0))(0), 0.0, 0);
+  Point tip(0.5, 0.0, 0);
   if(_current_elem->contains_point(tip))
   {
     DenseVector<Number> & re = _assembly.residualBlock(_var.number());
@@ -94,8 +94,8 @@ EnrichStressDivergenceTensors::computeResidual()
 void
 EnrichStressDivergenceTensors::computeJacobian()
 {
-  Point tip_edge((_current_elem->point(0))(0), 0.5, 0);
-  Point tip(0.5, 0.5, 0);
+  Point tip_edge((_current_elem->point(0))(0), 0.0, 0);
+  Point tip(0.5, 0.0, 0);
   if(_current_elem->contains_point(tip))
   {
     DenseMatrix<Number> & ke = _assembly.jacobianBlock(_var.number(), _var.number());
@@ -160,7 +160,7 @@ EnrichStressDivergenceTensors::computeQpResidual()
   {
     BI[i].resize(4);
 
-    Point crack_tip(0.5, 0.5, 0); //crack tip is at (0.5, 0.5, 0)
+    Point crack_tip(0.5, 0.0, 0); //crack tip is at (0.5, 0.5, 0)
     Node * node_i = _current_elem->get_node(i);
 
     Real x_to_tip = (*node_i)(0) - crack_tip(0);
@@ -185,7 +185,7 @@ EnrichStressDivergenceTensors::computeQpResidual()
   }
 
 
-  Point crack_tip(0.5, 0.5, 0); //crack tip is at (0.5, 0.5, 0)
+  Point crack_tip(0.5, 0.0, 0); //crack tip is at (0.5, 0.5, 0)
   Point q_pt = _q_point[_qp];
 
   Real x_to_tip = q_pt(0) - crack_tip(0);
@@ -239,7 +239,7 @@ EnrichStressDivergenceTensors::computeQpResidual()
   }
 
   RealVectorValue grad_B(Bx[_enrichment_component], By[_enrichment_component], 0.0);
- 
+
   return _stress[_qp].row(_component) * (_grad_test[_i][_qp] * (B[_enrichment_component] - BI[_i][_enrichment_component]) + _test[_i][_qp] * grad_B);
 }
 
@@ -268,7 +268,7 @@ EnrichStressDivergenceTensors::computeQpJacobian()
   {
     BI[i].resize(4);
 
-    Point crack_tip(0.5, 0.5, 0); //crack tip is at (0.5, 0.5, 0)
+    Point crack_tip(0.5, 0.0, 0); //crack tip is at (0.5, 0.5, 0)
     Node * node_i = _current_elem->get_node(i);
 
     Real x_to_tip = (*node_i)(0) - crack_tip(0);
@@ -293,7 +293,7 @@ EnrichStressDivergenceTensors::computeQpJacobian()
   }
 
 
-  Point crack_tip(0.5, 0.5, 0); //crack tip is at (0.5, 0.5, 0)
+  Point crack_tip(0.5, 0.0, 0); //crack tip is at (0.5, 0.5, 0)
   Point q_pt = _q_point[_qp];
 
   Real x_to_tip = q_pt(0) - crack_tip(0);
@@ -388,38 +388,38 @@ EnrichStressDivergenceTensors::computeQpOffDiagJacobian(unsigned int jvar)
     Bxl.resize(4);
     Byl.resize(4);
 
-      std::vector<std::vector<Real> > BI;
-  BI.resize(4);
-  for (unsigned int i = 0; i < BI.size(); ++i)
-  {
-    BI[i].resize(4);
+    std::vector<std::vector<Real> > BI;
+    BI.resize(4);
+    for (unsigned int i = 0; i < BI.size(); ++i)
+    {
+      BI[i].resize(4);
 
-    Point crack_tip(0.5, 0.5, 0); //crack tip is at (0.5, 0.5, 0)
-    Node * node_i = _current_elem->get_node(i);
+      Point crack_tip(0.5, 0.0, 0); //crack tip is at (0.5, 0.5, 0)
+      Node * node_i = _current_elem->get_node(i);
 
-    Real x_to_tip = (*node_i)(0) - crack_tip(0);
-    Real y_to_tip = (*node_i)(1) - crack_tip(1);
+      Real x_to_tip = (*node_i)(0) - crack_tip(0);
+      Real y_to_tip = (*node_i)(1) - crack_tip(1);
 
-    Real alpha = 0.0; // crack direction
+      Real alpha = 0.0; // crack direction
 
-    Real x_local =  std::cos(alpha) * x_to_tip + std::sin(alpha) * y_to_tip;
-    Real y_local = -std::sin(alpha) * x_to_tip + std::cos(alpha) * y_to_tip;
+      Real x_local =  std::cos(alpha) * x_to_tip + std::sin(alpha) * y_to_tip;
+      Real y_local = -std::sin(alpha) * x_to_tip + std::cos(alpha) * y_to_tip;
 
-    Real r = std::sqrt(x_local * x_local + y_local * y_local);
+      Real r = std::sqrt(x_local * x_local + y_local * y_local);
 
-    if (r < 0.001)
-      r = 0.001;
+      if (r < 0.001)
+        r = 0.001;
 
-    Real theta = std::atan2(y_local, x_local);
+      Real theta = std::atan2(y_local, x_local);
 
-    BI[i][0] = std::sqrt(r) * std::sin(theta / 2.0);
-    BI[i][1] = std::sqrt(r) * std::cos(theta / 2.0);
-    BI[i][2] = std::sqrt(r) * std::sin(theta / 2.0) * std::sin(theta);
-    BI[i][3] = std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
-  }
+      BI[i][0] = std::sqrt(r) * std::sin(theta / 2.0);
+      BI[i][1] = std::sqrt(r) * std::cos(theta / 2.0);
+      BI[i][2] = std::sqrt(r) * std::sin(theta / 2.0) * std::sin(theta);
+      BI[i][3] = std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
+    }
 
 
-    Point crack_tip(0.5, 0.5, 0); //crack tip is at (0.5, 0.5, 0)
+    Point crack_tip(0.5, 0.0, 0); //crack tip is at (0.5, 0.5, 0)
     Point q_pt = _q_point[_qp];
 
     Real x_to_tip = q_pt(0) - crack_tip(0);
