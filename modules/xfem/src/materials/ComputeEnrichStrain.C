@@ -104,7 +104,7 @@ ComputeEnrichStrain::computeQpProperties()
   {
     BI[i].resize(4);
 
-    Point crack_tip(0.5, 0.5, 0); //crack tip is at (0.5, 0.5, 0)
+    Point crack_tip(0.5, 0.0, 0); //crack tip is at (0.5, 0.5, 0)
     Node * node_i = _current_elem->get_node(i);
 
     Real x_to_tip = (*node_i)(0) - crack_tip(0);
@@ -128,7 +128,7 @@ ComputeEnrichStrain::computeQpProperties()
     BI[i][3] = std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
   }
 
-  Point crack_tip(0.5, 0.5, 0); //crack tip is at (0.5, 0.5, 0)
+  Point crack_tip(0.5, 0.0, 0); //crack tip is at (0.5, 0.5, 0)
   Point q_pt = _q_point[_qp];
 
   Real x_to_tip = q_pt(0) - crack_tip(0);
@@ -210,6 +210,15 @@ ComputeEnrichStrain::computeQpProperties()
   RankTwoTensor grad_tensor_enrich(_grad_enrich_disp[0], _grad_enrich_disp[1], _grad_enrich_disp[2]);
 
   _enrich_strain[_qp] = (grad_tensor_enrich + grad_tensor_enrich.transpose()) / 2.0;
+
+  /*
+  Point tip(0.5, 0.5, 0);
+  if(_current_elem->contains_point(tip))
+  {
+    std::cout << "_qp = " << _qp << ", enrich_strain = " << std::endl;
+    _enrich_strain[_qp].print();
+  }
+  */
 
   RealVectorValue grad_disp_z(0.0, 0.0, 0.0);
 

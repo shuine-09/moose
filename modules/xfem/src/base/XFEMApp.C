@@ -41,9 +41,10 @@
 #include "EllipseCutUserObject.h"
 #include "RectangleCutUserObject.h"
 
-template <>
-InputParameters
-validParams<XFEMApp>()
+#include "MaterialTensorIntegralXFEM.h"
+
+template<>
+InputParameters validParams<XFEMApp>()
 {
   InputParameters params = validParams<MooseApp>();
   return params;
@@ -122,6 +123,9 @@ XFEMApp::registerObjects(Factory & factory)
   
   //Materials
   registerMaterial(ComputeEnrichStrain);
+
+  //Postprocessors
+  registerPostprocessor(MaterialTensorIntegralXFEM);
 }
 
 // External entry point for dynamic syntax association

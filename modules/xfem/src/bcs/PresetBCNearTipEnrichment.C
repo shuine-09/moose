@@ -40,7 +40,7 @@ PresetBCNearTipEnrichment::computeQpValue()
 bool
 PresetBCNearTipEnrichment::shouldApply()
 {
-  Real dist = std::sqrt(((*_current_node)(0) - 0.5) * ((*_current_node)(0) - 0.5) + ((*_current_node)(1) - 0.5) * ((*_current_node)(1) - 0.5));
+  Real dist = std::sqrt(((*_current_node)(0) - 0.5) * ((*_current_node)(0) - 0.5) + ((*_current_node)(1) - 0.0) * ((*_current_node)(1) - 0.0));
 
   if (dist > _radius)
     return true;
