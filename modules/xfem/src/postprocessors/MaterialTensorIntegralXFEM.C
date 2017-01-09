@@ -9,6 +9,8 @@
 #include "RankTwoScalarTools.h"
 #include "XFEM.h"
 #include "FEProblem.h"
+#include "DisplacedProblem.h"
+#include "MooseMesh.h"
 
 template<>
 InputParameters validParams<MaterialTensorIntegralXFEM>()
@@ -17,7 +19,7 @@ InputParameters validParams<MaterialTensorIntegralXFEM>()
   params.addRequiredParam<MaterialPropertyName>("rank_two_tensor", "The rank two material tensor name");
   params.addRequiredRangeCheckedParam<unsigned int>("index_i", "index_i >= 0 & index_i <= 2", "The index i of ij for the tensor to output (0, 1, 2)");
   params.addRequiredRangeCheckedParam<unsigned int>("index_j", "index_j >= 0 & index_j <= 2", "The index j of ij for the tensor to output (0, 1, 2)");
-  params.set<bool>("use_displaced_mesh") = true;
+  params.set<bool>("use_displaced_mesh") = false;
   return params;
 }
 
@@ -27,7 +29,13 @@ MaterialTensorIntegralXFEM::MaterialTensorIntegralXFEM(const InputParameters & p
     _i(getParam<unsigned int>("index_i")),
     _j(getParam<unsigned int>("index_j"))
 {
+  //FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
 
+  //if (fe_problem == NULL)
+  //  mooseError("Problem casting _subproblem to FEProblem in MaterialTensorIntegralXFEM");
+  _xfem = MooseSharedNamespace::dynamic_pointer_cast<XFEM>(_fe_problem.getXFEM());
+  if (_xfem == NULL)
+    mooseError("Problem casting to XFEM in MaterialTensorIntegralXFEM");
 }
 
 Real
@@ -40,9 +48,10 @@ MaterialTensorIntegralXFEM::getValue()
 Real
 MaterialTensorIntegralXFEM::computeIntegral()
 {
-  Point tip_edge((_current_elem->point(0))(0), 0.0, 0);
-  Point tip(0.5, 0.0, 0);
+  Point tip_edge((_current_elem->point(0))(0), 1.0, 0);
+  Point tip(0.5, 1.0, 0);
   if(_current_elem->contains_point(tip))
+  //if (0)
   {
     std::vector<Point> intersectionPoints;
 
@@ -57,25 +66,19 @@ MaterialTensorIntegralXFEM::computeIntegral()
 
     FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
 
-    if (fe_problem == NULL)
-      mooseError("Problem casting _subproblem to FEProblem in MaterialTensorIntegralXFEM");
-    _xfem = MooseSharedNamespace::dynamic_pointer_cast<XFEM>(fe_problem->getXFEM());
-    if (_xfem == NULL)
-      mooseError("Problem casting to XFEM in MaterialTensorIntegralXFEM");
-
     _xfem->getXFEMqRuleOnSurface(intersectionPoints, tip, q_points, weights);
 
-    fe_problem->reinitElemPhys(_current_elem, q_points, 0);
+    _fe_problem.reinitElemPhys(_current_elem, q_points, 0);
 
     //fe_problem->prepareShapes(_var.number(), 0);
 
-    fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
+    _fe_problem.reinitMaterials(_current_elem->subdomain_id(), 0, false);
 
     Real sum = 0;
 
     for (_qp = 0; _qp < q_points.size(); _qp++)
     {
-      Point crack_tip(0.5, 0.0, 0); //crack tip is at (0.5, 0.5, 0)
+      Point crack_tip(0.5, 1.0, 0); //crack tip is at (0.5, 0.5, 0)
       Point q_pt = q_points[_qp];
 
       Real x_to_tip = q_pt(0) - crack_tip(0);
@@ -115,6 +118,8 @@ MaterialTensorIntegralXFEM::computeIntegral()
       if (r > 0.2)
         error = 0.0;
 
+      std::cout << "tip at " << q_points[_qp]  << ", exact = " << sigma_yy_exact << ", fem sol = " << RankTwoScalarTools::component(_tensor[_qp], _i, _j) << std::endl;
+
       sum += weights[_qp] * error;
     }
     return sum;
@@ -125,7 +130,7 @@ MaterialTensorIntegralXFEM::computeIntegral()
 
     for (_qp = 0; _qp < _qrule->n_points(); _qp++)
     {
-      Point crack_tip(0.5, 0.0, 0); //crack tip is at (0.5, 0.5, 0)
+      Point crack_tip(0.5, 1.0, 0); //crack tip is at (0.5, 0.5, 0)
       Point q_pt = _q_point[_qp];
 
       Real x_to_tip = q_pt(0) - crack_tip(0);
@@ -165,7 +170,19 @@ MaterialTensorIntegralXFEM::computeIntegral()
       if (r > 0.2)
         error = 0.0;
 
-      sum += _JxW[_qp] * _coord[_qp] * error;
+      Real flag = 0.0;
+      if (r < 0.15)
+      {
+        const Elem * undisplaced_elem  = NULL;
+        if(_fe_problem.getDisplacedProblem() != NULL)
+          undisplaced_elem = _fe_problem.getDisplacedProblem()->refMesh().elemPtr(_current_elem->id());
+        else
+          undisplaced_elem = _current_elem;
+        flag = _xfem->flagQpointInside(undisplaced_elem, _q_point[_qp]);
+        std::cout << "flag = " << flag << ", exact = " << sigma_yy_exact << ", fem sol = " << RankTwoScalarTools::component(_tensor[_qp], _i, _j) << std::endl;
+      }
+
+      sum += _JxW[_qp] * _coord[_qp] * error * flag;
     }
     return sum;
   }

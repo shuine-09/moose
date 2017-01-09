@@ -15,6 +15,7 @@
 class StressDivergenceTensors;
 class RankTwoTensor;
 class RankFourTensor;
+class XFEM;
 
 template <>
 InputParameters validParams<StressDivergenceTensors>();
@@ -39,6 +40,10 @@ protected:
   virtual Real computeQpResidual() override;
   virtual Real computeQpJacobian() override;
   virtual Real computeQpOffDiagJacobian(unsigned int jvar) override;
+  virtual void computeResidual();
+
+  virtual void computeJacobian();
+  virtual void computeOffDiagJacobian(unsigned int jvar);
 
   virtual void computeFiniteDeformJacobian();
   virtual void computeAverageGradientTest();
@@ -74,6 +79,10 @@ protected:
 
   /// Flag for volumetric locking correction
   bool _volumetric_locking_correction;
+
+private:
+   MooseSharedPointer<XFEM> _xfem;
+
 };
 
 #endif // STRESSDIVERGENCETENSORS_H
