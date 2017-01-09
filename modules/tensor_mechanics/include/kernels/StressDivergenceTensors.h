@@ -15,6 +15,7 @@
 class StressDivergenceTensors;
 class RankTwoTensor;
 class RankFourTensor;
+class XFEM;
 
 template<>
 InputParameters validParams<StressDivergenceTensors>();
@@ -33,6 +34,8 @@ protected:
   virtual Real computeQpResidual();
   virtual Real computeQpJacobian();
   virtual Real computeQpOffDiagJacobian(unsigned int jvar);
+
+  virtual void computeResidual();
 
   virtual void computeJacobian();
   virtual void computeOffDiagJacobian(unsigned int jvar);
@@ -60,6 +63,10 @@ protected:
   const bool _temp_coupled;
 
   const unsigned int _temp_var;
+
+private:
+   MooseSharedPointer<XFEM> _xfem;
+
 };
 
 #endif //STRESSDIVERGENCETENSORS_H

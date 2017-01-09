@@ -1834,7 +1834,7 @@ void
 XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, Point & tip_point, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts) const
 {
   unsigned int nnd_pe = intersection_points.size();
-  unsigned int num_pts = 6;
+  unsigned int num_pts = 3;
   quad_pts.resize(nnd_pe * num_pts);
   quad_wts.resize(nnd_pe * num_pts);
 
@@ -1851,7 +1851,7 @@ XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, Point & ti
     subtrig_points[2] = intersection_points[jplus1];
 
     std::vector<std::vector<Real> > sg2;
-    Xfem::stdQuadr2D(3, 4, sg2); // get sg2
+    Xfem::stdQuadr2D(3, 2, sg2); // get sg2
     for (unsigned int l = 0; l < sg2.size(); ++l) // loop all int pts on a sub-trig
     {
       Xfem::shapeFunc2D(3, sg2[l], subtrig_points, shape, jac, true); // Get shape

@@ -20,6 +20,7 @@ InputParameters validParams<PresetBCNearTipEnrichment>()
   InputParameters p = validParams<NodalBC>();
   p.addRequiredParam<Real>("value", "Value of the BC");
   p.addParam<Real>("radius", 0.1, "Radius");
+  p.set<bool>("use_displaced_mesh") = false;
   return p;
 }
 
@@ -40,7 +41,9 @@ PresetBCNearTipEnrichment::computeQpValue()
 bool
 PresetBCNearTipEnrichment::shouldApply()
 {
-  Real dist = std::sqrt(((*_current_node)(0) - 0.5) * ((*_current_node)(0) - 0.5) + ((*_current_node)(1) - 0.0) * ((*_current_node)(1) - 0.0));
+  Real dist = std::sqrt(((*_current_node)(0) - 0.5) * ((*_current_node)(0) - 0.5) + ((*_current_node)(1) - 1.0) * ((*_current_node)(1) - 1.0));
+
+  //std::cout << "current_node = " << (*_current_node)(0) << ", " << (*_current_node)(1) << std::endl;
 
   if (dist > _radius)
     return true;

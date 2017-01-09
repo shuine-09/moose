@@ -43,8 +43,8 @@ RankTwoAuxXFEM::RankTwoAuxXFEM(const InputParameters & parameters) :
 void
 RankTwoAuxXFEM::compute()
 {
-  Point tip_edge((_current_elem->point(0))(0), 0.0, 0);
-  Point tip(0.5, 0.0, 0);
+  Point tip_edge((_current_elem->point(0))(0), 1.0, 0);
+  Point tip(0.5, 1.0, 0);
   if(_current_elem->contains_point(tip))
   {
     std::vector<Point> intersectionPoints;
