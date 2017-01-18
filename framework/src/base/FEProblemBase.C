@@ -4031,6 +4031,12 @@ FEProblemBase::updateMeshXFEM()
   bool updated = false;
   if (haveXFEM())
   {
+    if (_xfem->updateHeal(_time))
+    {
+      meshChanged();
+      execute(EXEC_NONLINEAR);
+    }
+
     updated = _xfem->update(_time);
     if (updated)
     {
