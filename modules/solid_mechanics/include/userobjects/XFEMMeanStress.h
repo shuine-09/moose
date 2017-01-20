@@ -64,7 +64,7 @@ private:
   const MaterialProperty<Real> & _weibull_eta;
   bool _use_weibull;
   std::vector<Real> _weibull_at_tip;
-
+  const PostprocessorValue * const _postprocessor;
 };
 
 template<>

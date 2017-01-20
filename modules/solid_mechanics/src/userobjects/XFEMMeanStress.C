@@ -20,6 +20,7 @@ InputParameters validParams<XFEMMeanStress>()
   params.addParam<Real>("weibull_radius", "Radius for weibull distrbution");
   params.addParam<Real>("critical_stress", 0.0, "Critical stress.");
   params.addParam<bool>("use_weibull", false,"Use weibull distribution to propagate crack?");
+  params.addParam<PostprocessorName>("average_h", "Postprocessor that gives average element size");
   return params;
 }
 
@@ -29,7 +30,8 @@ XFEMMeanStress::XFEMMeanStress(const InputParameters & parameters):
     _tensor(getMaterialProperty<SymmTensor>(getParam<std::string>("tensor"))),
     _critical_stress(getParam<Real>("critical_stress")),
     _weibull_eta(getMaterialProperty<Real>("weibull_eta")),
-    _use_weibull(getParam<bool>("use_weibull"))
+    _use_weibull(getParam<bool>("use_weibull")),
+    _postprocessor( isParamValid("average_h") ? &getPostprocessorValue("average_h") : NULL )
 {
 
   _fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
@@ -55,7 +57,14 @@ XFEMMeanStress::XFEMMeanStress(const InputParameters & parameters):
 
 void
 XFEMMeanStress::initialize()
-{ 
+{
+  if (_postprocessor)
+  {
+    _radius = 1.5 * *_postprocessor;
+    _weibull_radius = 1.5 * *_postprocessor;
+  }
+
+
   _crack_front_points.clear();
   _elem_id_crack_tip.clear();
   _stress_tensor.clear();
@@ -72,7 +81,7 @@ XFEMMeanStress::initialize()
   
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
   {  
-    _weibull_at_tip[i] = 9999.0;
+    _weibull_at_tip[i] = 9999e15;
     _weights[i] = 0;
   }
 
@@ -110,7 +119,7 @@ XFEMMeanStress::getStressTensor()
       Real dist = std::pow(dist_to_crack_front_vector.size_sq(),0.5);
       Real fact = 1.0/(pow(2*libMesh::pi, 1.5) * pow(_radius, 3.0)) * std::exp(-0.5 * pow(dist/_radius,2.0));
       //Real fact = (1.0-dist/_radius);
-      if (dist < _radius * 2 && flag > 0.5)
+      if (dist < 2.0 * _radius && flag > 0.5)
       {
         StressTensor[i*9+0] += _tensor[qp](0,0) * fact;
         StressTensor[i*9+1] += _tensor[qp](0,1) * fact;
@@ -123,7 +132,7 @@ XFEMMeanStress::getStressTensor()
         StressTensor[i*9+8] += _tensor[qp](2,2) * fact;
         _weights[i] += fact;
         
-        if (dist < _weibull_radius)
+        if (dist < _weibull_radius && flag > 1.5)
         {
           if (_weibull_eta[qp] < _weibull_at_tip[i])
           {

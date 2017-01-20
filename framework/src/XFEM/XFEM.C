@@ -315,7 +315,7 @@ XFEM::update(Real time)
 
   build_efa_mesh();
 
-  std::cout << "WJ : store crack tip origin and direction 1 " << std::endl;
+  //std::cout << "WJ : store crack tip origin and direction 1 " << std::endl;
   store_crack_tip_origin_and_direction();
 
   if (mark_cut_edges(time))
@@ -326,7 +326,7 @@ XFEM::update(Real time)
   if (mesh_changed)
   {
     build_efa_mesh();
-    std::cout << "WJ : store crack tip origin and direction 2 " << std::endl;
+    //std::cout << "WJ : store crack tip origin and direction 2 " << std::endl;
     store_crack_tip_origin_and_direction();
     //cut_mesh_with_efa();
   }
@@ -853,7 +853,7 @@ XFEM::mark_cut_edges_by_state(Real time)
     }
   }
 
-  std::cout << "WJ: Looking for crack front points" << std::endl;
+  //std::cout << "WJ: Looking for crack front points" << std::endl;
 
   std::map<const Elem*, std::vector<Point> >::iterator pmeit;
   for (pmeit = _elem_crack_origin_direction_map.begin(); pmeit != _elem_crack_origin_direction_map.end(); ++pmeit)
@@ -1079,6 +1079,8 @@ XFEM::mark_cut_edges_by_state(Real time)
     }
 
 
+    std::cout << "WJ : edge_cut = " << edge_cut << std::endl;
+
     if (edge_cut)
     {
       if (!_use_crack_growth_increment)
@@ -1105,7 +1107,7 @@ XFEM::mark_cut_edges_by_state(Real time)
 
         Real x0 = crack_tip_origin(0);
         Real y0 = crack_tip_origin(1);
-        Real crack_growth_increment = 0.0001; //0.0001 TEST ONLY 
+        Real crack_growth_increment = 0.0002; // !!!!! 0.0001 TEST ONLY 
         Real x1 = x0 + crack_growth_increment * growth_direction(0);
         Real y1 = y0 + crack_growth_increment * growth_direction(1);
 
@@ -1629,6 +1631,8 @@ XFEM::flag_qp_inside(const Elem* elem, const Point & p) const
       }
     } // plane_id
   }
+  else
+    flag = 2.0;
   return flag;
 }
 
