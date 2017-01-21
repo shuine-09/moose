@@ -21,6 +21,8 @@ XFEMElementPairLocator::XFEMElementPairLocator(MooseSharedPointer<XFEM> xfem,
 void
 XFEMElementPairLocator::reinit()
 {
+  return;
+
   // Does not support secondary cut yet.
   if (_xfem->has_secondary_cut())
     return;

@@ -20,6 +20,8 @@
 #include "XFEMAction.h"
 #include "XFEMSingleVariableConstraint.h"
 #include "XFEMPressure.h"
+#include "XFEMMeanStress.h"
+#include "XFEMWeibullMaterial.h"
 
 template <>
 InputParameters
@@ -77,9 +79,13 @@ XFEMApp::registerObjects(Factory & factory)
   // UserObjects
   registerUserObject(XFEMMarkerUserObject);
   registerUserObject(XFEMMaterialTensorMarkerUserObject);
+  registerUserObject(XFEMMeanStress);
 
   // DiracKernels
   registerDiracKernel(XFEMPressure);
+
+  //Materials
+  registerMaterial(XFEMWeibullMaterial);
 }
 
 // External entry point for dynamic syntax association

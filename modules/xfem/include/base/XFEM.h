@@ -122,10 +122,14 @@ public:
                                       unsigned int & edge_id_keep,
                                       Point & normal_keep);
 
-  void getCrackTipOrigin(std::map<unsigned int, const Elem *> & elem_id_crack_tip,
-                         std::vector<Point> & crack_front_points);
-  // void update_crack_propagation_direction(const Elem* elem, Point direction);
-  // void clear_crack_propagation_direction();
+  void getCrackTipOrigin(std::map<unsigned int, const Elem*> & elem_id_crack_tip, std::vector<Point> &  crack_front_points);
+  void getCrackTipOriginDirection(std::map<unsigned int, const Elem*> & elem_id_crack_tip, std::vector<Point> &  crack_front_points, std::vector<Point> & crack_directions);
+
+  void updateCrackGrowthDirection(const Elem* elem, Point direction);
+  void clearCrackGrowthDirection();
+  void updateDoesCrackGrowth(const Elem* elem, bool does_crack_growth);
+  void clearDoesCrackGrowth();
+  unsigned int numberCrackTips();
   /**
    * Set and get xfem cut data and type
    */
@@ -157,9 +161,16 @@ public:
                                   std::vector<Point> & quad_pts,
                                   std::vector<Real> & quad_wts) const;
   virtual void getXFEMqRuleOnSurface(std::vector<Point> & intersection_points,
+<<<<<<< HEAD
                                      std::vector<Point> & quad_pts,
                                      std::vector<Real> & quad_wts) const;
   bool has_secondary_cut() { return _has_secondary_cut; }
+=======
+                                  std::vector<Point> & quad_pts,
+                                  std::vector<Real> & quad_wts) const;
+  bool has_secondary_cut(){return _has_secondary_cut;}
+  Real flagQpoint(const Elem * elem, const Point & p) const;
+>>>>>>> added XFEMWeibullMaterial, XFEMMeanStress and modified XFEM for propagation cracks.
 
 private:
   void getFragmentEdges(const Elem * elem,
@@ -192,7 +203,12 @@ private:
 
   std::map<const Elem *, std::vector<Point>> _elem_crack_origin_direction_map;
 
+<<<<<<< HEAD
   // std::map<const Elem*, Point> _crack_propagation_direction_map;
+=======
+  std::map<const Elem*, Point> _crack_propagation_direction_map;
+  std::map<const Elem*, bool> _does_crack_growth_map;
+>>>>>>> added XFEMWeibullMaterial, XFEMMeanStress and modified XFEM for propagation cracks.
 
   std::map<const Elem *, RealVectorValue> _state_marked_elems;
   std::set<const Elem *> _state_marked_frags;
