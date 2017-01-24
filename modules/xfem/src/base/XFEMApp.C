@@ -22,6 +22,8 @@
 #include "XFEMPressure.h"
 #include "XFEMMeanStress.h"
 #include "XFEMWeibullMaterial.h"
+#include "XFEMMaxHoopStress.h"
+#include "XFEMEnergyReleaseRate.h"
 
 template <>
 InputParameters
@@ -80,6 +82,8 @@ XFEMApp::registerObjects(Factory & factory)
   registerUserObject(XFEMMarkerUserObject);
   registerUserObject(XFEMMaterialTensorMarkerUserObject);
   registerUserObject(XFEMMeanStress);
+  registerUserObject(XFEMMaxHoopStress);
+  registerUserObject(XFEMEnergyReleaseRate);
 
   // DiracKernels
   registerDiracKernel(XFEMPressure);

@@ -142,6 +142,51 @@ XFEM::getCrackTipOrigin(std::map<unsigned int, const Elem *> & elem_id_crack_tip
 }
 
 void
+XFEM::getCrackTipOriginDirection(std::map<unsigned int, const Elem* > & elem_id_crack_tip, std::vector<Point> & crack_front_points, std::vector<Point> & crack_directions)
+{
+  elem_id_crack_tip.clear();
+  crack_front_points.clear();
+  crack_front_points.resize(_elem_crack_origin_direction_map.size());
+  crack_directions.clear();
+  crack_directions.resize(_elem_crack_origin_direction_map.size());
+
+  std::map<const Elem*, std::vector<Point> >::iterator mit1 = _elem_crack_origin_direction_map.begin();
+  unsigned int crack_tip_index = 0;
+  // This map is used to sort the order in _elem_crack_origin_direction_map such that every process has same order
+  std::map<unsigned int, const Elem*> elem_id_map;
+
+  int m = -1;
+  for (mit1 = _elem_crack_origin_direction_map.begin(); mit1 != _elem_crack_origin_direction_map.end(); mit1++)
+  {
+    unsigned int elem_id = mit1->first->id();
+    if (elem_id > 999999)
+    {
+      elem_id_map[m] = mit1->first;
+      m--;
+    }
+    else
+    {
+      elem_id_map[elem_id] = mit1->first;
+    }
+  }
+
+  std::map<unsigned int, const Elem*> ::iterator mit2 = elem_id_map.begin();
+
+  for (; mit2 != elem_id_map.end(); mit2++)
+  {
+    const Elem* elem = mit2->second;
+    mit1 = _elem_crack_origin_direction_map.find(elem);
+    if (mit1 != _elem_crack_origin_direction_map.end())
+    {
+      elem_id_crack_tip[crack_tip_index] = mit1->first;
+      crack_front_points[crack_tip_index] = (mit1->second)[0]; // [0] stores origin coordinates and [1] stores direction
+      crack_directions[crack_tip_index] = (mit1->second)[1];
+      crack_tip_index++;
+    }
+  }
+}
+
+void
 XFEM::addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal)
 {
   Elem * elem = _mesh->elem(elem_id);

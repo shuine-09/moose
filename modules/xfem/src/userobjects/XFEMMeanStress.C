@@ -122,7 +122,7 @@ XFEMMeanStress::getStressTensor()
       Real dist = std::pow(dist_to_crack_front_vector.size_sq(),0.5);
       Real fact = 1.0/(pow(2*libMesh::pi, 1.5) * pow(_radius, 3.0)) * std::exp(-0.5 * pow(dist/_radius,2.0));
       //Real fact = (1.0-dist/_radius);
-      if (dist < _radius && flag > 0.5)
+      if (dist < 2.5 *  _radius && flag > 0.5)
       {
         StressTensor[i*9+0] += _tensor[qp](0,0) * fact;
         StressTensor[i*9+1] += _tensor[qp](0,1) * fact;
