@@ -450,9 +450,12 @@ Transient::solveStep(Real input_dt)
       _problem.execute(EXEC_TIMESTEP_END);
     }
 
-    if ( _problem.haveXFEM() &&
-         _problem.updateMeshXFEM() &&
-         (_xfem_update_count < _max_xfem_update))
+    //if ( _problem.haveXFEM() &&
+    //     _problem.updateMeshXFEM() &&
+    //     (_xfem_update_count < _max_xfem_update))
+    if (_problem.haveXFEM() &&
+        _xfem_update_count < _max_xfem_update &&
+        _problem.updateMeshXFEM())
     {
       _console << "XFEM modifying mesh, repeating step" << std::endl;
       _xfem_repeat_step = true;
