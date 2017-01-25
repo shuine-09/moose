@@ -524,27 +524,27 @@ XFEM::correctCrackExtensionDirection(const Elem * elem,
                                      unsigned int & edge_id_keep,
                                      Point & normal_keep)
 {
-  std::vector<Point> edge_ends(2, Point(0.0, 0.0, 0.0));
-  Point edge1(0.0, 0.0, 0.0);
-  Point edge2(0.0, 0.0, 0.0);
-  Point left_angle(0.0, 0.0, 0.0);
-  Point right_angle(0.0, 0.0, 0.0);
-  Point left_angle_normal(0.0, 0.0, 0.0);
-  Point right_angle_normal(0.0, 0.0, 0.0);
-  Point crack_direction_normal(0.0, 0.0, 0.0);
-  Point edge1_to_tip(0.0, 0.0, 0.0);
-  Point edge2_to_tip(0.0, 0.0, 0.0);
-  Point edge1_to_tip_normal(0.0, 0.0, 0.0);
-  Point edge2_to_tip_normal(0.0, 0.0, 0.0);
+  std::vector<Point> edge_ends(2,Point(0.0,0.0,0.0));
+  Point edge1(0.0,0.0,0.0);
+  Point edge2(0.0,0.0,0.0);
+  Point left_angle(0.0,0.0,0.0);
+  Point right_angle(0.0,0.0,0.0);
+  Point left_angle_normal(0.0,0.0,0.0);
+  Point right_angle_normal(0.0,0.0,0.0);
+  Point crack_direction_normal(0.0,0.0,0.0);
+  Point edge1_to_tip(0.0,0.0,0.0);
+  Point edge2_to_tip(0.0,0.0,0.0);
+  Point edge1_to_tip_normal(0.0,0.0,0.0);
+  Point edge2_to_tip_normal(0.0,0.0,0.0);
 
-  Real cos_45 = std::cos(45.0 / 180.0 * 3.14159);
-  Real sin_45 = std::sin(45.0 / 180.0 * 3.14159);
+  Real cos_45 = std::cos(60.0/180.0*3.14159);
+  Real sin_45 = std::sin(60.0/180.0*3.14159);
 
-  left_angle(0) = cos_45 * crack_tip_direction(0) - sin_45 * crack_tip_direction(1);
-  left_angle(1) = sin_45 * crack_tip_direction(0) + cos_45 * crack_tip_direction(1);
+  left_angle(0) = cos_45*crack_tip_direction(0) - sin_45*crack_tip_direction(1);
+  left_angle(1) = sin_45*crack_tip_direction(0) + cos_45*crack_tip_direction(1);
 
-  right_angle(0) = cos_45 * crack_tip_direction(0) + sin_45 * crack_tip_direction(1);
-  right_angle(1) = -sin_45 * crack_tip_direction(0) + cos_45 * crack_tip_direction(1);
+  right_angle(0) =  cos_45*crack_tip_direction(0) + sin_45*crack_tip_direction(1);
+  right_angle(1) = -sin_45*crack_tip_direction(0) + cos_45*crack_tip_direction(1);
 
   left_angle_normal(0) = -left_angle(1);
   left_angle_normal(1) = left_angle(0);
@@ -581,16 +581,14 @@ XFEM::correctCrackExtensionDirection(const Elem * elem,
       Real angle_edge1_normal = edge1_to_tip_normal * normal;
       Real angle_edge2_normal = edge2_to_tip_normal * normal;
 
-      if (std::abs(angle_edge1_normal) > std::abs(angle_min) &&
-          (edge1_to_tip * crack_tip_direction) > std::cos(45.0 / 180.0 * 3.14159))
+      if (std::abs(angle_edge1_normal) > std::abs(angle_min) && (edge1_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
       {
         edge_id_keep = i;
         distance_keep = 0.05;
         normal_keep = edge1_to_tip_normal;
         angle_min = angle_edge1_normal;
       }
-      else if (std::abs(angle_edge2_normal) > std::abs(angle_min) &&
-               (edge2_to_tip * crack_tip_direction) > std::cos(45.0 / 180.0 * 3.14159))
+      else if (std::abs(angle_edge2_normal) > std::abs(angle_min) && (edge2_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
       {
         edge_id_keep = i;
         distance_keep = 0.95;
@@ -602,8 +600,7 @@ XFEM::correctCrackExtensionDirection(const Elem * elem,
               crack_tip_origin, left_angle_normal, edge_ends[0], edge_ends[1], distance) &&
           (!CEMElem->isEdgePhantom(i)))
       {
-        if (std::abs(left_angle_normal * normal) > std::abs(angle_min) &&
-            (edge1_to_tip * crack_tip_direction) > std::cos(45.0 / 180.0 * 3.14159))
+        if (std::abs(left_angle_normal*normal) > std::abs(angle_min) && (edge1_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
         {
           edge_id_keep = i;
           distance_keep = distance;
@@ -615,8 +612,7 @@ XFEM::correctCrackExtensionDirection(const Elem * elem,
                    crack_tip_origin, right_angle_normal, edge_ends[0], edge_ends[1], distance) &&
                (!CEMElem->isEdgePhantom(i)))
       {
-        if (std::abs(right_angle_normal * normal) > std::abs(angle_min) &&
-            (edge2_to_tip * crack_tip_direction) > std::cos(45.0 / 180.0 * 3.14159))
+        if (std::abs(right_angle_normal*normal) > std::abs(angle_min) && (edge2_to_tip*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
         {
           edge_id_keep = i;
           distance_keep = distance;
@@ -631,8 +627,7 @@ XFEM::correctCrackExtensionDirection(const Elem * elem,
                                        distance) &&
                (!CEMElem->isEdgePhantom(i)))
       {
-        if (std::abs(crack_direction_normal * normal) > std::abs(angle_min) &&
-            (crack_tip_direction * crack_tip_direction) > std::cos(45.0 / 180.0 * 3.14159))
+        if (std::abs(crack_direction_normal*normal) > std::abs(angle_min) && (crack_tip_direction*crack_tip_direction) > std::cos(60.0/180.0*3.14159))
         {
           edge_id_keep = i;
           distance_keep = distance;
@@ -702,9 +697,8 @@ XFEM::markCutEdgesByState(Real time)
             elem_center += getEFANodeCoords(CEMElem->getEdge(i)->getNode(0), CEMElem, elem);
             elem_center += getEFANodeCoords(CEMElem->getEdge(i)->getNode(1), CEMElem, elem);
           }
-          elem_center /= nsides * 2.0;
-          edge_center = getEFANodeCoords(orig_edge->getNode(0), CEMElem, elem) +
-                        getEFANodeCoords(orig_edge->getNode(1), CEMElem, elem);
+          elem_center = elem_center / (nsides*2.0);
+          edge_center = getEFANodeCoords(orig_edge->getNode(0),CEMElem,elem) + getEFANodeCoords(orig_edge->getNode(1),CEMElem,elem);
           edge_center /= 2.0;
           crack_tip_origin = edge_center;
           crack_tip_direction = elem_center - edge_center;
@@ -755,7 +749,7 @@ XFEM::markCutEdgesByState(Real time)
     between_two_cuts /= pow(between_two_cuts.norm_sq(), 0.5);
     Real angle_between_two_cuts = between_two_cuts * crack_tip_direction;
 
-    if (angle_between_two_cuts > std::cos(45.0 / 180.0 * 3.14159)) // original cut direction is good
+    if (angle_between_two_cuts > std::cos(80.0/180.0*3.14159)) //original cut direction is good
       find_compatible_direction = true;
 
     if (!find_compatible_direction && edge_cut)
@@ -769,7 +763,7 @@ XFEM::markCutEdgesByState(Real time)
                                      edge_id_keep,
                                      normal_keep);
 
-    std::cout << "WJ : edge cut = " << edge_cut << std::endl;
+    std::cout << "WJ : find_compatible_direction " << find_compatible_direction << ", edge cut = " << edge_cut << std::endl;
 
     if (edge_cut)
     {
@@ -962,7 +956,7 @@ XFEM::markCutEdgesByState(Real time)
     between_two_cuts /= pow(between_two_cuts.size_sq(),0.5);
     Real angle_between_two_cuts = between_two_cuts * crack_tip_direction;
 
-    if (angle_between_two_cuts > std::cos(60.0/180.0*3.14159)) //original cut direction is good
+    if (angle_between_two_cuts > std::cos(80.0/180.0*3.14159)) //original cut direction is good
     {  
       std::cout << "WJ: originial cut direction will be used." << std::endl;
       find_compatible_direction = true;

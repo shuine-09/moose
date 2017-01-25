@@ -26,6 +26,7 @@ InputParameters validParams<XFEMMaxHoopStress>()
   params.addCoupledVar("disp_y", "The y displacement");
   params.addCoupledVar("disp_z", "The z displacement");
   params.addCoupledVar("temp", "Coupled Temperature");
+  params.addParam<BoundaryName>("intersecting_boundary", "Boundary intersected by ends of crack.");
   return params;
 }
 
@@ -60,7 +61,10 @@ XFEMMaxHoopStress::XFEMMaxHoopStress(const InputParameters & parameters):
   }
   else
     mooseError("XFEMMaxHoopStress error: must set radius.");
-  
+ 
+  if (isParamValid("intersecting_boundary"))
+    _intersecting_boundary_name = getParam<BoundaryName>("intersecting_boundary");
+ 
   //plane strain
   _kappa = 3 - 4*_poissons_ratio;
   _shear_modulus = _youngs_modulus / (2*(1 + _poissons_ratio));
@@ -275,8 +279,6 @@ XFEMMaxHoopStress::computeAuxFields(const SIF_MODE sif_mode, ColumnMajorMatrix &
 void
 XFEMMaxHoopStress::initialize()
 {
-  _J_thermal_term_vec = hasMaterialProperty<RealVectorValue>("J_thermal_term_vec") ? &getMaterialProperty<RealVectorValue>("J_thermal_term_vec"):NULL;
- 
   _crack_front_points.clear();
   _crack_front_directions.clear();
   _elem_id_crack_tip.clear();
@@ -508,6 +510,10 @@ XFEMMaxHoopStress::computeQpIntegrals(const std::vector<std::vector<Real> > & N_
     for (unsigned int j = 0; j < n_nodes; j++)
     {
       Real q = calcQValue((*_current_elem->get_node(j)), crack_front_point);
+      dof_id_type node_id = _current_elem->get_node(j)->id();
+      BoundaryID intersecting_boundary_id = _mesh.getBoundaryID(_intersecting_boundary_name);
+      if (_mesh.isBoundaryNode(node_id, intersecting_boundary_id))
+        q = 0.0;
       q_nodes[j] = q;
     }
 

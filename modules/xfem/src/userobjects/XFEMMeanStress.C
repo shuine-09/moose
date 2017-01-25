@@ -67,7 +67,6 @@ XFEMMeanStress::initialize()
     _weibull_radius = 2.0 * *_postprocessor;
   }
 
-
   _crack_front_points.clear();
   _elem_id_crack_tip.clear();
   _stress_tensor.clear();
@@ -122,7 +121,7 @@ XFEMMeanStress::getStressTensor()
       Real dist = std::pow(dist_to_crack_front_vector.size_sq(),0.5);
       Real fact = 1.0/(pow(2*libMesh::pi, 1.5) * pow(_radius, 3.0)) * std::exp(-0.5 * pow(dist/_radius,2.0));
       //Real fact = (1.0-dist/_radius);
-      if (dist < 2.5 *  _radius && flag > 0.5)
+      if (dist < 2.0 * _radius && flag > 0.5)
       {
         StressTensor[i*9+0] += _tensor[qp](0,0) * fact;
         StressTensor[i*9+1] += _tensor[qp](0,1) * fact;
@@ -177,7 +176,7 @@ XFEMMeanStress::threadJoin(const UserObject & y)
 void 
 XFEMMeanStress::finalize()
 {
-  _xfem->clearCrackGrowthDirection();
+  //_xfem->clearCrackGrowthDirection();
   _xfem->clearDoesCrackGrowth();
 
   gatherSum(_stress_tensor);
@@ -209,11 +208,11 @@ XFEMMeanStress::finalize()
     else
       does_elem_crack = (tensor_quantity > _critical_stress);
 
-    std::cout << "stress = " << tensor_quantity << ", weibull_tip = " << _weibull_at_tip[i] << " does elem crack = " << does_elem_crack << std::endl;
+    //std::cout << "stress = " << tensor_quantity << ", weibull_tip = " << _weibull_at_tip[i] << " does elem crack = " << does_elem_crack << std::endl;
     _xfem->updateDoesCrackGrowth(_elem_id_crack_tip[i], does_elem_crack);
 
-    _xfem->updateCrackGrowthDirection(_elem_id_crack_tip[i], normal);
-    std::cout << "crack front index (" << i << ") : average stress direction  = " << normal << std::endl; 
+    //_xfem->updateCrackGrowthDirection(_elem_id_crack_tip[i], normal);
+    //std::cout << "crack front index (" << i << ") : average stress direction  = " << normal << std::endl; 
   } 
 }
 
