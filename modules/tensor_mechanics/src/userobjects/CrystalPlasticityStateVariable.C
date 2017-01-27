@@ -104,10 +104,10 @@ CrystalPlasticityStateVariable::readInitialValueFromInline(std::vector<Real> & v
 bool
 CrystalPlasticityStateVariable::updateStateVariable(unsigned int qp, Real dt, std::vector<Real> & val) const
 {
-  if (_variable_size == 1)
-  {
-    std::cout << "material properity state var evol rate comp = " <<  (*_mat_prop_state_var_evol_rate_comps[0])[qp][0] << ", dt = " << dt << ", scale_factor = " << _scale_factor[0] << std::endl;
-  }
+  //if (_variable_size == 1)
+  //{
+  //  std::cout << "material properity state var evol rate comp = " <<  (*_mat_prop_state_var_evol_rate_comps[0])[qp][0] << ", dt = " << dt << ", scale_factor = " << _scale_factor[0] << std::endl;
+  //}
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
@@ -124,6 +124,8 @@ CrystalPlasticityStateVariable::updateStateVariable(unsigned int qp, Real dt, st
       val[i] = _mat_prop_state_var_old[qp][i];
     else
       val[i] = _mat_prop_state_var_old[qp][i] + val[i];
+
+    //std::cout << "new material property = " << val[i] << std::endl;
 
     if (val[i] < 0.0)
     {

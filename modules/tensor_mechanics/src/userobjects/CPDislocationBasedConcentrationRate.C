@@ -76,7 +76,7 @@ CPDislocationBasedConcentrationRate::calcStateVariableEvolutionRateComponent(uns
     Real ceq = _c0 * std::exp(-tau(i) * _molar_volume/(_gas_constant * _temp));
     Real vc = pre_factor * (ceq - _cv[qp][0]) * (_rho_m[qp][i] + _rho_i[qp][i]) * _b;
     val[0] += vc;
-    std::cout << "ceq = " << ceq << ", cv = " << _cv[qp][0] << ", vc = " << vc << ", tau = " << tau(i) << std::endl;
+    //std::cout << "ceq = " << ceq << ", cv = " << _cv[qp][0] << ", vc = " << vc << ", tau = " << tau(i) << std::endl;
   }
 
  std::cout << "concentration rate = " << val[0] << std::endl;
