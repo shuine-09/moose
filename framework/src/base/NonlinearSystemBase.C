@@ -819,6 +819,9 @@ NonlinearSystemBase::constraintResiduals(NumericVector<Number> & residual, bool 
             std::vector<Point> points;
             points.push_back(info._closest_point);
 
+            std::cout << "slave node = " << slave_node << std::endl;
+            std::cout << "closest point = " << info._closest_point << std::endl;
+
             // reinit variables on the master element's face at the contact point
             _fe_problem.reinitNeighborPhys(master_elem, master_side, points, 0);
 
