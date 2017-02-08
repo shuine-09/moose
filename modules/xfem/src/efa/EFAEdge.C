@@ -16,6 +16,7 @@ EFAEdge::EFAEdge(EFANode * node1, EFANode * node2) :
 {
   _embedded_nodes.clear();
   _intersection_x.clear();
+  _edge_interior_node = NULL;
   consistencyCheck();
 }
 
@@ -30,6 +31,12 @@ EFAEdge::EFAEdge(const EFAEdge & other_edge)
 
 EFAEdge::~EFAEdge() // do not delete edge node - they will be deleted
 {                  // in EFAelement's destructor
+}
+
+void
+EFAEdge::setInteriorNode(EFANode * node)
+{
+  _edge_interior_node = node;
 }
 
 bool

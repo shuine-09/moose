@@ -383,6 +383,7 @@ XFEM::markCutEdgesByGeometry(Real time)
       {
         if (!CEMElem->isEdgePhantom(elem_cut_edges[i].host_side_id)) // must not be phantom edge
         {
+          std::cout << "host id = " << elem_cut_edges[i].host_side_id << ", distance = " << elem_cut_edges[i].distance << std::endl;
           _efa_mesh.addElemEdgeIntersection(elem->id(), elem_cut_edges[i].host_side_id,
                                             elem_cut_edges[i].distance);
           marked_edges = true;
@@ -894,11 +895,11 @@ XFEM::cutMeshWithEFA()
 
   _efa_mesh.updatePhysicalLinksAndFragments();
   // DEBUG
-//  _efa_mesh.printMesh();
+  _efa_mesh.printMesh();
 
   _efa_mesh.updateTopology();
   // DEBUG
-//  _efa_mesh.printMesh();
+  _efa_mesh.printMesh();
 
   //Add new nodes
   const std::vector<EFANode*> NewNodes = _efa_mesh.getNewNodes();
@@ -971,6 +972,7 @@ XFEM::cutMeshWithEFA()
       std::vector<boundary_id_type> parent_node_boundary_ids = _mesh->boundary_info->boundary_ids(parent_node);
       _mesh->boundary_info->add_node(libmesh_node, parent_node_boundary_ids);
 
+
       if (_mesh2)
       {
         std::map<unsigned int, Node*>::iterator nit2 = efa_id_to_new_node2.find(node_id);
@@ -994,6 +996,9 @@ XFEM::cutMeshWithEFA()
     libmesh_elem->set_n_systems(parent_elem->n_systems());
     libmesh_elem->subdomain_id() = parent_elem->subdomain_id();
     libmesh_elem->processor_id() = parent_elem->processor_id();
+
+
+    libmesh_elem->print_info();
 
     //TODO: The 0 here is the thread ID.  Need to sort out how to do this correctly
     //TODO: Also need to copy neighbor material data
