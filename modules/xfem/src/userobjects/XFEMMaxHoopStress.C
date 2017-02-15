@@ -27,6 +27,7 @@ InputParameters validParams<XFEMMaxHoopStress>()
   params.addCoupledVar("disp_z", "The z displacement");
   params.addCoupledVar("temp", "Coupled Temperature");
   params.addParam<BoundaryName>("intersecting_boundary", "Boundary intersected by ends of crack.");
+  params.addParam<PostprocessorName>("average_h", "Postprocessor that gives average element size");
   return params;
 }
 
@@ -46,7 +47,8 @@ XFEMMaxHoopStress::XFEMMaxHoopStress(const InputParameters & parameters):
     _thermal_expansion(getParam<Real>("thermal_expansion")),
     _mesh(_subproblem.mesh()),
     _poissons_ratio(getParam<Real>("poissons_ratio")),
-    _youngs_modulus(getParam<Real>("youngs_modulus"))
+    _youngs_modulus(getParam<Real>("youngs_modulus")),
+    _postprocessor( isParamValid("average_h") ? &getPostprocessorValue("average_h") : NULL )
 {
   _fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
   if (_fe_problem == NULL)
@@ -604,6 +606,7 @@ XFEMMaxHoopStress::computeQpIntegrals(const std::vector<std::vector<Real> > & N_
       // Term3 = aux stress * strain * dq_x   (= stress * aux strain * dq_x)
       Real term3 = dq(0,0) * _aux_stress.doubleContraction(strain_cf);
 
+      /*
       RealVectorValue J_vec(0);
 
       for (unsigned int j=0; j<3; ++j)
@@ -617,6 +620,14 @@ XFEMMaxHoopStress::computeQpIntegrals(const std::vector<std::vector<Real> > & N_
       for (unsigned int j = 0; j < 3; j++)
         eq_thermal += crack_direction_local(j)*scalar_q*J_vec(j);
 
+      */
+
+      RealVectorValue grad_temp_cf = rotateToCrackFrontCoords(_temp_grad[_qp]);
+
+      Real eq_thermal = 0.0;
+      Real aux_stress_trace = _aux_stress(0,0) + _aux_stress(1,1) + _aux_stress(2,2);
+      eq_thermal = scalar_q * aux_stress_trace * _thermal_expansion * grad_temp_cf(0);
+
       Real eq = term1 + term2 - term3 + eq_thermal;
 
       QpIntegrals[i*2 + int(*it)]   = eq;
@@ -628,6 +639,12 @@ XFEMMaxHoopStress::computeQpIntegrals(const std::vector<std::vector<Real> > & N_
 void 
 XFEMMaxHoopStress::execute()
 {
+  if (_postprocessor)
+  {
+    _radius_inner = 1.5 *  *_postprocessor;
+    _radius_outer = 3.5 *  *_postprocessor;
+  } 
+
   std::vector<Real> comp_integ = computeIntegrals();
   for (unsigned int i = 0; i < _num_crack_front_points*2; i++)
     _integral_values[i] += comp_integ[i];
@@ -664,15 +681,15 @@ XFEMMaxHoopStress::finalize()
 
     Real theta = 0.0;
 
-    std::cout << "hoop_stress1 = " << hoop_stress1 << ", theta1 = " << theta1 << std::endl;
-    std::cout << "hoop_stress2 = " << hoop_stress2 << ", theta2 = " << theta2 << std::endl;
+    std::cout << "hoop_stress1 = " << hoop_stress1 << ", theta1 = " << theta1 / libMesh::pi * 180.0 << std::endl;
+    std::cout << "hoop_stress2 = " << hoop_stress2 << ", theta2 = " << theta2 / libMesh::pi * 180.0 << std::endl;
 
     if (hoop_stress1 > hoop_stress2)
       theta = theta1;
     else
       theta = theta2;
 
-    std::cout << "theta = " << theta << std::endl;
+    std::cout << "theta = " << theta / libMesh::pi * 180.0 << std::endl;
 
     Point crack_front_point = _crack_front_points[i];
     Point crack_direction = _crack_front_directions[i];
@@ -681,7 +698,7 @@ XFEMMaxHoopStress::finalize()
 
     Real omega = std::atan2(crack_direction(1), crack_direction(0));
 
-    std::cout << "omega = " << omega << std::endl;
+    std::cout << "omega = " << omega / libMesh::pi * 180 << std::endl;
 
     Point direction(std::cos(omega+theta), std::sin(omega+theta), 0.0);
     
