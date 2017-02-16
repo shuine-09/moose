@@ -106,6 +106,7 @@ private:
   ColumnMajorMatrix _rot_mat;
   RealVectorValue _crack_plane_normal;
   BoundaryName _intersecting_boundary_name;
+  const PostprocessorValue * const _postprocessor;
 };
 
 template<>

@@ -18,7 +18,7 @@ InputParameters validParams<XFEMEnergyReleaseRate>()
   InputParameters params = validParams<ElementUserObject>();
   params.addParam<Real>("radius_inner", "Inner radius for volume integral domain");
   params.addParam<Real>("radius_outer", "Outer radius for volume integral domain");
-  params.addParam<Real>("critial_energy_release_rate", 0.0, "Critical energy release rate.");
+  params.addParam<Real>("critical_energy_release_rate", 0.0, "Critical energy release rate.");
   params.addParam<bool>("use_weibull", false,"Use weibull distribution to initiate crack?");
   params.addParam<PostprocessorName>("average_h", "Postprocessor that gives average element size");
   params.set<bool>("use_displaced_mesh") = false;
@@ -28,12 +28,13 @@ InputParameters validParams<XFEMEnergyReleaseRate>()
 XFEMEnergyReleaseRate::XFEMEnergyReleaseRate(const InputParameters & parameters):
     ElementUserObject(parameters),
     _Eshelby_tensor(getMaterialProperty<ColumnMajorMatrix>("Eshelby_tensor")),
-    _J_thermal_term_vec(hasMaterialProperty<RealVectorValue>("J_thermal_term_vec")?
-                        &getMaterialProperty<RealVectorValue>("J_thermal_term_vec"):
-                        NULL),
+//    _J_thermal_term_vec(hasMaterialProperty<RealVectorValue>("J_thermal_term_vec")?
+//                        &getMaterialProperty<RealVectorValue>("J_thermal_term_vec"):
+//                        NULL),
+    _J_thermal_term_vec(&getMaterialProperty<RealVectorValue>("J_thermal_term_vec")),
     _weibull(getMaterialProperty<Real>("weibull")),
     _qp(0),
-    _critical_energy_release_rate(getParam<Real>("critial_energy_release_rate")),
+    _critical_energy_release_rate(getParam<Real>("critical_energy_release_rate")),
     _mesh(_subproblem.mesh()),
      _use_weibull(getParam<bool>("use_weibull")),
      _postprocessor( isParamValid("average_h") ? &getPostprocessorValue("average_h") : NULL )
@@ -51,12 +52,15 @@ XFEMEnergyReleaseRate::XFEMEnergyReleaseRate(const InputParameters & parameters)
   }
   else
     mooseError("XFEMEnergyReleaseRate error: must set radius_inner and radius_outer.");
+
+  if (_J_thermal_term_vec == NULL)
+    std::cout << "J_thermal_term_vec is NULL " << std::endl;
 }
 
 void
 XFEMEnergyReleaseRate::initialize()
 {
-  _J_thermal_term_vec = hasMaterialProperty<RealVectorValue>("J_thermal_term_vec") ? &getMaterialProperty<RealVectorValue>("J_thermal_term_vec") : NULL;
+  //_J_thermal_term_vec = hasMaterialProperty<RealVectorValue>("J_thermal_term_vec") ? &getMaterialProperty<RealVectorValue>("J_thermal_term_vec") : NULL;
 
   _crack_front_points.clear();
   _crack_directions.clear();
@@ -179,7 +183,7 @@ XFEMEnergyReleaseRate::computeQpIntegrals(const std::vector<std::vector<Real> > 
     //Thermal component
     Real eq_thermal = 0.0;
 
-    if (_J_thermal_term_vec != NULL)
+    //if (_J_thermal_term_vec != NULL)
     {
       for (unsigned int i = 0; i < 3; i++)
         eq_thermal += crack_direction(i) * scalar_q * (*_J_thermal_term_vec)[_qp](i);
@@ -194,6 +198,12 @@ XFEMEnergyReleaseRate::computeQpIntegrals(const std::vector<std::vector<Real> > 
 void 
 XFEMEnergyReleaseRate::execute()
 {
+  if (_postprocessor)
+  {
+    _radius_inner = 1.5 *  *_postprocessor;
+    _radius_outer = 3.5 *  *_postprocessor;
+  } 
+
   std::vector<Real> comp_integ = computeIntegrals();
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
   {
@@ -228,7 +238,7 @@ XFEMEnergyReleaseRate::finalize()
     std::cout << "energy release rate = " << _integral_values[i] << std::endl;
     bool does_elem_crack = false;
     if (_use_weibull)
-      does_elem_crack = _integral_values[i] > _weibull_at_tip[i];
+      does_elem_crack = _integral_values[i] > _weibull_at_tip[i] * _critical_energy_release_rate;
     else
       does_elem_crack = _integral_values[i] > _critical_energy_release_rate;
     std::cout << "critical_energy_release_rate = " << _critical_energy_release_rate << ", weibull_tip = " << _weibull_at_tip[i] << " does elem crack = " << does_elem_crack << std::endl;

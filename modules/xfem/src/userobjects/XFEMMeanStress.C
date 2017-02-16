@@ -63,8 +63,8 @@ XFEMMeanStress::initialize()
 {
   if (_postprocessor)
   {
-    _radius = 2.0 * *_postprocessor;
-    _weibull_radius = 2.0 * *_postprocessor;
+    _radius = 3.0 * *_postprocessor;
+    _weibull_radius = 3.0 * *_postprocessor;
   }
 
   _crack_front_points.clear();
