@@ -907,7 +907,7 @@ XFEM::markCutEdgesByState(Real time)
         }
       }
       else{
-        mooseError("element " << elem->id() << " cannot find its crack tip origin and direction.");
+        mooseError("element ", elem->id(), " cannot find its crack tip origin and direction.");
       }
     }
     else
@@ -973,6 +973,7 @@ XFEM::markCutEdgesByState(Real time)
     if (edge_cut)
     {
       if (!_use_crack_growth_increment)
+      //if (1)
       {
        _efa_mesh.addElemEdgeIntersection(elem->id(), edge_id_keep, distance_keep);
         marked_edges = true;
@@ -996,7 +997,7 @@ XFEM::markCutEdgesByState(Real time)
 
         Real x0 = crack_tip_origin(0);
         Real y0 = crack_tip_origin(1);
-        Real crack_growth_increment = 0.0002; // !!!!! 0.0001 TEST ONLY 
+        Real crack_growth_increment = 0.75; //0.00025; // !!!!! 0.0001 TEST ONLY 
         Real x1 = x0 + crack_growth_increment * growth_direction(0);
         Real y1 = y0 + crack_growth_increment * growth_direction(1);
 
