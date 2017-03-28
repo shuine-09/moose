@@ -1054,6 +1054,9 @@ EFAElement2D::createChild(const std::set<EFAElement *> & CrackTipElements,
         EFAPoint origin_to_point = p - origin;
         EFAPoint origin2_to_point = p - origin2;
 
+        if (std::abs(origin_to_point * normal) < Xfem::tol)
+          origin_to_point = p - (origin + normal * Xfem::tol);
+
         if (_fragments.size() == 1 && !shouldDuplicateForCrackTip(CrackTipElements))
           childElem->setNode(j, _nodes[j]); // inherit parent's node
         else if (origin_to_point * normal < Xfem::tol && origin2_to_point * normal2 < Xfem::tol)
