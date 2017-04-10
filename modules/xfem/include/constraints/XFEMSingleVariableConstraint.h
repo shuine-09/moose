@@ -40,6 +40,9 @@ protected:
    */
   virtual Real computeQpJacobian(Moose::DGJacobianType type);
 
+  /// Use penalty method
+  bool _use_penalty;
+
   /// Vector normal to the internal interface
   Point _interface_normal;
 

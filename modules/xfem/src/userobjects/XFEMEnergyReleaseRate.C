@@ -55,6 +55,8 @@ XFEMEnergyReleaseRate::XFEMEnergyReleaseRate(const InputParameters & parameters)
 
   if (_J_thermal_term_vec == NULL)
     std::cout << "J_thermal_term_vec is NULL " << std::endl;
+
+  _file.open ("crack_info.txt");
 }
 
 void
@@ -244,4 +246,7 @@ XFEMEnergyReleaseRate::finalize()
     std::cout << "critical_energy_release_rate = " << _critical_energy_release_rate << ", weibull_tip = " << _weibull_at_tip[i] << " does elem crack = " << does_elem_crack << std::endl;
     _xfem->updateDoesCrackGrowth(_elem_id_crack_tip[i], does_elem_crack);
   }
+
+  if (_integral_values.size())
+    _file << _t << " " << _integral_values[0] << std::endl;
 }

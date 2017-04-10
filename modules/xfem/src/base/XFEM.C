@@ -1006,7 +1006,7 @@ XFEM::markCutEdgesByState(Real time)
 
         Real x0 = crack_tip_origin(0);
         Real y0 = crack_tip_origin(1);
-        Real crack_growth_increment = 0.75; //0.00025; // !!!!! 0.0001 TEST ONLY 
+        Real crack_growth_increment = 0.3; //0.0002; //0.00025; // !!!!! 0.0001 TEST ONLY 
         Real x1 = x0 + crack_growth_increment * growth_direction(0);
         Real y1 = y0 + crack_growth_increment * growth_direction(1);
 
@@ -1256,6 +1256,16 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl,
     Elem * parent_elem = _mesh->elem(parent_id);
     Elem * libmesh_elem = Elem::build(parent_elem->type()).release();
 
+    for (ElementPairLocator::ElementPairList::iterator it = _sibling_elems.begin();
+         it != _sibling_elems.end();
+         ++it)
+    {
+      if (parent_elem == it->first)
+        it->first = libmesh_elem;
+      else if (parent_elem == it->second)
+        it->second = libmesh_elem;
+    }
+
     // parent has at least two children
     if (NewElements[i]->getParent()->numChildren() > 1)
       temporary_parent_children_map[parent_id].push_back(libmesh_elem);
@@ -1266,6 +1276,15 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl,
     {
       parent_elem2 = _mesh2->elem(parent_id);
       libmesh_elem2 = Elem::build(parent_elem2->type()).release();
+      for (ElementPairLocator::ElementPairList::iterator it = _sibling_displaced_elems.begin();
+           it != _sibling_displaced_elems.end();
+           ++it)
+      {
+        if (parent_elem2 == it->first)
+          it->first = libmesh_elem2;
+        else if (parent_elem2 == it->second)
+          it->second = libmesh_elem2;
+      }
     }
 
     for (unsigned int j = 0; j < NewElements[i]->numNodes(); ++j)

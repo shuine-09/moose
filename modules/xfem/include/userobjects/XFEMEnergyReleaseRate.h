@@ -23,6 +23,9 @@
 #include "libmesh/vector_value.h"
 #include "libmesh/elem.h"
 
+#include <iostream>
+#include <fstream>
+
 class XFEM;
 
 class XFEMEnergyReleaseRate : public ElementUserObject
@@ -35,7 +38,7 @@ public:
    */
   XFEMEnergyReleaseRate(const InputParameters & parameters);
 
-  virtual ~XFEMEnergyReleaseRate() {}
+  virtual ~XFEMEnergyReleaseRate() {_file.close();}
 
   virtual void initialize();
   virtual void execute();
@@ -66,6 +69,8 @@ private:
   bool _use_weibull;
   std::vector<Real> _weibull_at_tip;
   const PostprocessorValue * const _postprocessor;
+
+  std::ofstream _file;
 };
 
 template<>
