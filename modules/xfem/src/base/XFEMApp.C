@@ -25,6 +25,8 @@
 #include "XFEMMaxHoopStress.h"
 #include "XFEMEnergyReleaseRate.h"
 
+#include "HeatTestAux.h"
+
 template <>
 InputParameters
 validParams<XFEMApp>()
@@ -74,6 +76,7 @@ XFEMApp::registerObjects(Factory & factory)
   registerAux(XFEMVolFracAux);
   registerAux(XFEMCutPlaneAux);
   registerAux(XFEMMarkerAux);
+  registerAux(HeatTestAux);
 
   // Constraints
   registerConstraint(XFEMSingleVariableConstraint);
