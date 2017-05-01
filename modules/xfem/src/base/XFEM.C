@@ -927,11 +927,11 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
 
   _efa_mesh.updatePhysicalLinksAndFragments();
   // DEBUG
-  //_efa_mesh.printMesh();
+  _efa_mesh.printMesh();
 
   _efa_mesh.updateTopology();
   // DEBUG
-  //_efa_mesh.printMesh();
+  _efa_mesh.printMesh();
 
   const std::vector<EFANode *> new_nodes = _efa_mesh.getNewNodes();
   const std::vector<EFAElement *> new_elements = _efa_mesh.getChildElements();
@@ -1242,8 +1242,8 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
   {
     std::vector<const Elem *> & sibling_elem_vec = it->second;
     if (sibling_elem_vec.size() != 2)
-      mooseError("Must have exactly 2 sibling elements");
-    _sibling_elems.push_back(std::make_pair(sibling_elem_vec[0], sibling_elem_vec[1]));
+      // mooseError("Must have exactly 2 sibling elements");
+      _sibling_elems.push_back(std::make_pair(sibling_elem_vec[0], sibling_elem_vec[1]));
   }
 
   // add sibling elems on displaced mesh
