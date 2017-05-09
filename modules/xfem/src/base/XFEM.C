@@ -206,8 +206,8 @@ XFEM::update(Real time, NonlinearSystemBase & nl, AuxiliarySystem & aux)
 
   if (mesh_changed)
   {
-    buildEFAMesh();
-    storeCrackTipOriginAndDirection();
+    // buildEFAMesh();
+    // storeCrackTipOriginAndDirection();
   }
 
   if (mesh_changed)

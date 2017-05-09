@@ -342,14 +342,52 @@ EFAElement::mergeNodes(EFANode *& childNode,
     }
     else // both nodes are temporary -- create new permanent node and delete temporary nodes
     {
-      unsigned int new_node_id = Efa::getNewID(PermanentNodes);
-      EFANode * newNode =
-          new EFANode(new_node_id, EFANode::N_CATEGORY_PERMANENT, childNode->parent());
-      PermanentNodes.insert(std::make_pair(new_node_id, newNode));
+      std::cout << "WJ: both nodes are temporary. " << std::endl;
+      if (!childNode->parent()->isNodeUsed())
+      {
+        EFANode * newNode = childNode->parent();
+        childOfNeighborElem->switchNode(newNode, childOfNeighborNode, true);
+        childElem->switchNode(newNode, childNode, true);
 
-      childOfNeighborElem->switchNode(newNode, childOfNeighborNode, true);
-      childElem->switchNode(newNode, childNode, true);
+        if (!Efa::deleteFromMap(TempNodes, childOfNeighborNode))
+          EFAError("Attempted to delete node: ",
+                   childOfNeighborNode->id(),
+                   " from TempNodes, but couldn't find it");
+        if (!Efa::deleteFromMap(TempNodes, childNode))
+          EFAError("Attempted to delete node: ",
+                   childNode->id(),
+                   " from TempNodes, but couldn't find it");
 
+        newNode->useNode();
+        childNode = newNode;
+        childOfNeighborNode = newNode;
+      }
+      else
+      {
+        unsigned int new_node_id = Efa::getNewID(PermanentNodes);
+        EFANode * newNode = new EFANode(new_node_id,
+                                        EFANode::N_CATEGORY_PERMANENT,
+                                        childNode->parent(),
+                                        childNode->parent()->isNodeCut());
+        PermanentNodes.insert(std::make_pair(new_node_id, newNode));
+
+        childOfNeighborElem->switchNode(newNode, childOfNeighborNode, true);
+        childElem->switchNode(newNode, childNode, true);
+
+        if (!Efa::deleteFromMap(TempNodes, childOfNeighborNode))
+          EFAError("Attempted to delete node: ",
+                   childOfNeighborNode->id(),
+                   " from TempNodes, but couldn't find it");
+        if (!Efa::deleteFromMap(TempNodes, childNode))
+          EFAError("Attempted to delete node: ",
+                   childNode->id(),
+                   " from TempNodes, but couldn't find it");
+
+        childOfNeighborNode = newNode;
+        childNode = newNode;
+      }
+
+      /*
       if (childNode->parent() != childOfNeighborNode->parent())
       {
         EFAError("Attempting to merge nodes ",
@@ -358,16 +396,18 @@ EFAElement::mergeNodes(EFANode *& childNode,
                  childOfNeighborNode->id(),
                  " but they don't share a common parent");
       }
+      */
 
-      if (!Efa::deleteFromMap(TempNodes, childOfNeighborNode))
-        EFAError("Attempted to delete node: ",
-                 childOfNeighborNode->id(),
-                 " from TempNodes, but couldn't find it");
-      if (!Efa::deleteFromMap(TempNodes, childNode))
-        EFAError(
-            "Attempted to delete node: ", childNode->id(), " from TempNodes, but couldn't find it");
-      childOfNeighborNode = newNode;
-      childNode = newNode;
+      // if (!Efa::deleteFromMap(TempNodes, childOfNeighborNode))
+      //  EFAError("Attempted to delete node: ",
+      //           childOfNeighborNode->id(),
+      //           " from TempNodes, but couldn't find it");
+      // if (!Efa::deleteFromMap(TempNodes, childNode))
+      //  EFAError(
+      //      "Attempted to delete node: ", childNode->id(), " from TempNodes, but couldn't find
+      //      it");
+      // childOfNeighborNode = newNode;
+      // childNode = newNode;
     }
   }
 }

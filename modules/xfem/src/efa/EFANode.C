@@ -9,8 +9,8 @@
 
 #include <sstream>
 
-EFANode::EFANode(unsigned int nid, N_CATEGORY ncat, EFANode * nparent)
-  : _category(ncat), _id(nid), _parent(nparent)
+EFANode::EFANode(unsigned int nid, N_CATEGORY ncat, EFANode * nparent, bool iscut, bool isused)
+  : _category(ncat), _id(nid), _parent(nparent), _is_cut(iscut), _is_used(isused)
 {
 }
 
@@ -50,4 +50,28 @@ void
 EFANode::removeParent()
 {
   _parent = NULL;
+}
+
+bool
+EFANode::isNodeCut()
+{
+  return _is_cut;
+}
+
+void
+EFANode::cutNode()
+{
+  _is_cut = true;
+}
+
+bool
+EFANode::isNodeUsed()
+{
+  return _is_used;
+}
+
+void
+EFANode::useNode()
+{
+  _is_used = true;
 }

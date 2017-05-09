@@ -323,8 +323,11 @@ EFAFragment2D::split()
   // N.B. each boundary each can only have 1 cut at most
   std::vector<EFAFragment2D *> new_fragments;
   std::vector<unsigned int> cut_edges;
+  std::vector<unsigned int> cut_nodes;
   for (unsigned int iedge = 0; iedge < _boundary_edges.size(); ++iedge)
   {
+    if (_boundary_edges[iedge]->getNode(0)->isNodeCut())
+      cut_nodes.push_back(iedge);
     if (_boundary_edges[iedge]->numEmbeddedNodes() > 1)
       EFAError("A fragment boundary edge can't have more than 1 cuts");
     if (_boundary_edges[iedge]->hasIntersection())
@@ -337,9 +340,54 @@ EFAFragment2D::split()
   }
   else if (cut_edges.size() == 1 || cut_edges.size() == 2)
   {
-    unsigned int iedge = 0;
-    unsigned int icutedge = 0;
+    // unsigned int iedge = 0;
+    // unsigned int icutedge = 0;
+    if (cut_edges[0] == 1 && cut_nodes[0] == 0)
+    {
+      EFAFragment2D * new_frag1 = new EFAFragment2D(_host_elem, false, NULL);
+      EFAFragment2D * new_frag2 = new EFAFragment2D(_host_elem, false, NULL);
+      EFANode * node1 = _boundary_edges[0]->getNode(0);
+      EFANode * node2 = _boundary_edges[0]->getNode(1);
+      EFANode * node3 = _boundary_edges[1]->getEmbeddedNode(0);
+      EFANode * node4 = _boundary_edges[1]->getNode(1);
+      EFANode * node5 = _boundary_edges[2]->getNode(1);
 
+      new_frag1->addEdge(new EFAEdge(node1, node2));
+      new_frag1->addEdge(new EFAEdge(node2, node3));
+      new_frag1->addEdge(new EFAEdge(node3, node1));
+
+      new_frag2->addEdge(new EFAEdge(node1, node3));
+      new_frag2->addEdge(new EFAEdge(node3, node4));
+      new_frag2->addEdge(new EFAEdge(node4, node5));
+      new_frag2->addEdge(new EFAEdge(node5, node1));
+
+      new_fragments.push_back(new_frag1);
+      new_fragments.push_back(new_frag2);
+    }
+    else if (cut_edges[0] == 3 && cut_nodes[0] == 2)
+    {
+      EFAFragment2D * new_frag1 = new EFAFragment2D(_host_elem, false, NULL);
+      EFAFragment2D * new_frag2 = new EFAFragment2D(_host_elem, false, NULL);
+      EFANode * node1 = _boundary_edges[0]->getNode(0);
+      EFANode * node2 = _boundary_edges[0]->getNode(1);
+      EFANode * node3 = _boundary_edges[1]->getNode(1);
+      EFANode * node4 = _boundary_edges[3]->getEmbeddedNode(0);
+      EFANode * node5 = _boundary_edges[2]->getNode(1);
+
+      new_frag1->addEdge(new EFAEdge(node1, node2));
+      new_frag1->addEdge(new EFAEdge(node2, node3));
+      new_frag1->addEdge(new EFAEdge(node3, node4));
+      new_frag1->addEdge(new EFAEdge(node4, node1));
+
+      new_frag2->addEdge(new EFAEdge(node3, node5));
+      new_frag2->addEdge(new EFAEdge(node5, node4));
+      new_frag2->addEdge(new EFAEdge(node4, node3));
+
+      new_fragments.push_back(new_frag1);
+      new_fragments.push_back(new_frag2);
+    }
+
+    /*
     do // loop over new fragments
     {
       EFAFragment2D * new_frag = new EFAFragment2D(_host_elem, false, NULL);
@@ -394,6 +442,19 @@ EFAFragment2D::split()
 
       new_fragments.push_back(new_frag);
     } while (new_fragments.size() < cut_edges.size());
+    */
+  }
+  else
+  {
+    std::cout << "WJ : create a fragment of itself." << std::endl;
+    EFAFragment2D * new_frag = new EFAFragment2D(_host_elem, false, NULL);
+    for (unsigned int iedge = 0; iedge < _boundary_edges.size(); ++iedge)
+    {
+      EFANode * first_node_on_edge = _boundary_edges[iedge]->getNode(0);
+      EFANode * second_node_on_edge = _boundary_edges[iedge]->getNode(1);
+      new_frag->addEdge(new EFAEdge(first_node_on_edge, second_node_on_edge));
+    }
+    new_fragments.push_back(new_frag);
   }
 
   return new_fragments;

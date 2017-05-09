@@ -37,6 +37,21 @@ XFEMCutElem2D::getNodeCoordinates(EFANode * CEMnode, MeshBase * displaced_mesh) 
   std::vector<Point> master_points;
   std::vector<double> master_weights;
 
+  for (unsigned int i = 0; i < _efa_elem2d.numEdges(); ++i) // check element exterior edges
+  {
+    if (_efa_elem2d.getEdge(i)->getNode(0)->isNodeCut())
+    {
+      if (i == 0)
+        return node_coor = Point(0.0, 0.0, 0.0);
+      else if (i == 1)
+        return node_coor = Point(1.0, 0.0, 0.0);
+      else if (i == 2)
+        return node_coor = Point(1.0, 1.0, 0.0);
+      else if (i == 3)
+        return node_coor = Point(0.0, 1.0, 0.0);
+    }
+  }
+
   _efa_elem2d.getMasterInfo(CEMnode, master_nodes, master_weights);
   for (unsigned int i = 0; i < master_nodes.size(); ++i)
   {
@@ -60,6 +75,8 @@ void
 XFEMCutElem2D::computePhysicalVolumeFraction()
 {
   Real frag_vol = 0.0;
+  _physical_volfrac = 0.5;
+  return;
 
   // Calculate area of entire element and fragment using the formula:
   // A = 1/2 sum_{i=0}^{n-1} (x_i y_{i+1} - x_{i+1} y{i})

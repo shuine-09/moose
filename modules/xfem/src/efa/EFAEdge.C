@@ -40,6 +40,22 @@ EFAEdge::equivalent(const EFAEdge & other) const
     isEqual = true;
   else if (other._edge_node2 == _edge_node1 && other._edge_node1 == _edge_node2)
     isEqual = true;
+  else if (other._edge_node1->parent() != NULL && _edge_node1->parent() != NULL &&
+           other._edge_node1->parent() == _edge_node1->parent() &&
+           other._edge_node1->parent()->isNodeCut() && other._edge_node2 == _edge_node2)
+    isEqual = true;
+  else if (other._edge_node2->parent() != NULL && _edge_node2->parent() != NULL &&
+           other._edge_node2->parent() == _edge_node2->parent() &&
+           other._edge_node2->parent()->isNodeCut() && other._edge_node1 == _edge_node1)
+    isEqual = true;
+  else if (other._edge_node2->parent() != NULL && _edge_node1->parent() != NULL &&
+           other._edge_node2->parent() == _edge_node1->parent() &&
+           other._edge_node2->parent()->isNodeCut() && other._edge_node1 == _edge_node2)
+    isEqual = true;
+  else if (other._edge_node1->parent() != NULL && _edge_node2->parent() != NULL &&
+           other._edge_node1->parent() == _edge_node2->parent() &&
+           other._edge_node1->parent()->isNodeCut() && other._edge_node2 == _edge_node1)
+    isEqual = true;
   return isEqual;
 }
 
@@ -328,6 +344,7 @@ void
 EFAEdge::consistencyCheck()
 {
   bool consistent = true;
+  /*
   if ((_edge_node1->category() == EFANode::N_CATEGORY_PERMANENT ||
        _edge_node1->category() == EFANode::N_CATEGORY_TEMP) &&
       _edge_node2->category() == EFANode::N_CATEGORY_LOCAL_INDEX)
@@ -340,6 +357,7 @@ EFAEdge::consistencyCheck()
     EFAError("In consistencyCheck nodes on edge are not consistent");
   if (_embedded_nodes.size() != _intersection_x.size())
     EFAError("In consistencyCheck num of emb_nodes must be = num of inters_x");
+    */
 }
 
 void
@@ -349,11 +367,11 @@ EFAEdge::switchNode(EFANode * new_node, EFANode * old_node)
     _edge_node1 = new_node;
   else if (_edge_node2 == old_node)
     _edge_node2 = new_node;
-  else if (isEmbeddedNode(old_node))
-  {
-    unsigned int id = getEmbeddedNodeIndex(old_node);
-    _embedded_nodes[id] = new_node;
-  }
+  // else if (isEmbeddedNode(old_node))
+  //{
+  //  unsigned int id = getEmbeddedNodeIndex(old_node);
+  //  _embedded_nodes[id] = new_node;
+  //}
 }
 
 bool

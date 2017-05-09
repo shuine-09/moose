@@ -5,16 +5,16 @@
 
 [XFEM]
   cut_type = 'line_segment_2d'
-  cut_data = '-0.00 0.3 1.0 0.7 0 0'
+  cut_data = '-0.00 0.4 1.0 0.6 0 0'
   qrule = volfrac
-  output_cut_plane = true
+  output_cut_plane = false
 []
 
 [Mesh]
   type = GeneratedMesh
   dim = 2
   nx = 2
-  ny = 2
+  ny = 4
   xmin = 0.0
   xmax = 1.0
   ymin = 0.0
@@ -38,41 +38,28 @@
   [../]
 []
 
-[Functions]
-  [./right_disp_x]
-    type = PiecewiseLinear
-    x = '0  1.0    2.0   3.0'
-    y = '0  0.005  0.01  0.01'
-  [../]
-  [./top_disp_y]
-    type = PiecewiseLinear
-    x = '0  1.0    2.0   3.0'
-    y = '0  0.005  0.01  0.01'
-  [../]
-[]
-
 [BCs]
-  [./right_x]
-    type = FunctionPresetBC
-    boundary = 1
+  [./top_x]
+    type = PresetBC
+    boundary = 2
     variable = disp_x
-    function = right_disp_x
+    value = 0.0
   [../]
   [./top_y]
-    type = FunctionPresetBC
+    type = PresetBC
     boundary = 2
     variable = disp_y
-    function = top_disp_y
+    value = 0.1
   [../]
   [./bottom_y]
     type = PresetBC
     boundary = 0
     variable = disp_y
-    value = 0.0
+    value = -0.1
   [../]
-  [./left_x]
+  [./bottom_x]
     type = PresetBC
-    boundary = 3
+    boundary = 0
     variable = disp_x
     value = 0.0
   [../]

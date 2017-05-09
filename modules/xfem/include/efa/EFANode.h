@@ -21,12 +21,18 @@ public:
     N_CATEGORY_LOCAL_INDEX
   };
 
-  EFANode(unsigned int nid, N_CATEGORY ncat, EFANode * nparent = NULL);
+  EFANode(unsigned int nid,
+          N_CATEGORY ncat,
+          EFANode * nparent = NULL,
+          bool iscut = false,
+          bool isused = false);
 
 private:
   N_CATEGORY _category;
   unsigned int _id;
   EFANode * _parent;
+  bool _is_cut;
+  bool _is_used;
 
 public:
   std::string idCatString();
@@ -34,6 +40,10 @@ public:
   N_CATEGORY category() const;
   EFANode * parent() const;
   void removeParent();
+  bool isNodeCut();
+  void cutNode();
+  void useNode();
+  bool isNodeUsed();
 };
 
 #endif
