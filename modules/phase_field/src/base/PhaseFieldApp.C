@@ -59,6 +59,7 @@
 #include "MatReaction.h"
 #include "MultiGrainRigidBodyMotion.h"
 #include "PFFracBulkRate.h"
+#include "PFFracAnisoBulkRate.h"
 #include "PFFracCoupledInterface.h"
 #include "SimpleACInterface.h"
 #include "SimpleCHInterface.h"
@@ -353,6 +354,7 @@ PhaseFieldApp::registerObjects(Factory & factory)
   registerKernel(MatReaction);
   registerKernel(MultiGrainRigidBodyMotion);
   registerKernel(PFFracBulkRate);
+  registerKernel(PFFracAnisoBulkRate);
   registerKernel(PFFracCoupledInterface);
   registerKernel(SimpleACInterface);
   registerKernel(SimpleCHInterface);

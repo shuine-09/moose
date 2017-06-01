@@ -4,12 +4,12 @@
 /*          All contents are licensed under LGPL V2.1           */
 /*             See LICENSE for full restrictions                */
 /****************************************************************/
-#include "PFFracBulkRate.h"
+#include "PFFracAnisoBulkRate.h"
 #include "MathUtils.h"
 
 template <>
 InputParameters
-validParams<PFFracBulkRate>()
+validParams<PFFracAnisoBulkRate>()
 {
   InputParameters params = validParams<KernelValue>();
   params.addClassDescription(
@@ -31,7 +31,7 @@ validParams<PFFracBulkRate>()
   return params;
 }
 
-PFFracBulkRate::PFFracBulkRate(const InputParameters & parameters)
+PFFracAnisoBulkRate::PFFracAnisoBulkRate(const InputParameters & parameters)
   : KernelValue(parameters),
     _gc_prop(getMaterialProperty<Real>("gc_prop_var")),
     _G0_pos(getMaterialProperty<Real>("G0_var")),
@@ -51,29 +51,34 @@ PFFracBulkRate::PFFracBulkRate(const InputParameters & parameters)
 }
 
 Real
-PFFracBulkRate::precomputeQpResidual()
+PFFracAnisoBulkRate::precomputeQpResidual()
 {
   const Real gc = _gc_prop[_qp];
   const Real c = _u[_qp];
   // const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * _G0_pos[_qp] / gc - c / _l;
-  const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * _G0_pos[_qp] / gc - c / _l;
+  const Real x = gc / _l * c - gc * _betaval[_qp] * _l - 2.0 * (1.0 - c) * _G0_pos[_qp];
 
-  return -((std::abs(x) + x) / 2.0) / _visco;
+  // return -((std::abs(x) + x) / 2.0) / _visco;
+  return x / _visco;
+
 }
 
 Real
-PFFracBulkRate::precomputeQpJacobian()
+PFFracAnisoBulkRate::precomputeQpJacobian()
 {
   const Real gc = _gc_prop[_qp];
   const Real c = _u[_qp];
-  const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * _G0_pos[_qp] / gc - c / _l;
+  // const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * _G0_pos[_qp] / gc - c / _l;
+  // const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * _G0_pos[_qp] / gc - c / _l;
+  const Real x = gc / _l + 2.0 * _G0_pos[_qp];
+  return x / _visco * _phi[_j][_qp];
 
-  return (MathUtils::sign(x) + 1.0) / 2.0 * (2.0 * _G0_pos[_qp] / gc + 1.0 / _l) / _visco *
-         _phi[_j][_qp];
+  // return (MathUtils::sign(x) + 1.0) / 2.0 * (2.0 * _G0_pos[_qp] / gc + 1.0 / _l) / _visco *
+  //        _phi[_j][_qp];
 }
 
 Real
-PFFracBulkRate::computeQpOffDiagJacobian(unsigned int jvar)
+PFFracAnisoBulkRate::computeQpOffDiagJacobian(unsigned int jvar)
 {
   unsigned int c_comp;
   bool disp_flag = false;
@@ -81,18 +86,20 @@ PFFracBulkRate::computeQpOffDiagJacobian(unsigned int jvar)
   const Real c = _u[_qp];
   const Real gc = _gc_prop[_qp];
 
-  const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * (_G0_pos[_qp] / gc) - c / _l;
+  // const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * (_G0_pos[_qp] / gc) - c / _l;
+  const Real x = gc / _l * c - gc * _betaval[_qp] * _l - 2.0 * (1.0 - c) * _G0_pos[_qp];
 
-  const Real signx = MathUtils::sign(x);
+  const Real signx = 1.0;
 
-  Real xfacbeta = -((signx + 1.0) / 2.0) / _visco * _l;
-  Real xfac = -((signx + 1.0) / 2.0) / _visco * 2.0 * (1.0 - c) / gc;
+  Real xfacbeta = - gc / _visco * _l;
+  Real xfac = - 2.0 / _visco * (1.0 - c);
 
   // Contribution of auxiliary variable to off diag Jacobian of c
   for (unsigned int k = 0; k < _ndisp; ++k)
   {
     if (jvar == _beta_var)
       return xfacbeta * _phi[_j][_qp] * _test[_i][_qp];
+
     else if (jvar == _disp_var[k])
     {
       c_comp = k;
