@@ -4,27 +4,27 @@
 /*          All contents are licensed under LGPL V2.1           */
 /*             See LICENSE for full restrictions                */
 /****************************************************************/
-#ifndef PFFRACBULKRATE_H
-#define PFFRACBULKRATE_H
+#ifndef PFFRACANISOBULKRATE_H
+#define PFFRACANISOBULKRATE_H
 
 #include "KernelValue.h"
 #include "RankTwoTensor.h"
 
 // Forward Declarations
-class PFFracBulkRate;
+class PFFracAnisoBulkRate;
 
 template <>
-InputParameters validParams<PFFracBulkRate>();
+InputParameters validParams<PFFracAnisoBulkRate>();
 
 /**
  * Phase field based fracture model
  * This kernel computes the residual and jacobian for bulk free energy contribution to c
  * Refer to Formulation: Miehe et. al., Int. J. Num. Methods Engg., 2010, 83. 1273-1311 Equation 63
  */
-class PFFracBulkRate : public KernelValue
+class PFFracAnisoBulkRate : public KernelValue
 {
 public:
-  PFFracBulkRate(const InputParameters & parameters);
+  PFFracAnisoBulkRate(const InputParameters & parameters);
 
 protected:
   virtual Real precomputeQpResidual();
@@ -56,4 +56,4 @@ protected:
   Real _visco;
 };
 
-#endif // PFFRACBULKRATE_H
+#endif // PFFracAnisoBulkRate_H

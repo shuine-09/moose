@@ -55,11 +55,10 @@ PFFracAnisoBulkRate::precomputeQpResidual()
 {
   const Real gc = _gc_prop[_qp];
   const Real c = _u[_qp];
-  // const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * _G0_pos[_qp] / gc - c / _l;
-  const Real x = gc / _l * c - gc * _betaval[_qp] * _l - 2.0 * (1.0 - c) * _G0_pos[_qp];
 
-  // return -((std::abs(x) + x) / 2.0) / _visco;
-  return x / _visco;
+  const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * _G0_pos[_qp] / gc - c / _l;
+
+  return -x / _visco;
 
 }
 
@@ -68,13 +67,9 @@ PFFracAnisoBulkRate::precomputeQpJacobian()
 {
   const Real gc = _gc_prop[_qp];
   const Real c = _u[_qp];
-  // const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * _G0_pos[_qp] / gc - c / _l;
-  // const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * _G0_pos[_qp] / gc - c / _l;
-  const Real x = gc / _l + 2.0 * _G0_pos[_qp];
-  return x / _visco * _phi[_j][_qp];
+  const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * _G0_pos[_qp] / gc - c / _l;
+  return x / _visco *_phi[_j][_qp];
 
-  // return (MathUtils::sign(x) + 1.0) / 2.0 * (2.0 * _G0_pos[_qp] / gc + 1.0 / _l) / _visco *
-  //        _phi[_j][_qp];
 }
 
 Real
@@ -86,13 +81,8 @@ PFFracAnisoBulkRate::computeQpOffDiagJacobian(unsigned int jvar)
   const Real c = _u[_qp];
   const Real gc = _gc_prop[_qp];
 
-  // const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * (_G0_pos[_qp] / gc) - c / _l;
-  const Real x = gc / _l * c - gc * _betaval[_qp] * _l - 2.0 * (1.0 - c) * _G0_pos[_qp];
-
-  const Real signx = 1.0;
-
-  Real xfacbeta = - gc / _visco * _l;
-  Real xfac = - 2.0 / _visco * (1.0 - c);
+  Real xfacbeta = -1.0 / _visco * _l;
+  Real xfac = -2.0 / _visco * (1.0 - c) / gc;
 
   // Contribution of auxiliary variable to off diag Jacobian of c
   for (unsigned int k = 0; k < _ndisp; ++k)

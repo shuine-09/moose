@@ -42,4 +42,4 @@ protected:
   RankTwoTensor _eigvec;
 };
 
-#endif // LINEARISOELASTICPFDAMAGE_H
+#endif // AnisoElasticPFDamage_H

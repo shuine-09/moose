@@ -26,7 +26,6 @@ LinearIsoElasticPFDamage::LinearIsoElasticPFDamage(const InputParameters & param
     _c(coupledValue("c")),
     _kdamage(getParam<Real>("kdamage")),
     _G0_pos(declareProperty<Real>("G0_pos")),
-    _G0_pos_old(declarePropertyOld<Real>("G0_pos")),  //added G0_old variable for old time step
     _dstress_dc(
         declarePropertyDerivative<RankTwoTensor>(_base_name + "stress", getVar("c", 0)->name())),
     _dG0_pos_dstrain(declareProperty<RankTwoTensor>("dG0_pos_dstrain")),
@@ -34,20 +33,6 @@ LinearIsoElasticPFDamage::LinearIsoElasticPFDamage(const InputParameters & param
     _epos(LIBMESH_DIM),
     _eigval(LIBMESH_DIM)
 {
-}
-
-void
-LinearIsoElasticPFDamage::initQpStatefulProperties()
-{
-  ComputeStressBase::initQpStatefulProperties();
-  if (_t > 0)
-  _G0_pos_old[_qp] = _G0_pos[_qp];
-  else{
-    _G0_pos[_qp] = 0.0;
-    _G0_pos_old[_qp] = 0.0;
-  }
-  _dG0_pos_dstrain[_qp] = _stress[_qp];
-  _dstress_dc[_qp] = _stress[_qp] * (2.0 * (1.0 - _c[_qp]));
 }
 
 void
@@ -106,19 +91,8 @@ LinearIsoElasticPFDamage::updateVar()
   // Energy with positive principal strains
   _G0_pos[_qp] = lambda * Utility::pow<2>(etrpos) / 2.0 + val;
 
-  //Before Update
-  Real G0_Pos_trial = lambda * Utility::pow<2>(etrpos) / 2.0 + val;
-
-  if (G0_Pos_trial > _G0_pos_old[_qp]){
-    _G0_pos[_qp] = G0_Pos_trial;
-    _dG0_pos_dstrain[_qp] = stress0pos;
-  }else{
-    _G0_pos[_qp] = _G0_pos_old[_qp];
-    _dG0_pos_dstrain[_qp] = stress0pos * 0.0;  // derivative of positive strain energy wrt strain
-  }
-
   // Used in PFFracBulkRate Jacobian
-  // _dG0_pos_dstrain[_qp] = stress0pos;
+  _dG0_pos_dstrain[_qp] = stress0pos;
 
   // Used in StressDivergencePFFracTensors Jacobian
   if (c < 1.0)

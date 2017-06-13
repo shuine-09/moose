@@ -55,7 +55,6 @@ PFFracBulkRate::precomputeQpResidual()
 {
   const Real gc = _gc_prop[_qp];
   const Real c = _u[_qp];
-  // const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * _G0_pos[_qp] / gc - c / _l;
   const Real x = _l * _betaval[_qp] + 2.0 * (1.0 - c) * _G0_pos[_qp] / gc - c / _l;
 
   return -((std::abs(x) + x) / 2.0) / _visco;

@@ -4,12 +4,12 @@
 /*          All contents are licensed under LGPL V2.1           */
 /*             See LICENSE for full restrictions                */
 /****************************************************************/
-#include "LinearIsoElasticPFDamage.h"
+#include "AnisoElasticPFDamage.h"
 #include "libmesh/utility.h"
 
 template <>
 InputParameters
-validParams<LinearIsoElasticPFDamage>()
+validParams<AnisoElasticPFDamage>()
 {
   InputParameters params = validParams<ComputeStressBase>();
   params.addClassDescription("Phase-field fracture model energy contribution to damage "
@@ -21,7 +21,7 @@ validParams<LinearIsoElasticPFDamage>()
   return params;
 }
 
-LinearIsoElasticPFDamage::LinearIsoElasticPFDamage(const InputParameters & parameters)
+AnisoElasticPFDamage::AnisoElasticPFDamage(const InputParameters & parameters)
   : ComputeStressBase(parameters),
     _c(coupledValue("c")),
     _kdamage(getParam<Real>("kdamage")),
@@ -37,7 +37,7 @@ LinearIsoElasticPFDamage::LinearIsoElasticPFDamage(const InputParameters & param
 }
 
 void
-LinearIsoElasticPFDamage::initQpStatefulProperties()
+AnisoElasticPFDamage::initQpStatefulProperties()
 {
   ComputeStressBase::initQpStatefulProperties();
   if (_t > 0)
@@ -46,29 +46,27 @@ LinearIsoElasticPFDamage::initQpStatefulProperties()
     _G0_pos[_qp] = 0.0;
     _G0_pos_old[_qp] = 0.0;
   }
-  _dG0_pos_dstrain[_qp] = _stress[_qp];
-  _dstress_dc[_qp] = _stress[_qp] * (2.0 * (1.0 - _c[_qp]));
+  // _dG0_pos_dstrain[_qp] = _stress[_qp];
+  // _dstress_dc[_qp] = -_stress[_qp] * (2.0 * (1.0 - _c[_qp]));
 }
 
 void
-LinearIsoElasticPFDamage::computeQpStress()
+AnisoElasticPFDamage::computeQpStress()
 {
   updateVar();
   updateJacobian();
 }
 
 void
-LinearIsoElasticPFDamage::updateVar()
+AnisoElasticPFDamage::updateVar()
 {
-  // // Isotropic elasticity is assumed
-  // Real lambda = _elasticity_tensor[_qp](0, 0, 1, 1);
-  // Real mu = _elasticity_tensor[_qp](0, 1, 0, 1);
+
   Real c = _c[_qp];
-  // Real xfac = _kdamage;
-  // xfac += Utility::pow<2>(1.0 - c);
   Real cfactor = 1.0;
   if (c > 1.0)
     cfactor = 0.0;
+
+  _Jacobian_mult[_qp] = _elasticity_tensor[_qp];
 
   RankTwoTensor eigvec;
   std::vector<Real> eigval(LIBMESH_DIM);
@@ -86,13 +84,18 @@ LinearIsoElasticPFDamage::updateVar()
   RankFourTensor QToQT = (eigvec.transpose()).mixedProductIkJl(eigvec.transpose());
   RankFourTensor IpoIp = Ipos.mixedProductIkJl(I);
   RankFourTensor InoIn = Ineg.mixedProductIkJl(I);
+  // RankFourTensor QIoQI = (eigvec.transpose()).outerProduct(eigvec.transpose());
 
-  const RankFourTensor Jnc = _Jacobian_mult[_qp] * QoQ * IpoIp * QToQT; //Jacobian matrix under new coordinate system
 
-  const RankFourTensor Jpos = _Jacobian_mult[_qp] * QoQ * IpoIp * QToQT;
-  const RankFourTensor Jneg = _Jacobian_mult[_qp] * QoQ * InoIn * QToQT;
-  // _Jacobian_mult[_qp] = cfactor * Jpos * ((1.0 - c) * (1.0 - c) + _kdamage) + Jneg;
-  _Jacobian_mult[_qp] = Jpos * ((1.0 - c) * (1.0 - c) + _kdamage) + Jneg;
+  // const RankFourTensor Jnc = _Jacobian_mult[_qp] * QoQ * IpoIp * QToQT; //Jacobian matrix under new coordinate system
+  const RankFourTensor Jnc = QToQT * _elasticity_tensor[_qp] * QoQ; //Jacobian matrix under new coordinate system Not sure
+  // const RankFourTensor Jnc = QoQ * _Jacobian_mult[_qp] * QToQT; //Jacobian matrix under new coordinate system Not sure
+  // const RankFourTensor Jnc = _Jacobian_mult[_qp] * QoQ * QToQT; //Jacobian matrix under new coordinate system  //Not sure this is correct
+
+
+  const RankFourTensor Jpos = _elasticity_tensor[_qp] * QoQ * IpoIp * QToQT;
+  const RankFourTensor Jneg = _elasticity_tensor[_qp] * QoQ * InoIn * QToQT;
+  _Jacobian_mult[_qp] = cfactor * Jpos * ((1.0 - c) * (1.0 - c) + _kdamage) + Jneg;
 
   RankTwoTensor eigpos = eigval_tensor * Ipos;  //positive principle strain tensor
   RankTwoTensor eigneg = eigval_tensor * Ineg;  //negative eigen strain tensor
@@ -100,12 +103,17 @@ LinearIsoElasticPFDamage::updateVar()
   RankTwoTensor stressncpos = Jnc * eigpos;
   RankTwoTensor stressncneg = Jnc * eigneg;
 
+  // RankTwoTensor stressncmark = Jnc * eigval_tensor;
+  // RankTwoTensor stressncneg = Jnc * eigneg;
+
   RankTwoTensor stress0pos = eigvec * stressncpos * (eigvec.transpose());
   RankTwoTensor stress0neg = eigvec * stressncneg * (eigvec.transpose());
 
+  // RankTwoTensor stress0pos = QIoQI * stressncpos;
+  // RankTwoTensor stress0neg = QIoQI * stressncneg;
+
   // Damage associated with positive component of stress
-  // _stress[_qp] = cfactor * stress0pos * ((1.0 - c) * (1.0 - c) + _kdamage) + stress0neg;
-  _stress[_qp] = stress0pos * ((1.0 - c) * (1.0 - c) + _kdamage) + stress0neg;
+  _stress[_qp] = cfactor * stress0pos * ((1.0 - c) * (1.0 - c) + _kdamage) + stress0neg;
 
   // Energy with positive principal strains
   _G0_pos[_qp] = stressncpos.doubleContraction(eigval_tensor) / 2.0;
@@ -114,7 +122,10 @@ LinearIsoElasticPFDamage::updateVar()
 
 
   //Before Update
+  // Real G0_Pos_trial = stressncmark.doubleContraction(eigval_tensor) / 2.0;
   Real G0_Pos_trial = stressncpos.doubleContraction(eigval_tensor) / 2.0;
+  // Real G0_Pos_trial = stressncpos.doubleContraction(eigpos) / 2.0;
+
 
   if (G0_Pos_trial > _G0_pos_old[_qp]){
     _G0_pos[_qp] = G0_Pos_trial;
@@ -127,13 +138,16 @@ LinearIsoElasticPFDamage::updateVar()
   // Used in PFFracBulkRate Jacobian
   // _dG0_pos_dstrain[_qp] = stress0pos;
 
+  // Damage associated with positive component of stress
+  _stress[_qp] = cfactor * stress0pos * ((1.0 - c) * (1.0 - c) + _kdamage) + stress0neg;
+
   // Used in StressDivergencePFFracTensors Jacobian
-  // _dstress_dc[_qp] = -cfactor * stress0pos * 2.0 * (1.0 - c);
-  _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c);
+  _dstress_dc[_qp] = -cfactor * stress0pos * 2.0 * (1.0 - c);
+  // _dstress_dc[_qp] = -cfactor * _dG0_pos_dstrain[_qp] * 2.0 * (1.0 - c);
 }
 
 void
-LinearIsoElasticPFDamage::updateJacobian()
+AnisoElasticPFDamage::updateJacobian()
 {
   _Jacobian_mult[_qp] = _elasticity_tensor[_qp];
 }
