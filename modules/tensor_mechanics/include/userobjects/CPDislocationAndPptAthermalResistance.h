@@ -12,7 +12,7 @@
 
 class CPDislocationAndPptAthermalResistance;
 
-template<>
+template <>
 InputParameters validParams<CPDislocationAndPptAthermalResistance>();
 
 class CPDislocationAndPptAthermalResistance : public CPDislocationBasedAthermalSlipResistance
@@ -23,13 +23,9 @@ public:
   virtual bool calcSlipResistance(unsigned int qp, std::vector<Real> & val) const;
 
 protected:
-
-  const MaterialProperty<std::vector<Real> > & _shear_rate_prop;
-
-  Real _apb_shear_energy;
-  Real _number_density;
-  Real _size;
-  Function * _factor_function;
+  Real _precipitate_radius;
+  Real _precipitate_volume_fraction;
+  Real _orowan_strength_factor;
 };
 
 #endif

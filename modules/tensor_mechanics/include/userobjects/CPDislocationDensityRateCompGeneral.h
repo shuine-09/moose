@@ -11,27 +11,29 @@
 
 class CPDislocationDensityRateCompGeneral;
 
-template<>
+template <>
 InputParameters validParams<CPDislocationDensityRateCompGeneral>();
 
 /**
- * A general dislocation based constitutive model userobject class to calculate dislocation density rate component
- * following rho_dot^alpha = k * rho^alpha * abs(gamma_dot^alpha)
+ * A general dislocation based constitutive model userobject class to calculate dislocation density
+ * rate component following rho_dot^alpha = k * rho^alpha * abs(gamma_dot^alpha)
  */
 class CPDislocationDensityRateCompGeneral : public CrystalPlasticityStateVarRateComponent
 {
- public:
+public:
   CPDislocationDensityRateCompGeneral(const InputParameters & parameters);
 
-  virtual bool calcStateVariableEvolutionRateComponent(unsigned int qp, std::vector<Real> & val) const;
+  virtual bool calcStateVariableEvolutionRateComponent(unsigned int qp,
+                                                       std::vector<Real> & val) const;
 
- protected:
+protected:
+  const MaterialProperty<std::vector<Real>> & _mat_prop;
 
-  const MaterialProperty<std::vector<Real> > & _mat_prop;
- 
-  const MaterialProperty<std::vector<Real> > & _mat_prop_rate;
+  const MaterialProperty<std::vector<Real>> & _mat_prop_rate;
 
   Real _prefactor;
+
+  bool _use_dislocation_density;
 };
 
 #endif // CPDISLOCATIONDENSITYRATECOMPGENERAL_H

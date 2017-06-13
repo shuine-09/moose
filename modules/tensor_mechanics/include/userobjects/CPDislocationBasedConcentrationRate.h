@@ -12,29 +12,27 @@
 
 class CPDislocationBasedConcentrationRate;
 
-template<>
+template <>
 InputParameters validParams<CPDislocationBasedConcentrationRate>();
 
 /**
- * A general dislocation based constitutive model userobject class to calculate dislocation density rate component
- * following rho_dot^alpha = k * rho^alpha * abs(gamma_dot^alpha)
+ * A general dislocation based constitutive model userobject class to calculate dislocation density
+ * rate component following rho_dot^alpha = k * rho^alpha * abs(gamma_dot^alpha)
  */
 class CPDislocationBasedConcentrationRate : public CrystalPlasticityStateVarRateComponent
 {
- public:
+public:
   CPDislocationBasedConcentrationRate(const InputParameters & parameters);
 
-  virtual bool calcStateVariableEvolutionRateComponent(unsigned int qp, std::vector<Real> & val) const;
+  virtual bool calcStateVariableEvolutionRateComponent(unsigned int qp,
+                                                       std::vector<Real> & val) const;
 
- protected:
-
-  const MaterialProperty<std::vector<Real> > & _cv;
-  const MaterialProperty<std::vector<RankTwoTensor> > & _flow_direction;
-  const MaterialProperty<std::vector<Real> > & _rho_m;
-  const MaterialProperty<std::vector<Real> > & _rho_i;
+protected:
+  const MaterialProperty<std::vector<Real>> & _cv;
+  const MaterialProperty<std::vector<RankTwoTensor>> & _flow_direction;
+  const MaterialProperty<std::vector<Real>> & _rho_m;
+  const MaterialProperty<std::vector<Real>> & _rho_i;
   const MaterialProperty<RankTwoTensor> & _pk2;
-
-  Real _prefactor;
 
   Real _c0;
   Real _diffusivity;
@@ -43,6 +41,11 @@ class CPDislocationBasedConcentrationRate : public CrystalPlasticityStateVarRate
   Real _molar_volume;
   Real _gas_constant;
   Real _temp;
+  Real _boltz_const;
+  Real _atom_volume;
+  Real _stress_factor;
+  Real _diffusivity_factor;
+  Real _activation_energy;
 };
 
 #endif

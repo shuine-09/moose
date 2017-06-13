@@ -14,16 +14,19 @@
 
 #include "ReadGrainCenterFromFile.h"
 
-template<>
-InputParameters validParams<ReadGrainCenterFromFile>()
+registerMooseObject("TensorMechanicsApp", ReadGrainCenterFromFile);
+
+template <>
+InputParameters
+validParams<ReadGrainCenterFromFile>()
 {
   InputParameters params = validParams<ElementPropertyReadFile>();
   params.addParam<std::string>("grain_center_file_name", "Name of the file with grain center");
   return params;
 }
 
-ReadGrainCenterFromFile::ReadGrainCenterFromFile(const InputParameters & parameters) :
-    ElementPropertyReadFile(parameters),
+ReadGrainCenterFromFile::ReadGrainCenterFromFile(const InputParameters & parameters)
+  : ElementPropertyReadFile(parameters),
     _grain_center_file_name(getParam<std::string>("grain_center_file_name"))
 {
   initGrainCenterPoints();
@@ -44,8 +47,8 @@ ReadGrainCenterFromFile::readFromFile()
   std::ifstream file_prop;
   file_prop.open(_grain_center_file_name.c_str());
 
-  for ( unsigned int i = 0; i < _ngrain; ++i)
-    for ( unsigned int j = 0; j < LIBMESH_DIM; ++j)
+  for (unsigned int i = 0; i < _ngrain; ++i)
+    for (unsigned int j = 0; j < LIBMESH_DIM; ++j)
       if (!(file_prop >> _center[i](j)))
         mooseError("Error ReadGrainCenterFromFile: Premature end of file");
 

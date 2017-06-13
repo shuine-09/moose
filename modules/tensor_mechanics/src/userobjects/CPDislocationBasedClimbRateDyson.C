@@ -4,13 +4,13 @@
 /*          All contents are licensed under LGPL V2.1           */
 /*             See LICENSE for full restrictions                */
 /****************************************************************/
-#include "CPDislocationBasedClimbRate.h"
+#include "CPDislocationBasedClimbRateDyson.h"
 
-registerMooseObject("TensorMechanicsApp", CPDislocationBasedClimbRate);
+registerMooseObject("TensorMechanicsApp", CPDislocationBasedClimbRateDyson);
 
 template <>
 InputParameters
-validParams<CPDislocationBasedClimbRate>()
+validParams<CPDislocationBasedClimbRateDyson>()
 {
   InputParameters params = validParams<CrystalPlasticitySlipRate>();
   params.addParam<std::string>("uo_concentration_name", "Name of concentration variable");
@@ -23,14 +23,8 @@ validParams<CPDislocationBasedClimbRate>()
                                "state variable user object specified in input "
                                "file.");
   params.addRequiredParam<Real>("diffusivity", "Self diffusivity");
-  params.addRequiredParam<Real>("core_radius", "Dislocation core radius");
   params.addRequiredParam<Real>("burgers_length", "Length of Burgers vector");
-  params.addRequiredParam<Real>("molar_volume", "Molar volume");
-  params.addRequiredParam<Real>("atom_volume", "Atom volume");
-  params.addRequiredParam<Real>("lattice_constant",
-                                "Lattice constatnt: average inter-atomic distance.");
   params.addParam<Real>("boltz_const", "Boltzmann's constant");
-  params.addParam<Real>("gas_constant", 8.314, "Gas constant J/mole");
   params.addParam<Real>("temp", 273.0, "Temperature in K");
   params.addParam<Real>("stress_factor", 1.0, "Stress concentration factor due to precipitate.");
   params.addParam<Real>("diffusivity_factor", 1.0, "diffusivity factor.");
@@ -39,14 +33,15 @@ validParams<CPDislocationBasedClimbRate>()
   params.addRequiredParam<Real>("precipitate_volume_fraction",
                                 "The precipitate_volume_fraction of precipitates.");
   params.addParam<Real>(
-      "theta", libMesh::pi / 2, "The angle between dislocation line direction and burger vector.");
+      "theta", libMesh::pi, "The angle between dislocation line direction and burger vector.");
   params.addClassDescription("Dislocation based constitutive mode userobject "
                              "class for climb rate.  Override the virtual "
                              "functions in your class");
   return params;
 }
 
-CPDislocationBasedClimbRate::CPDislocationBasedClimbRate(const InputParameters & parameters)
+CPDislocationBasedClimbRateDyson::CPDislocationBasedClimbRateDyson(
+    const InputParameters & parameters)
   : CrystalPlasticitySlipRate(parameters),
     _cv(getMaterialProperty<std::vector<Real>>(
         parameters.get<std::string>("uo_concentration_name"))),
@@ -57,13 +52,8 @@ CPDislocationBasedClimbRate::CPDislocationBasedClimbRate(const InputParameters &
     _pk2(getMaterialPropertyByName<RankTwoTensor>("pk2")),
     _flow_direction(getMaterialProperty<std::vector<RankTwoTensor>>(_name + "_flow_direction")),
     _diffusivity(getParam<Real>("diffusivity")),
-    _rc(getParam<Real>("core_radius")),
     _b(getParam<Real>("burgers_length")),
-    _molar_volume(getParam<Real>("molar_volume")),
-    _atom_volume(getParam<Real>("atom_volume")),
-    _lattice_constant(getParam<Real>("lattice_constant")),
     _boltz_const(getParam<Real>("boltz_const")),
-    _gas_constant(getParam<Real>("gas_constant")),
     _temp(getParam<Real>("temp")),
     _stress_factor(getParam<Real>("stress_factor")),
     _diffusivity_factor(getParam<Real>("diffusivity_factor")),
@@ -75,8 +65,8 @@ CPDislocationBasedClimbRate::CPDislocationBasedClimbRate(const InputParameters &
 }
 
 void
-CPDislocationBasedClimbRate::calcFlowDirection(unsigned int qp,
-                                               std::vector<RankTwoTensor> & flow_direction) const
+CPDislocationBasedClimbRateDyson::calcFlowDirection(
+    unsigned int qp, std::vector<RankTwoTensor> & flow_direction) const
 {
   RealVectorValue mo;
 
@@ -94,54 +84,34 @@ CPDislocationBasedClimbRate::calcFlowDirection(unsigned int qp,
 }
 
 bool
-CPDislocationBasedClimbRate::calcSlipRate(unsigned int qp, Real dt, std::vector<Real> & val) const
+CPDislocationBasedClimbRateDyson::calcSlipRate(unsigned int qp,
+                                               Real dt,
+                                               std::vector<Real> & val) const
 {
   DenseVector<Real> tau(_variable_size);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
     tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) * _b;
 
-  Real rho = 0.0;
-  for (unsigned int i = 0; i < _variable_size; ++i)
-    rho += (_rho_m[qp][i] + _rho_i[qp][i]);
-
-  Real R = 1.0 / (2.0 * std::sqrt(rho));
   Real Dv_sd =
-      _diffusivity * _diffusivity_factor * std::exp(-_activation_energy / (_gas_constant * _temp));
-  // Real pre_factor = 12.0 * libMesh::pi * _atom_volume * Dv_sd /
-  //                  (_b * (libMesh::pi * pow(_lattice_constant, 3.0) -
-  //                         6.0 * _atom_volume * std::log(_lattice_constant / R)));
-  Real pre_factor = 2.0 * libMesh::pi * Dv_sd / std::log(R / 4 / _b) / _b;
+      _diffusivity * _diffusivity_factor * std::exp(-_activation_energy / (_boltz_const * _temp));
+
+  Real pre_factor = Dv_sd / _b;
+
+  // Real spacing_precipitate =
+  //     std::sqrt(8.0 / (libMesh::pi * 3.0 * _precipitate_volume_fraction)) * _precipitate_radius -
+  //     _precipitate_radius;
+  Real spacing_precipitate = _b;
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
-    // std::cout << "value = "
-    //          << _stress_factor * tau(i) * _atom_volume /
-    //                 (_boltz_const * _b * _temp)
-    //<< std::endl;
-    Real vc = -pre_factor / std::sin(_theta) *
-              (std::exp(-_stress_factor * tau(i) * _atom_volume / (_boltz_const * _b * _temp) /
-                        std::sin(_theta)) -
-               1.0 * _cv[qp][0]);
-    // Real vc =
-    //     pre_factor *
-    //     (std::exp(-_stress_factor * tau(i) * _atom_volume / (_boltz_const * _b * _temp)) - 1.0);
+    Real vc = -pre_factor * std::sinh(-_stress_factor * tau(i) * _b * spacing_precipitate /
+                                      (_boltz_const * _temp));
 
     if (abs(vc) > 1.0e10)
-    {
       vc = 0.0;
-      // std::cout << "Dv_sd = " << Dv_sd << ", prefactor = "
-      //           << std::exp(-_stress_factor * tau(i) * _atom_volume / (_boltz_const * _b *
-      //           _temp))
-      //          << ", tau = " << tau(i) << std::endl;
-    }
 
-    // val[i] = -_prefactor * (_rho_m[qp][i] + _rho_i[qp][i]) * _b * vc;
     val[i] = -_prefactor * _precipitate_volume_fraction * (_rho_m[qp][i]) * _b * vc;
-
-    // std::cout << "slip system(" << i << ") : climb velocity = " << vc << ", climb rate = " <<
-    // val[i]
-    //           << ", resolved stress = " << tau(i) << " Pk2 yy = " << _pk2[qp](1, 1) << std::endl;
 
     if (std::abs(val[i] * dt) > _slip_incr_tol)
     {
@@ -155,50 +125,37 @@ CPDislocationBasedClimbRate::calcSlipRate(unsigned int qp, Real dt, std::vector<
 }
 
 bool
-CPDislocationBasedClimbRate::calcSlipRateDerivative(unsigned int qp,
-                                                    Real dt,
-                                                    std::vector<Real> & val) const
+CPDislocationBasedClimbRateDyson::calcSlipRateDerivative(unsigned int qp,
+                                                         Real dt,
+                                                         std::vector<Real> & val) const
 {
   DenseVector<Real> tau(_variable_size);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
     tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) * _b;
 
-  Real rho = 0.0;
-  for (unsigned int i = 0; i < _variable_size; ++i)
-    rho += (_rho_m[qp][i] + _rho_i[qp][i]);
-
-  Real R = 1.0 / (2.0 * std::sqrt(rho));
   Real Dv_sd =
-      _diffusivity * _diffusivity_factor * std::exp(-_activation_energy / (_gas_constant * _temp));
-  // Real pre_factor = 12.0 * libMesh::pi * _atom_volume * Dv_sd /
-  //                  (_b * (libMesh::pi * pow(_lattice_constant, 3.0) -
-  //                         6.0 * _atom_volume * std::log(_lattice_constant / R)));
-  Real pre_factor = 2.0 * libMesh::pi * Dv_sd / std::log(R / 4 / _b) / _b;
+      _diffusivity * _diffusivity_factor * std::exp(-_activation_energy / (_boltz_const * _temp));
+  Real pre_factor = Dv_sd / _b;
+
+  // Real spacing_precipitate =
+  //     std::sqrt(8.0 / (libMesh::pi * 3.0 * _precipitate_volume_fraction)) * _precipitate_radius -
+  //     _precipitate_radius;
+
+  Real spacing_precipitate = _b;
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
     Real dvc_dtau =
-        pre_factor / std::sin(_theta) *
-        (_stress_factor * _atom_volume / (_boltz_const * _b * _temp / std::sin(_theta)) *
-         (std::exp(-_stress_factor * tau(i) * _atom_volume / (_boltz_const * _b * _temp))));
-
-    // val[i] = -_prefactor * (_rho_m[qp][i] + _rho_i[qp][i]) * _b * dvc_dtau *
-    //         (-1.0 * _b); // tau = -1.0 * pk2 * direction
+        pre_factor *
+        std::cosh(-_stress_factor * tau(i) * _b * spacing_precipitate / (_boltz_const * _temp)) *
+        (_stress_factor * tau(i) * _b * spacing_precipitate / (_boltz_const * _temp));
 
     if (abs(dvc_dtau) > 1.0e10)
-    {
       dvc_dtau = 0.0;
-      // std::cout << "Dv_sd = " << Dv_sd << ", prefactor = "
-      //           << std::exp(-_stress_factor * tau(i) * _atom_volume / (_boltz_const * _b *
-      //           _temp))
-      //           << ", tau = " << tau(i) << std::endl;
-    }
 
-    // val[i] = _prefactor * (_rho_i[qp][i] + _rho_m[qp][i]) * _b * dvc_dtau *
-    //         (-1.0 * _b); // tau = -1.0 * pk2 * direction
-    val[i] = -_prefactor * _precipitate_volume_fraction * (_rho_m[qp][i]) * _b * dvc_dtau *
-             (-1.0 * _b); // tau = -1.0 * pk2 * direction
+    val[i] =
+        -_prefactor * _precipitate_volume_fraction * (_rho_m[qp][i]) * _b * dvc_dtau * (-1.0 * _b);
   }
 
   return true;

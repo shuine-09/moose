@@ -11,7 +11,7 @@
 
 class CPDislocationBasedAthermalSlipResistance;
 
-template<>
+template <>
 InputParameters validParams<CPDislocationBasedAthermalSlipResistance>();
 
 /**
@@ -19,16 +19,15 @@ InputParameters validParams<CPDislocationBasedAthermalSlipResistance>();
  */
 class CPDislocationBasedAthermalSlipResistance : public CrystalPlasticitySlipResistance
 {
- public:
+public:
   CPDislocationBasedAthermalSlipResistance(const InputParameters & parameters);
 
   virtual bool calcSlipResistance(unsigned int qp, std::vector<Real> & val) const;
 
- protected:
+protected:
+  const MaterialProperty<std::vector<Real>> & _mat_prop_mobile_dislocation_density;
 
-  const MaterialProperty<std::vector<Real> > & _mat_prop_mobile_dislocation_density;
-
-  const MaterialProperty<std::vector<Real> > & _mat_prop_immobile_dislocation_density;
+  const MaterialProperty<std::vector<Real>> & _mat_prop_immobile_dislocation_density;
 
   std::vector<Real> _interaction_matrix;
 

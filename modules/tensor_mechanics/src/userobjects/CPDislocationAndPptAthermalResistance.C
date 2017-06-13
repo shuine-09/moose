@@ -6,42 +6,49 @@
 /****************************************************************/
 #include "CPDislocationAndPptAthermalResistance.h"
 
-template<>
-InputParameters validParams<CPDislocationAndPptAthermalResistance>()
+registerMooseObject("TensorMechanicsApp", CPDislocationAndPptAthermalResistance);
+
+template <>
+InputParameters
+validParams<CPDislocationAndPptAthermalResistance>()
 {
   InputParameters params = validParams<CPDislocationBasedAthermalSlipResistance>();
-  params.addParam<std::string>("uo_shear_rate_name", "Name of shear rate property");
-  params.addRequiredParam<Real>("apb_shear_energy", "Anti-phase boundary shear resistance energy");
-  params.addParam<Real>("number_density", 0.0, "Average number density of precipitate");
-  params.addParam<Real>("size", 0.0, "Average size of precipitate");
-  params.addParam<FunctionName>("factor_function", "Function to obtain shear rate dependent factor");
+  params.addParam<Real>("precipitate_radius", 0.0, "Average radius of precipitate");
+  params.addParam<Real>("precipitate_volume_fraction", 0.0, "Volume fraction of precipitate.");
+  params.addParam<Real>("orowan_strength_factor", 1.0, "A prefactor for Orowan looping strength.");
   return params;
 }
 
-CPDislocationAndPptAthermalResistance::CPDislocationAndPptAthermalResistance(const InputParameters & parameters) :
-    CPDislocationBasedAthermalSlipResistance(parameters),
-    _shear_rate_prop(getMaterialProperty<std::vector<Real> >(parameters.get<std::string>("uo_shear_rate_name"))),
-    _apb_shear_energy(getParam<Real>("apb_shear_energy")),
-    _number_density(getParam<Real>("number_density")),
-    _size(getParam<Real>("size")),
-    _factor_function(isParamValid("factor_function") ? &getFunction("factor_function") : NULL)
+CPDislocationAndPptAthermalResistance::CPDislocationAndPptAthermalResistance(
+    const InputParameters & parameters)
+  : CPDislocationBasedAthermalSlipResistance(parameters),
+    _precipitate_radius(getParam<Real>("precipitate_radius")),
+    _precipitate_volume_fraction(getParam<Real>("precipitate_volume_fraction")),
+    _orowan_strength_factor(getParam<Real>("orowan_strength_factor"))
 {
 }
 
 bool
-CPDislocationAndPptAthermalResistance::calcSlipResistance(unsigned int qp, std::vector<Real> & val) const
+CPDislocationAndPptAthermalResistance::calcSlipResistance(unsigned int qp,
+                                                          std::vector<Real> & val) const
 {
-  Real f = _number_density * 4.0/3.0 * libMesh::pi * std::pow(_size/2.0, 3.0);
-  Real apb_shear_resist = 2.0 * _apb_shear_energy/ std::pow(_b, 2.0) * std::sqrt(f * _size/(libMesh::pi * _shear_mod));
-
-  Point p;
   if (CPDislocationBasedAthermalSlipResistance::calcSlipResistance(qp, val))
   {
     for (unsigned int i = 0; i < _variable_size; ++i)
     {
       Real disloc_resist = std::pow(val[i], 2.0);
-      val[i] = disloc_resist + _factor_function->value(_shear_rate_prop[qp][i], p) * std::pow(apb_shear_resist, 2.0);
-      val[i] = std::sqrt(val[i]); 
+      val[i] = 0.0;
+      if (_precipitate_volume_fraction > 0.0)
+      {
+        Real spacing_precipitate =
+            std::sqrt(8.0 / (libMesh::pi * 3.0 * _precipitate_volume_fraction)) *
+                _precipitate_radius -
+            _precipitate_radius;
+        Real orowan_looping = _shear_mod * _b / spacing_precipitate * _orowan_strength_factor;
+        val[i] += std::pow(orowan_looping, 2.0);
+      }
+      val[i] += disloc_resist;
+      val[i] = std::sqrt(val[i]);
     }
   }
   else

@@ -392,13 +392,14 @@ FiniteStrainUObasedCP::isStateVariablesConverged()
       diff = std::abs((*_mat_prop_state_vars[i])[_qp][j] -
                       _state_vars_prev[i][j]); // Calculate increment size
 
-      // std::cout << "i = " << i << ", j = " << j << ", diff = " << diff << ",
-      // std::abs((*_mat_prop_state_vars_old[i])[_qp][j] = " <<
-      // std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) << ", zero_tol = " << _zero_tol <<
-      // std::endl;
+      // std::cout << "i = " << i << ", j = " << j << ", diff = " << diff
+      //          << ", std::abs((*_mat_prop_state_vars_old[i])[_qp][j] = "
+      //          << std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) << ", zero_tol = " <<
+      //          _zero_tol
+      //          << std::endl;
 
-      if (std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) < _zero_tol && diff > _zero_tol)
-        return true;
+      // if (std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) < _zero_tol && diff > _zero_tol)
+      //   return true;
       if (std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) > _zero_tol &&
           diff > _stol * std::abs((*_mat_prop_state_vars_old[i])[_qp][j]))
         return true;
