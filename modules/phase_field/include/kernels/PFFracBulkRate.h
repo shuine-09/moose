@@ -7,7 +7,7 @@
 #ifndef PFFRACBULKRATE_H
 #define PFFRACBULKRATE_H
 
-#include "KernelValue.h"
+#include "Kernel.h"
 #include "RankTwoTensor.h"
 
 // Forward Declarations
@@ -21,15 +21,14 @@ InputParameters validParams<PFFracBulkRate>();
  * This kernel computes the residual and jacobian for bulk free energy contribution to c
  * Refer to Formulation: Miehe et. al., Int. J. Num. Methods Engg., 2010, 83. 1273-1311 Equation 63
  */
-class PFFracBulkRate : public KernelValue
+class PFFracBulkRate : public Kernel
 {
 public:
   PFFracBulkRate(const InputParameters & parameters);
 
 protected:
-  virtual Real precomputeQpResidual();
-  virtual Real precomputeQpJacobian();
-  virtual Real computeQpOffDiagJacobian(unsigned int jvar);
+  virtual Real computeQpResidual();
+  virtual Real computeQpJacobian();
 
   /// Critical energy release rate for fracture
   const MaterialProperty<Real> & _gc_prop;
@@ -40,10 +39,6 @@ protected:
   /// Variation of undamaged strain energy driving damage evolution with strain
   const MaterialProperty<RankTwoTensor> * _dG0_pos_dstrain;
 
-  /// Auxiliary variable: beta = Laplacian of c
-  const VariableValue & _betaval;
-  const unsigned int _beta_var;
-
   /// Coupled displacement variables
   const unsigned int _ndisp;
   std::vector<unsigned int> _disp_var;
@@ -51,9 +46,6 @@ protected:
 
   /// Characteristic length, controls damage zone thickness
   Real _l;
-
-  /// Viscosity parameter ( visco -> 0, rate independent )
-  Real _visco;
 };
 
 #endif // PFFRACBULKRATE_H

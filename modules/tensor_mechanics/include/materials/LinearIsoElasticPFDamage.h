@@ -23,6 +23,7 @@ public:
 
 protected:
   virtual void computeQpStress();
+  virtual void initQpStatefulProperties();
   virtual void updateVar();
   virtual void updateJacobian();
 
@@ -31,6 +32,7 @@ protected:
   Real _kdamage;
 
   MaterialProperty<Real> & _G0_pos;
+  MaterialProperty<Real> & _G0_pos_old; // declare the old timestep g0_postive strain energy
   MaterialProperty<RankTwoTensor> & _dstress_dc;
   MaterialProperty<RankTwoTensor> & _dG0_pos_dstrain;
 
