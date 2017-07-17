@@ -12,6 +12,7 @@
 #include "AppFactory.h"
 #include "MooseSyntax.h"
 
+#include "DiffusionStress.h"
 #include "XFEMVolFracAux.h"
 #include "XFEMCutPlaneAux.h"
 #include "XFEMMarkerAux.h"
@@ -66,6 +67,9 @@ XFEMApp__registerObjects(Factory & factory)
 void
 XFEMApp::registerObjects(Factory & factory)
 {
+  //Kernels
+  registerKernel(DiffusionStress);
+
   // AuxKernels
   registerAux(XFEMVolFracAux);
   registerAux(XFEMCutPlaneAux);
