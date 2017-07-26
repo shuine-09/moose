@@ -109,6 +109,7 @@
 #include "ComputeAxisymmetric1DIncrementalStrain.h"
 #include "ComputeAxisymmetric1DFiniteStrain.h"
 #include "ComputePlasticHeatEnergy.h"
+#include "AnisoStressElasticPFDamage.h"
 
 #include "TensorMechanicsPlasticSimpleTester.h"
 #include "TensorMechanicsPlasticTensile.h"
@@ -239,6 +240,7 @@ TensorMechanicsApp::registerObjects(Factory & factory)
   registerKernel(PlasticHeatEnergy);
   registerKernel(PhaseFieldFractureMechanicsOffDiag);
 
+  registerMaterial(AnisoStressElasticPFDamage);
   registerMaterial(LinearElasticTruss);
   registerMaterial(FiniteStrainPlasticMaterial);
   registerMaterial(FiniteStrainCrystalPlasticity);
