@@ -19,6 +19,7 @@
 #include "XFEMMaterialTensorMarkerUserObject.h"
 #include "XFEMAction.h"
 #include "XFEMSingleVariableConstraint.h"
+#include "XFEMTwoSideDirichletBC.h"
 #include "XFEMPressure.h"
 
 #include "GeometricCutUserObject.h"
@@ -81,6 +82,7 @@ XFEMApp::registerObjects(Factory & factory)
 
   // Constraints
   registerConstraint(XFEMSingleVariableConstraint);
+  registerConstraint(XFEMTwoSideDirichletBC);
 
   // UserObjects
   registerUserObject(XFEMMarkerUserObject);
