@@ -41,6 +41,9 @@ LevelSetCutUserObject::cutElementByGeometry(const Elem * elem,
                                             std::vector<CutEdge> & cut_edges,
                                             Real time) const
 {
+  NumericVector<Number> & current_aux_solution = _aux_system.serializedSolution();
+  _aux_system.serializeSolution();
+
   bool cut_elem = false;
 
   unsigned int n_sides = elem->n_sides();
@@ -61,8 +64,8 @@ LevelSetCutUserObject::cutElementByGeometry(const Elem * elem,
     dof_id_type ls_dof_id_1 = node1->dof_number(_aux_system.number(), _ls_var.number(), 0);
     dof_id_type ls_dof_id_2 = node2->dof_number(_aux_system.number(), _ls_var.number(), 0);
 
-    Number ls_node_1 = (*_aux_solution)(ls_dof_id_1);
-    Number ls_node_2 = (*_aux_solution)(ls_dof_id_2);
+    Number ls_node_1 = (current_aux_solution)(ls_dof_id_1);
+    Number ls_node_2 = (current_aux_solution)(ls_dof_id_2);
 
     if (ls_node_1 * ls_node_2 < 0)
     {
@@ -76,5 +79,6 @@ LevelSetCutUserObject::cutElementByGeometry(const Elem * elem,
       cut_edges.push_back(mycut);
     }
   }
+  current_aux_solution.close();
   return cut_elem;
 }
