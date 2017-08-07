@@ -12,6 +12,8 @@
 #include "CrystalPlasticityStateVariable.h"
 #include "CrystalPlasticityStateVarRateComponent.h"
 
+#include "MooseException.h"
+
 template <>
 InputParameters
 validParams<FiniteStrainUObasedCP>()
@@ -256,7 +258,8 @@ FiniteStrainUObasedCP::computeQpStress()
       }
     }
     if (substep_iter > _max_substep_iter && _err_tol)
-      mooseError("FiniteStrainUObasedCP: Constitutive failure");
+      //mooseError("FiniteStrainUObasedCP: Constitutive failure");
+      throw MooseException("MooseException FiniteStrainUObasedCP: Constitutive failure");
   } while (_err_tol);
 
   _dt = dt_original;
@@ -353,9 +356,9 @@ FiniteStrainUObasedCP::solveStatevar()
 
   if (iterg == _maxiterg)
   {
-#ifdef DEBUG
+//#ifdef DEBUG
     mooseWarning("FiniteStrainUObasedCP: Hardness Integration error\n");
-#endif
+//#endif
     _err_tol = true;
   }
 }
@@ -409,12 +412,12 @@ FiniteStrainUObasedCP::solveStress()
   calcResidJacob();
   if (_err_tol)
   {
-#ifdef DEBUG
+//#ifdef DEBUG
     mooseWarning("FiniteStrainUObasedCP: Slip increment exceeds tolerance - Element number ",
                  _current_elem->id(),
                  " Gauss point = ",
                  _qp);
-#endif
+//#endif
     return;
   }
 
@@ -431,12 +434,12 @@ FiniteStrainUObasedCP::solveStress()
 
     if (_err_tol)
     {
-#ifdef DEBUG
+//#ifdef DEBUG
       mooseWarning("FiniteStrainUObasedCP: Slip increment exceeds tolerance - Element number ",
                    _current_elem->id(),
                    " Gauss point = ",
                    _qp);
-#endif
+//#endif
       return;
     }
 
@@ -445,9 +448,9 @@ FiniteStrainUObasedCP::solveStress()
 
     if (_use_line_search && rnorm > rnorm_prev && !lineSearchUpdate(rnorm_prev, dpk2))
     {
-#ifdef DEBUG
+//#ifdef DEBUG
       mooseWarning("FiniteStrainUObasedCP: Failed with line search");
-#endif
+//#endif
       _err_tol = true;
       return;
     }
@@ -460,9 +463,9 @@ FiniteStrainUObasedCP::solveStress()
 
   if (iter >= _maxiter)
   {
-#ifdef DEBUG
+//#ifdef DEBUG
     mooseWarning("FiniteStrainUObasedCP: Stress Integration error rmax = ", rnorm);
-#endif
+//#endif
     _err_tol = true;
   }
 }

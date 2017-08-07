@@ -53,9 +53,19 @@ ComputeElasticityTensorCP::computeQpElasticityTensor()
   // Properties assigned at the beginning of every call to material calculation
   assignEulerAngles();
 
-  _R.update(_Euler_angles_mat_prop[_qp]);
+  //_R.update(_Euler_angles_mat_prop[_qp]);
 
-  _crysrot[_qp] = _R.transpose();
+  //_crysrot[_qp] = _R.transpose();
+
+  //RealTensorValue RR(-1.0/std::sqrt(6.0), -1.0/std::sqrt(6.0), 2.0/std::sqrt(6.0), 1.0/std::sqrt(2.0), -1.0/std::sqrt(2.0), 0, 1.0/std::sqrt(3.0), 1.0/std::sqrt(3.0), 1.0/std::sqrt(3.0));
+  
+  //RealTensorValue RR(0.4082, -0.8165, -0.4082, 0.5774, 0.5774, -0.5774, 0.7071, 0, 0.7071);
+  
+  RealTensorValue RR(0.5547, 0.8321, 0, -0.8321, 0.5547, 0, 0, 0, 1);
+
+  _R.assign(RR);
+  //_crysrot[_qp] = _R.transpose();
+  _crysrot[_qp] = _R;
   _elasticity_tensor[_qp] = _Cijkl;
   _elasticity_tensor[_qp].rotate(_crysrot[_qp]);
 }
