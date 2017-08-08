@@ -23,10 +23,6 @@
 #include "PresetBCNearTipEnrichment.h"
 #include "XFEMMarkerUserObject.h"
 #include "XFEMMaterialTensorMarkerUserObject.h"
-#include "XFEMCrackTipMeanStress.h"
-#include "CrackFrontRTheta.h"
-
-#include "XFEMCrackTipMeanStress.h"
 #include "CrackFrontRTheta.h"
 #include "ComputeEnrichStrain.h"
 
@@ -43,8 +39,9 @@
 
 #include "MaterialTensorIntegralXFEM.h"
 
-template<>
-InputParameters validParams<XFEMApp>()
+template <>
+InputParameters
+validParams<XFEMApp>()
 {
   InputParameters params = validParams<MooseApp>();
   return params;
@@ -87,16 +84,14 @@ XFEMApp__registerObjects(Factory & factory)
 void
 XFEMApp::registerObjects(Factory & factory)
 {
-  // AuxKernels
-  
-  //Kernels
+  // Kernels
   registerKernel(SingleVariableEnrichmentDiffusion);
   registerKernel(EnrichStressDivergenceTensors);
 
-  //BCs
+  // BCs
   registerBoundaryCondition(PresetBCNearTipEnrichment);
 
-  //AuxKernels
+  // AuxKernels
   registerAux(XFEMVolFracAux);
   registerAux(XFEMCutPlaneAux);
   registerAux(XFEMMarkerAux);
@@ -108,7 +103,6 @@ XFEMApp::registerObjects(Factory & factory)
   // UserObjects
   registerUserObject(XFEMMarkerUserObject);
   registerUserObject(XFEMMaterialTensorMarkerUserObject);
-  registerUserObject(XFEMCrackTipMeanStress);
   registerUserObject(CrackFrontRTheta);
 
   // Geometric Cut User Objects
@@ -120,11 +114,11 @@ XFEMApp::registerObjects(Factory & factory)
 
   // DiracKernels
   registerDiracKernel(XFEMPressure);
-  
-  //Materials
+
+  // Materials
   registerMaterial(ComputeEnrichStrain);
 
-  //Postprocessors
+  // Postprocessors
   registerPostprocessor(MaterialTensorIntegralXFEM);
 }
 

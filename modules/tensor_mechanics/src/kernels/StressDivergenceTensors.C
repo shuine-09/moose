@@ -87,7 +87,7 @@ StressDivergenceTensors::initialSetup()
     mooseError(
         "The coordinate system in the Problem block must be set to XYZ for cartesian geometries.");
   
-  FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
+  FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
 
   if (fe_problem == NULL)
     mooseError("Problem casting _subproblem to FEProblem in EnrichStressDivergenceTensors");
@@ -100,28 +100,6 @@ StressDivergenceTensors::initialSetup()
 void
 StressDivergenceTensors::computeResidual()
 {
-<<<<<<< HEAD
-  DenseVector<Number> & re = _assembly.residualBlock(_var.number());
-  _local_re.resize(re.size());
-  _local_re.zero();
-
-  if (_volumetric_locking_correction)
-    computeAverageGradientTest();
-
-  precalculateResidual();
-  for (_i = 0; _i < _test.size(); ++_i)
-    for (_qp = 0; _qp < _qrule->n_points(); ++_qp)
-      _local_re(_i) += _JxW[_qp] * _coord[_qp] * computeQpResidual();
-
-  re += _local_re;
-
-  if (_has_save_in)
-  {
-    Threads::spin_mutex::scoped_lock lock(Threads::spin_mtx);
-    for (const auto & var : _save_in)
-      var->sys().solution().add_vector(_local_re, var->dofIndices());
-  }
-=======
   Point tip_edge((_current_elem->point(0))(0), 1.0, 0);
   Point tip(0.5, 1.0, 0);
   Real elem_h = std::sqrt(_current_elem->volume());
@@ -145,7 +123,7 @@ StressDivergenceTensors::computeResidual()
 
     _xfem->getXFEMqRuleOnSurface(intersectionPoints, tip, q_points, weights);
 
-    FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
+    FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
 
     fe_problem->reinitElemPhys(_current_elem, q_points, 0);
 
@@ -276,9 +254,6 @@ StressDivergenceTensors::computeJacobian()
       computeAverageGradientPhi();
     }
     Kernel::computeJacobian();
-<<<<<<< HEAD
-  }
-=======
     */
   Point tip_edge((_current_elem->point(0))(0), 1.0, 0);
   Point tip(0.5, 1.0, 0);
@@ -304,7 +279,7 @@ StressDivergenceTensors::computeJacobian()
 
     _xfem->getXFEMqRuleOnSurface(intersectionPoints, tip, q_points, weights);
 
-    FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
+    FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
 
     fe_problem->reinitElemPhys(_current_elem, q_points, 0);
 

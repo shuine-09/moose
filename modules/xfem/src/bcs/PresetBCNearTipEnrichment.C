@@ -14,8 +14,9 @@
 
 #include "PresetBCNearTipEnrichment.h"
 
-template<>
-InputParameters validParams<PresetBCNearTipEnrichment>()
+template <>
+InputParameters
+validParams<PresetBCNearTipEnrichment>()
 {
   InputParameters p = validParams<NodalBC>();
   p.addRequiredParam<Real>("value", "Value of the BC");
@@ -24,11 +25,8 @@ InputParameters validParams<PresetBCNearTipEnrichment>()
   return p;
 }
 
-
-PresetBCNearTipEnrichment::PresetBCNearTipEnrichment(const InputParameters & parameters) :
-  PresetNodalBC(parameters),
-  _value(getParam<Real>("value")),
-  _radius(getParam<Real>("radius"))
+PresetBCNearTipEnrichment::PresetBCNearTipEnrichment(const InputParameters & parameters)
+  : PresetNodalBC(parameters), _value(getParam<Real>("value")), _radius(getParam<Real>("radius"))
 {
 }
 
@@ -41,13 +39,12 @@ PresetBCNearTipEnrichment::computeQpValue()
 bool
 PresetBCNearTipEnrichment::shouldApply()
 {
-  Real dist = std::sqrt(((*_current_node)(0) - 0.5) * ((*_current_node)(0) - 0.5) + ((*_current_node)(1) - 1.0) * ((*_current_node)(1) - 1.0));
-
-  //std::cout << "current_node = " << (*_current_node)(0) << ", " << (*_current_node)(1) << std::endl;
+  // TODO: crack tip coordinate
+  Real dist = std::sqrt(((*_current_node)(0) - 0.5) * ((*_current_node)(0) - 0.5) +
+                        ((*_current_node)(1) - 1.0) * ((*_current_node)(1) - 1.0));
 
   if (dist > _radius)
     return true;
   else
     return false;
-//  return true;
 }

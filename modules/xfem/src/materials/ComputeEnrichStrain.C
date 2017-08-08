@@ -11,18 +11,25 @@
 #include "libmesh/fe_interface.h"
 #include "libmesh/string_to_enum.h"
 
-template<>
-InputParameters validParams<ComputeEnrichStrain>()
+template <>
+InputParameters
+validParams<ComputeEnrichStrain>()
 {
   InputParameters params = validParams<Material>();
-  params.addRequiredParam<std::vector<NonlinearVariableName> >("enrichment_displacement", "The enrichment displacement");
-  params.addRequiredCoupledVar("displacements", "The displacements appropriate for the simulation geometry and coordinate system");
-  params.addParam<std::string>("base_name", "Optional parameter that allows the user to define multiple mechanics material systems on the same block, i.e. for multiple phases");
+  params.addRequiredParam<std::vector<NonlinearVariableName>>("enrichment_displacement",
+                                                              "The enrichment displacement");
+  params.addRequiredCoupledVar(
+      "displacements",
+      "The displacements appropriate for the simulation geometry and coordinate system");
+  params.addParam<std::string>("base_name",
+                               "Optional parameter that allows the user to define multiple "
+                               "mechanics material systems on the same block, i.e. for multiple "
+                               "phases");
   return params;
 }
 
-ComputeEnrichStrain::ComputeEnrichStrain(const InputParameters & parameters) :
-    DerivativeMaterialInterface<Material>(parameters),
+ComputeEnrichStrain::ComputeEnrichStrain(const InputParameters & parameters)
+  : DerivativeMaterialInterface<Material>(parameters),
     _enrich_disp(3),
     _grad_enrich_disp(3),
     _enrich_variable(4),
@@ -32,26 +39,29 @@ ComputeEnrichStrain::ComputeEnrichStrain(const InputParameters & parameters) :
     _ndisp(coupledComponents("displacements")),
     _disp(3),
     _grad_disp(3),
-    _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : "" ),
+    _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
     _mechanical_strain(declareProperty<RankTwoTensor>(_base_name + "mechanical_strain")),
     _total_strain(declareProperty<RankTwoTensor>(_base_name + "total_strain")),
     _eigenstrain(getDefaultMaterialProperty<RankTwoTensor>(_base_name + "stress_free_strain"))
 {
   for (unsigned int i = 0; i < _enrich_variable.size(); ++i)
-    _enrich_variable[i].resize(2); //TODO 3D
+    _enrich_variable[i].resize(2); // TODO 3D
 
-  const std::vector<NonlinearVariableName> & nl_vnames = getParam<std::vector<NonlinearVariableName> >("enrichment_displacement");
+  const std::vector<NonlinearVariableName> & nl_vnames =
+      getParam<std::vector<NonlinearVariableName>>("enrichment_displacement");
   NonlinearSystem & nl = _fe_problem.getNonlinearSystem();
 
-  for (unsigned int i = 0; i < 4; ++i) //TODO : total 4 enrichment functions per node along one direction
+  for (unsigned int i = 0; i < 4;
+       ++i) // TODO : total 4 enrichment functions per node along one direction
   {
     _enrich_variable[i][0] = &(nl.getVariable(0, nl_vnames[i * 2]));
     _enrich_variable[i][1] = &(nl.getVariable(0, nl_vnames[i * 2 + 1]));
   }
-  
+
   // Checking for consistency between mesh size and length of the provided displacements vector
   if (_ndisp != _mesh.dimension())
-    mooseError("The number of variables supplied in 'displacements' must match the mesh dimension.");
+    mooseError(
+        "The number of variables supplied in 'displacements' must match the mesh dimension.");
 
   // fetch coupled variables and gradients (as stateful properties if necessary)
   for (unsigned int i = 0; i < _ndisp; ++i)
@@ -71,20 +81,21 @@ ComputeEnrichStrain::ComputeEnrichStrain(const InputParameters & parameters) :
 void
 ComputeEnrichStrain::computeQpProperties()
 {
-  FEType fe_type(Utility::string_to_enum<Order>("first"),Utility::string_to_enum<FEFamily>("lagrange"));
+  FEType fe_type(Utility::string_to_enum<Order>("first"),
+                 Utility::string_to_enum<FEFamily>("lagrange"));
   const unsigned int dim = _current_elem->dim();
-  UniquePtr<FEBase> fe (FEBase::build(dim, fe_type));
-  fe->attach_quadrature_rule (_qrule);
+  UniquePtr<FEBase> fe(FEBase::build(dim, fe_type));
+  fe->attach_quadrature_rule(_qrule);
 
   // The values of the shape functions at the quadrature points
-  const std::vector<std::vector<Real> > & phi = fe->get_phi();
-  const std::vector<std::vector<RealGradient> > & dphi = fe->get_dphi();
+  const std::vector<std::vector<Real>> & phi = fe->get_phi();
+  const std::vector<std::vector<RealGradient>> & dphi = fe->get_dphi();
 
-  fe->reinit (_current_elem); 
+  fe->reinit(_current_elem);
 
   // calculate the near-tip enrichement function
-  std::vector<Real> B, Bx, By, Br, Bt, Bxl, Byl; 
-  // Br  : derivative w.r.t r  
+  std::vector<Real> B, Bx, By, Br, Bt, Bxl, Byl;
+  // Br  : derivative w.r.t r
   // Bt  : derivative w.r.t theta
   // Bxl : derivative w.r.t local x (crack tip coordinate)
   // Byl : derivative w.r.t local y (crack tip coordinate)
@@ -98,14 +109,14 @@ ComputeEnrichStrain::computeQpProperties()
   Bxl.resize(4);
   Byl.resize(4);
 
-  std::vector<std::vector<Real> > BI;
+  std::vector<std::vector<Real>> BI;
   BI.resize(4);
 
   for (unsigned int i = 0; i < BI.size(); ++i)
   {
     BI[i].resize(4);
 
-    Point crack_tip(0.5, 1.0, 0); //crack tip is at (0.5, 0.5, 0)
+    Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 0.5, 0)
     Node * node_i = _current_elem->get_node(i);
 
     Real x_to_tip = (*node_i)(0) - crack_tip(0);
@@ -113,7 +124,7 @@ ComputeEnrichStrain::computeQpProperties()
 
     Real alpha = 0.0; // crack direction
 
-    Real x_local =  std::cos(alpha) * x_to_tip + std::sin(alpha) * y_to_tip;
+    Real x_local = std::cos(alpha) * x_to_tip + std::sin(alpha) * y_to_tip;
     Real y_local = -std::sin(alpha) * x_to_tip + std::cos(alpha) * y_to_tip;
 
     Real r = std::sqrt(x_local * x_local + y_local * y_local);
@@ -129,17 +140,17 @@ ComputeEnrichStrain::computeQpProperties()
     BI[i][3] = std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
   }
 
-  Point crack_tip(0.5, 1.0, 0); //crack tip is at (0.5, 0.5, 0)
+  Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 0.5, 0)
   Point q_pt = _q_point[_qp];
 
   Real x_to_tip = q_pt(0) - crack_tip(0);
   Real y_to_tip = q_pt(1) - crack_tip(1);
 
   Real alpha = 0.0; // crack direction
-  
-  Real x_local =  std::cos(alpha) * x_to_tip + std::sin(alpha) * y_to_tip;
+
+  Real x_local = std::cos(alpha) * x_to_tip + std::sin(alpha) * y_to_tip;
   Real y_local = -std::sin(alpha) * x_to_tip + std::cos(alpha) * y_to_tip;
- 
+
   Real r = std::sqrt(x_local * x_local + y_local * y_local);
 
   if (r < 0.001)
@@ -152,20 +163,21 @@ ComputeEnrichStrain::computeQpProperties()
   B[2] = std::sqrt(r) * std::sin(theta / 2.0) * std::sin(theta);
   B[3] = std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
 
-
   Br[0] = 0.5 / std::sqrt(r) * std::sin(theta / 2.0);
   Bt[0] = std::sqrt(r) / 2.0 * std::cos(theta / 2.0);
   Br[1] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0);
   Bt[1] = -std::sqrt(r) / 2.0 * std::sin(theta / 2.0);
   Br[2] = 0.5 / std::sqrt(r) * std::sin(theta / 2.0) * std::sin(theta);
-  Bt[2] = std::sqrt(r) * (0.5 * std::cos(theta / 2.0) * std::sin(theta) + std::sin(theta / 2.0) * std::cos(theta));
+  Bt[2] = std::sqrt(r) *
+          (0.5 * std::cos(theta / 2.0) * std::sin(theta) + std::sin(theta / 2.0) * std::cos(theta));
   Br[2] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
-  Bt[2] = std::sqrt(r) * (-0.5 * std::sin(theta / 2.0) * std::sin(theta) + std::cos(theta / 2.0) * std::cos(theta));
+  Bt[2] = std::sqrt(r) * (-0.5 * std::sin(theta / 2.0) * std::sin(theta) +
+                          std::cos(theta / 2.0) * std::cos(theta));
 
-  //Real r_xl = std::cos(theta);
-  //Real r_yl = std::sin(theta);
-  //Real t_xl = -std::sin(theta) / r;
-  //Real t_yl = std::cos(theta) / r;
+  // Real r_xl = std::cos(theta);
+  // Real r_yl = std::sin(theta);
+  // Real t_xl = -std::sin(theta) / r;
+  // Real t_yl = std::cos(theta) / r;
 
   Bxl[0] = -0.5 / std::sqrt(r) * std::sin(theta / 2.0);
   Byl[0] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0);
@@ -185,7 +197,7 @@ ComputeEnrichStrain::computeQpProperties()
   NonlinearSystem & nl = _fe_problem.getNonlinearSystem();
   const NumericVector<Number> & sln = *nl.currentSolution();
 
-  //if(_current_elem->contains_point(crack_tip))
+  // if(_current_elem->contains_point(crack_tip))
   if (0)
   {
     std::cout << "q point = " << q_pt << std::endl;
@@ -203,7 +215,7 @@ ComputeEnrichStrain::computeQpProperties()
     }
   }
 
-  for (unsigned int m = 0; m < 2; ++m) //TODO: 3D
+  for (unsigned int m = 0; m < 2; ++m) // TODO: 3D
   {
     _enrich_disp[m] = 0.0;
     _grad_enrich_disp[m].zero();
@@ -214,28 +226,32 @@ ComputeEnrichStrain::computeQpProperties()
       dof_id_type dofy = node_i->dof_number(nl.number(), 1, 0);
       Real soln_localx = sln(dofx);
       Real soln_localy = sln(dofy);
-      if(_current_elem->contains_point(crack_tip))
-        std::cout << " node(" << i << ") x = " << soln_localx << ", y = " << soln_localy << std::endl;
+      if (_current_elem->contains_point(crack_tip))
+        std::cout << " node(" << i << ") x = " << soln_localx << ", y = " << soln_localy
+                  << std::endl;
 
       for (unsigned int j = 0; j < 4; ++j)
       {
         dof_id_type dof = node_i->dof_number(nl.number(), _enrich_variable[j][m]->number(), 0);
         Real soln_local = sln(dof);
-        if(_current_elem->contains_point(crack_tip))
-          std::cout << "j = " << j << ", m = " << m << ", _enrich_variable[j][m]->number() = " << _enrich_variable[j][m]->number() << ", dof = " << dof << ", sln = " << soln_local << std::endl;
-        _enrich_disp[m] += phi[i][_qp] * (B[j] - BI[i][j])* soln_local;
+        if (_current_elem->contains_point(crack_tip))
+          std::cout << "j = " << j << ", m = " << m
+                    << ", _enrich_variable[j][m]->number() = " << _enrich_variable[j][m]->number()
+                    << ", dof = " << dof << ", sln = " << soln_local << std::endl;
+        _enrich_disp[m] += phi[i][_qp] * (B[j] - BI[i][j]) * soln_local;
         RealVectorValue grad_B(Bx[j], By[j], 0.0);
-        _grad_enrich_disp[m] += (dphi[i][_qp] * (B[j] - BI[i][j]) + phi[i][_qp] * grad_B) * soln_local;
+        _grad_enrich_disp[m] +=
+            (dphi[i][_qp] * (B[j] - BI[i][j]) + phi[i][_qp] * grad_B) * soln_local;
       }
     }
   }
 
-
-  _enrich_disp[2] = 0.0; //TODO: 3D
+  _enrich_disp[2] = 0.0; // TODO: 3D
   _grad_enrich_disp[2].zero();
 
-  //strain = (grad_disp + grad_disp^T)/2
-  RankTwoTensor grad_tensor_enrich(_grad_enrich_disp[0], _grad_enrich_disp[1], _grad_enrich_disp[2]);
+  // strain = (grad_disp + grad_disp^T)/2
+  RankTwoTensor grad_tensor_enrich(
+      _grad_enrich_disp[0], _grad_enrich_disp[1], _grad_enrich_disp[2]);
 
   _enrich_strain[_qp] = (grad_tensor_enrich + grad_tensor_enrich.transpose()) / 2.0;
 
@@ -250,7 +266,7 @@ ComputeEnrichStrain::computeQpProperties()
 
   RealVectorValue grad_disp_z(0.0, 0.0, 0.0);
 
-  RankTwoTensor grad_tensor((*_grad_disp[0])[_qp], (*_grad_disp[1])[_qp], grad_disp_z); //TODO 3D!!
+  RankTwoTensor grad_tensor((*_grad_disp[0])[_qp], (*_grad_disp[1])[_qp], grad_disp_z); // TODO 3D!!
 
   _total_strain[_qp] = (grad_tensor + grad_tensor.transpose()) / 2.0;
 
@@ -259,15 +275,14 @@ ComputeEnrichStrain::computeQpProperties()
   _mechanical_strain[_qp] = _total_strain[_qp];
 
   Point tip(0.5, 1.0, 0);
-  if(_current_elem->contains_point(tip))
-  //if(0)
+  if (_current_elem->contains_point(tip))
+  // if(0)
   {
-    //for(unsigned int i = 0; i < 4; i++)
+    // for(unsigned int i = 0; i < 4; i++)
     //  for(unsigned int j = 0; j < 4; j++)
     //    std::cout << "BI[" << i << "][" << j << "] = " << BI[i][j] << std::endl;
 
-
-    std::cout << "r = " <<  r << ", theta = " << theta << std::endl;
+    std::cout << "r = " << r << ", theta = " << theta << std::endl;
     std::cout << "_qp = " << _qp << ", enrich_strain = " << std::endl;
     _enrich_strain[_qp].print();
     std::cout << "strain = " << std::endl;
@@ -276,8 +291,7 @@ ComputeEnrichStrain::computeQpProperties()
     _total_strain[_qp].print();
   }
 
-
-  //Remove the Eigen strain
+  // Remove the Eigen strain
   _mechanical_strain[_qp] -= _eigenstrain[_qp];
 }
 

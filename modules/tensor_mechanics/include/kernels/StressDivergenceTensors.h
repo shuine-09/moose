@@ -40,10 +40,6 @@ protected:
   virtual Real computeQpResidual() override;
   virtual Real computeQpJacobian() override;
   virtual Real computeQpOffDiagJacobian(unsigned int jvar) override;
-  virtual void computeResidual();
-
-  virtual void computeJacobian();
-  virtual void computeOffDiagJacobian(unsigned int jvar);
 
   virtual void computeFiniteDeformJacobian();
   virtual void computeAverageGradientTest();

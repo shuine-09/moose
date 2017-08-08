@@ -30,7 +30,7 @@ RankTwoAuxXFEM::RankTwoAuxXFEM(const InputParameters & parameters) :
     _i(getParam<unsigned int>("index_i")),
     _j(getParam<unsigned int>("index_j"))
 {
-  FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
+  FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
 
   if (fe_problem == NULL)
     mooseError("Problem casting _subproblem to FEProblem in RankTwoAuxXFEM");
@@ -60,7 +60,7 @@ RankTwoAuxXFEM::compute()
 
     _xfem->getXFEMqRuleOnSurface(intersectionPoints, tip, q_points, weights);
 
-    FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
+    FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
 
     fe_problem->reinitElemPhys(_current_elem, q_points, 0);
 
