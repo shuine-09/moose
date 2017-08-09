@@ -776,8 +776,8 @@ SolidModel::computeStrainEnergyDensity()
 {
   mooseAssert(_SED, "_SED not initialized");
   mooseAssert(_SED_old, "_SED_old not initialized");
-  (*_SED)[_qp] = (*_SED_old)[_qp] + _stress[_qp].doubleContraction(_strain_increment) / 2 +
-                 _stress_old_prop[_qp].doubleContraction(_strain_increment) / 2;
+  (*_SED)[_qp] = (*_SED_old)[_qp] + _stress[_qp].doubleContraction(_strain_increment) / 2. +
+                 _stress_old_prop[_qp].doubleContraction(_strain_increment) / 2.;
 }
 
 ////////////////////////////////////////////////////////////////////////
