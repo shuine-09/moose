@@ -15,6 +15,7 @@
 class StressDivergenceTensors;
 class RankTwoTensor;
 class RankFourTensor;
+class XFEM;
 
 template <>
 InputParameters validParams<StressDivergenceTensors>();
@@ -74,6 +75,9 @@ protected:
 
   /// Flag for volumetric locking correction
   bool _volumetric_locking_correction;
+
+private:
+  MooseSharedPointer<XFEM> _xfem;
 };
 
 #endif // STRESSDIVERGENCETENSORS_H

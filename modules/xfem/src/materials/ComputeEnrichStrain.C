@@ -51,7 +51,8 @@ ComputeEnrichStrain::ComputeEnrichStrain(const InputParameters & parameters)
       getParam<std::vector<NonlinearVariableName>>("enrichment_displacement");
   NonlinearSystem & nl = _fe_problem.getNonlinearSystem();
 
-  for (unsigned int i = 0; i < 4;
+  unsigned int num_enrichment_funcs = 4; // TODO!!!
+  for (unsigned int i = 0; i < num_enrichment_funcs;
        ++i) // TODO : total 4 enrichment functions per node along one direction
   {
     _enrich_variable[i][0] = &(nl.getVariable(0, nl_vnames[i * 2]));
@@ -116,7 +117,7 @@ ComputeEnrichStrain::computeQpProperties()
   {
     BI[i].resize(4);
 
-    Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 0.5, 0)
+    Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 1.0, 0)
     Node * node_i = _current_elem->get_node(i);
 
     Real x_to_tip = (*node_i)(0) - crack_tip(0);
@@ -129,8 +130,8 @@ ComputeEnrichStrain::computeQpProperties()
 
     Real r = std::sqrt(x_local * x_local + y_local * y_local);
 
-    if (r < 0.001)
-      r = 0.001;
+    if (r < 0.0001)
+      r = 0.0001;
 
     Real theta = std::atan2(y_local, x_local);
 
@@ -153,8 +154,8 @@ ComputeEnrichStrain::computeQpProperties()
 
   Real r = std::sqrt(x_local * x_local + y_local * y_local);
 
-  if (r < 0.001)
-    r = 0.001;
+  if (r < 0.0001)
+    r = 0.0001;
 
   Real theta = std::atan2(y_local, x_local);
 
@@ -197,23 +198,76 @@ ComputeEnrichStrain::computeQpProperties()
   NonlinearSystem & nl = _fe_problem.getNonlinearSystem();
   const NumericVector<Number> & sln = *nl.currentSolution();
 
-  // if(_current_elem->contains_point(crack_tip))
-  if (0)
-  {
-    std::cout << "q point = " << q_pt << std::endl;
-    std::vector<Point> qpoint;
-    qpoint.push_back(q_pt);
-    std::vector<Point> ref_point;
-    FEInterface::inverse_map(2, fe_type, _current_elem, qpoint, ref_point);
-    std::cout << "ref q point = " << ref_point[0] << std::endl;
-    for (unsigned int i = 0; i < 4; ++i)
-    {
-      std::cout << "Bx[" << i << "] = " << Bx[i] << std::endl;
-      std::cout << "By[" << i << "] = " << By[i] << std::endl;
-      std::cout << "phi[" << i << "] = " << phi[i][_qp] << std::endl;
-      std::cout << "dphi[" << i << "] = " << dphi[i][_qp] << std::endl;
-    }
-  }
+  // if (_current_elem->contains_point(crack_tip))
+  // // if (0)
+  // {
+  //   std::cout << "q point = " << q_pt << std::endl;
+  //   std::vector<Point> qpoint;
+  //   qpoint.push_back(q_pt);
+  //   std::vector<Point> ref_point;
+  //   FEInterface::inverse_map(2, fe_type, _current_elem, qpoint, ref_point);
+  //   std::cout << "ref q point = " << ref_point[0] << std::endl;
+  //   std::cout << "r = " << r << ", theta = " << theta << std::endl;
+  //   for (unsigned int i = 0; i < 4; ++i)
+  //   {
+  //     std::cout << "B0- BI[" << i << "] = " << B[0] - BI[i][0] << std::endl;
+  //     std::cout << "B0- BI[" << i << "] = " << B[1] - BI[i][1] << std::endl;
+  //     std::cout << "B0- BI[" << i << "] = " << B[2] - BI[i][2] << std::endl;
+  //     std::cout << "B0- BI[" << i << "] = " << B[3] - BI[i][3] << std::endl;
+  //     std::cout << "B1 = " << BI[i][0] << std::endl;
+  //     std::cout << "B2 = " << BI[i][1] << std::endl;
+  //     std::cout << "B3 = " << BI[i][2] << std::endl;
+  //     std::cout << "B4 = " << BI[i][3] << std::endl;
+  //     RealVectorValue grad_B1(Bx[0], By[0], 0.0);
+  //     RealVectorValue grad_B2(Bx[1], By[1], 0.0);
+  //     RealVectorValue grad_B3(Bx[2], By[2], 0.0);
+  //     RealVectorValue grad_B4(Bx[3], By[3], 0.0);
+  //     std::cout << "Bx1[" << i << "] = " << dphi[i][_qp] * (B[0] - BI[i][0]) + phi[i][_qp] *
+  //     grad_B1
+  //               << std::endl;
+  //     std::cout << "Bx2[" << i << "] = " << dphi[i][_qp] * (B[1] - BI[i][1]) + phi[i][_qp] *
+  //     grad_B2
+  //               << std::endl;
+  //     std::cout << "Bx3[" << i << "] = " << dphi[i][_qp] * (B[2] - BI[i][2]) + phi[i][_qp] *
+  //     grad_B3
+  //               << std::endl;
+  //     std::cout << "Bx4[" << i << "] = " << dphi[i][_qp] * (B[3] - BI[i][3]) + phi[i][_qp] *
+  //     grad_B4
+  //               << std::endl;
+  //     std::cout << "phi[" << i << "] = " << phi[i][_qp] << std::endl;
+  //     std::cout << "dphi[" << i << "] = " << dphi[i][_qp] << std::endl;
+  //   }
+  // }
+
+  // std::cout << "============================================================== " << std::endl;
+  // std::cout << "q point = " << q_pt << std::endl;
+  // std::vector<Point> qpoint;
+  // qpoint.push_back(q_pt);
+  // std::vector<Point> ref_point;
+  // FEInterface::inverse_map(2, fe_type, _current_elem, qpoint, ref_point);
+  // std::cout << "ref q point = " << ref_point[0] << std::endl;
+  //
+  // for (unsigned int i = 0; i < 4; ++i)
+  // {
+  //   RealVectorValue grad_B1(Bx[0], By[0], 0.0);
+  //   RealVectorValue grad_B2(Bx[1], By[1], 0.0);
+  //   RealVectorValue grad_B3(Bx[2], By[2], 0.0);
+  //   RealVectorValue grad_B4(Bx[3], By[3], 0.0);
+  //   std::cout << "Bx1[" << i << "] = " << dphi[i][_qp] * (B[0] - BI[i][0]) + phi[i][_qp] *
+  //   grad_B1
+  //             << std::endl;
+  //   std::cout << "Bx2[" << i << "] = " << dphi[i][_qp] * (B[1] - BI[i][1]) + phi[i][_qp] *
+  //   grad_B2
+  //             << std::endl;
+  //   std::cout << "Bx3[" << i << "] = " << dphi[i][_qp] * (B[2] - BI[i][2]) + phi[i][_qp] *
+  //   grad_B3
+  //             << std::endl;
+  //   std::cout << "Bx4[" << i << "] = " << dphi[i][_qp] * (B[3] - BI[i][3]) + phi[i][_qp] *
+  //   grad_B4
+  //             << std::endl;
+  //   std::cout << "phi[" << i << "] = " << phi[i][_qp] << std::endl;
+  //   std::cout << "dphi[" << i << "] = " << dphi[i][_qp] << std::endl;
+  // }
 
   for (unsigned int m = 0; m < 2; ++m) // TODO: 3D
   {
@@ -226,18 +280,18 @@ ComputeEnrichStrain::computeQpProperties()
       dof_id_type dofy = node_i->dof_number(nl.number(), 1, 0);
       Real soln_localx = sln(dofx);
       Real soln_localy = sln(dofy);
-      if (_current_elem->contains_point(crack_tip))
-        std::cout << " node(" << i << ") x = " << soln_localx << ", y = " << soln_localy
-                  << std::endl;
+      // if (_current_elem->contains_point(crack_tip))
+      // std::cout << " node(" << i << ") dispx = " << soln_localx << ", dispy = " << soln_localy
+      //          << std::endl;
 
       for (unsigned int j = 0; j < 4; ++j)
       {
         dof_id_type dof = node_i->dof_number(nl.number(), _enrich_variable[j][m]->number(), 0);
         Real soln_local = sln(dof);
-        if (_current_elem->contains_point(crack_tip))
-          std::cout << "j = " << j << ", m = " << m
-                    << ", _enrich_variable[j][m]->number() = " << _enrich_variable[j][m]->number()
-                    << ", dof = " << dof << ", sln = " << soln_local << std::endl;
+        // if (_current_elem->contains_point(crack_tip))
+        //  std::cout << "j = " << j << ", m = " << m
+        //            << ", _enrich_variable[j][m]->number() = " << _enrich_variable[j][m]->number()
+        //            << ", dof = " << dof << ", sln = " << soln_local << std::endl;
         _enrich_disp[m] += phi[i][_qp] * (B[j] - BI[i][j]) * soln_local;
         RealVectorValue grad_B(Bx[j], By[j], 0.0);
         _grad_enrich_disp[m] +=
@@ -275,21 +329,34 @@ ComputeEnrichStrain::computeQpProperties()
   _mechanical_strain[_qp] = _total_strain[_qp];
 
   Point tip(0.5, 1.0, 0);
-  if (_current_elem->contains_point(tip))
-  // if(0)
-  {
-    // for(unsigned int i = 0; i < 4; i++)
-    //  for(unsigned int j = 0; j < 4; j++)
-    //    std::cout << "BI[" << i << "][" << j << "] = " << BI[i][j] << std::endl;
-
-    std::cout << "r = " << r << ", theta = " << theta << std::endl;
-    std::cout << "_qp = " << _qp << ", enrich_strain = " << std::endl;
-    _enrich_strain[_qp].print();
-    std::cout << "strain = " << std::endl;
-    ((grad_tensor + grad_tensor.transpose()) / 2.0).print();
-    std::cout << "total strain = " << std::endl;
-    _total_strain[_qp].print();
-  }
+  Real elem_h = std::sqrt(_current_elem->volume());
+  Point tip_split(0.5 - elem_h, 1.0, 0);
+  // if (_current_elem->contains_point(tip))
+  // // if(0)
+  // {
+  //   // for(unsigned int i = 0; i < 4; i++)
+  //   //  for(unsigned int j = 0; j < 4; j++)
+  //   //    std::cout << "BI[" << i << "][" << j << "] = " << BI[i][j] << std::endl;
+  //
+  //   std::cout << "r = " << r << ", theta = " << theta << std::endl;
+  //   std::cout << "_qp = " << _qp << ", enrich_strain = " << std::endl;
+  //   _enrich_strain[_qp].print();
+  //   std::cout << "strain = " << std::endl;
+  //   ((grad_tensor + grad_tensor.transpose()) / 2.0).print();
+  //   std::cout << "total strain = " << std::endl;
+  //   _total_strain[_qp].print();
+  // }
+  // else if (_current_elem->contains_point(tip_split))
+  // {
+  //   std::cout << "===========================>>>> split " << std::endl;
+  //   std::cout << "r = " << r << ", theta = " << theta << std::endl;
+  //   std::cout << "_qp = " << _qp << ", enrich_strain = " << std::endl;
+  //   _enrich_strain[_qp].print();
+  //   std::cout << "strain = " << std::endl;
+  //   ((grad_tensor + grad_tensor.transpose()) / 2.0).print();
+  //   std::cout << "total strain = " << std::endl;
+  //   _total_strain[_qp].print();
+  // }
 
   // Remove the Eigen strain
   _mechanical_strain[_qp] -= _eigenstrain[_qp];

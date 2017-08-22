@@ -1567,8 +1567,9 @@ XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points,
     xcrd += intersection_points[i];
   xcrd /= nnd_pe;
 
-  quad_pts.resize(nnd_pe);
-  quad_wts.resize(nnd_pe);
+  unsigned int num_pts = 3;
+  quad_pts.resize(nnd_pe * num_pts);
+  quad_wts.resize(nnd_pe * num_pts);
 
   Real jac = 0.0;
 
@@ -1583,7 +1584,7 @@ XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points,
     subtrig_points[2] = intersection_points[jplus1];
 
     std::vector<std::vector<Real>> sg2;
-    Xfem::stdQuadr2D(3, 1, sg2);                 // get sg2
+    Xfem::stdQuadr2D(3, 2, sg2);                 // get sg2
     for (std::size_t l = 0; l < sg2.size(); ++l) // loop all int pts on a sub-trig
     {
       Xfem::shapeFunc2D(3, sg2[l], subtrig_points, shape, jac, true); // Get shape
@@ -1594,8 +1595,8 @@ XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points,
         tsg_line[1] += shape[k][2] * subtrig_points[k](1);
         tsg_line[2] += shape[k][2] * subtrig_points[k](2);
       }
-      quad_pts[j + l] = Point(tsg_line[0], tsg_line[1], tsg_line[2]);
-      quad_wts[j + l] = sg2[l][3] * jac;
+      quad_pts[j * num_pts + l] = Point(tsg_line[0], tsg_line[1], tsg_line[2]);
+      quad_wts[j * num_pts + l] = sg2[l][3] * jac;
     }
   }
 }
@@ -1792,7 +1793,10 @@ XFEM::getNodeSolutionDofs(const Node * node, SystemBase & sys) const
 }
 
 void
-XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, Point & tip_point, std::vector<Point> & quad_pts, std::vector<Real> & quad_wts) const
+XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points,
+                            Point & tip_point,
+                            std::vector<Point> & quad_pts,
+                            std::vector<Real> & quad_wts) const
 {
   unsigned int nnd_pe = intersection_points.size();
   unsigned int num_pts = 3;
@@ -1803,7 +1807,7 @@ XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, Point & ti
 
   for (unsigned int j = 0; j < nnd_pe; ++j) // loop all sub-trigs
   {
-    std::vector<std::vector<Real> > shape(3, std::vector<Real>(3,0.0));
+    std::vector<std::vector<Real>> shape(3, std::vector<Real>(3, 0.0));
     std::vector<Point> subtrig_points(3, Point(0.0, 0.0, 0.0)); // sub-trig nodal coords
 
     int jplus1 = j < nnd_pe - 1 ? j + 1 : 0;
@@ -1811,12 +1815,12 @@ XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, Point & ti
     subtrig_points[1] = intersection_points[j];
     subtrig_points[2] = intersection_points[jplus1];
 
-    std::vector<std::vector<Real> > sg2;
-    Xfem::stdQuadr2D(3, 2, sg2); // get sg2
+    std::vector<std::vector<Real>> sg2;
+    Xfem::stdQuadr2D(3, 2, sg2);                  // get sg2
     for (unsigned int l = 0; l < sg2.size(); ++l) // loop all int pts on a sub-trig
     {
       Xfem::shapeFunc2D(3, sg2[l], subtrig_points, shape, jac, true); // Get shape
-      std::vector<Real> tsg_line(3,0.0);
+      std::vector<Real> tsg_line(3, 0.0);
       for (unsigned int k = 0; k < 3; ++k) // loop sub-trig nodes
       {
         tsg_line[0] += shape[k][2] * subtrig_points[k](0);
@@ -1830,15 +1834,15 @@ XFEM::getXFEMqRuleOnSurface(std::vector<Point> & intersection_points, Point & ti
 }
 
 Real
-XFEM::flagQpointInside(const Elem* elem, const Point & p) const
+XFEM::flagQpointInside(const Elem * elem, const Point & p) const
 {
   // get the flag indicating if a QP is inside the physical domain of a partial element
   Real flag = 1.0; // default value - qp inside physical domain
-  std::map<unique_id_type, XFEMCutElem*>::const_iterator it;
+  std::map<unique_id_type, XFEMCutElem *>::const_iterator it;
   it = _cut_elem_map.find(elem->unique_id());
   if (it != _cut_elem_map.end())
   {
-    XFEMCutElem *xfce = it->second;
+    XFEMCutElem * xfce = it->second;
     unsigned int n_cut_planes = xfce->numCutPlanes();
     for (unsigned int plane_id = 0; plane_id < n_cut_planes; ++plane_id)
     {
@@ -1846,7 +1850,7 @@ XFEM::flagQpointInside(const Elem* elem, const Point & p) const
       Point normal = xfce->getCutPlaneNormal(plane_id);
       Point origin2qp = p - origin;
       Xfem::normalizePoint(origin2qp);
-      if (origin2qp*normal > 0.0)
+      if (origin2qp * normal > 0.0)
       {
         flag = 0.0; // QP outside pysical domain
         break;

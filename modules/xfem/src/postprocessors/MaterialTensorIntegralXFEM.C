@@ -61,10 +61,13 @@ MaterialTensorIntegralXFEM::computeIntegral()
   if (_current_elem->contains_point(tip))
   // if (0)
   {
+    std::cout << "WJ ==> current elem contains crack tip" << std::endl;
     std::vector<Point> intersectionPoints;
+    Point newpt((_current_elem->point(1))(0), 1.0, 0);
 
     intersectionPoints.push_back(_current_elem->point(0));
     intersectionPoints.push_back(_current_elem->point(1));
+    intersectionPoints.push_back(newpt);
     intersectionPoints.push_back(_current_elem->point(2));
     intersectionPoints.push_back(_current_elem->point(3));
     intersectionPoints.push_back(tip_edge);
@@ -78,7 +81,7 @@ MaterialTensorIntegralXFEM::computeIntegral()
 
     _fe_problem.reinitElemPhys(_current_elem, q_points, 0);
 
-    // fe_problem->prepareShapes(_var.number(), 0);
+    //_subproblem.prepareShapes(_var.number(), 0);
 
     _fe_problem.reinitMaterials(_current_elem->subdomain_id(), 0, false);
 
@@ -86,7 +89,7 @@ MaterialTensorIntegralXFEM::computeIntegral()
 
     for (_qp = 0; _qp < q_points.size(); _qp++)
     {
-      Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 0.5, 0)
+      Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 1.0, 0)
       Point q_pt = q_points[_qp];
 
       Real x_to_tip = q_pt(0) - crack_tip(0);
@@ -123,7 +126,7 @@ MaterialTensorIntegralXFEM::computeIntegral()
         error =
             std::pow((sigma_xy_exact - RankTwoScalarTools::component(_tensor[_qp], _i, _j)), 2.0);
       }
-      else if (_i == 1 & _j == 1)
+      else if (_i == 1 && _j == 1)
       {
         error =
             std::pow((sigma_yy_exact - RankTwoScalarTools::component(_tensor[_qp], _i, _j)), 2.0);
@@ -132,7 +135,7 @@ MaterialTensorIntegralXFEM::computeIntegral()
       if (r > 0.2)
         error = 0.0;
 
-      std::cout << "tip at " << q_points[_qp] << ", exact = " << sigma_yy_exact
+      std::cout << "Inside : tip at " << q_points[_qp] << ", exact = " << sigma_yy_exact
                 << ", fem sol = " << RankTwoScalarTools::component(_tensor[_qp], _i, _j)
                 << std::endl;
 
@@ -142,6 +145,8 @@ MaterialTensorIntegralXFEM::computeIntegral()
   }
   else
   {
+    // std::cout << "WJ <== current elem does not contain crack tip, q_points size = "
+    //           << _qrule->n_points() << std::endl;
     Real sum = 0;
 
     for (_qp = 0; _qp < _qrule->n_points(); _qp++)
@@ -202,9 +207,9 @@ MaterialTensorIntegralXFEM::computeIntegral()
         else
           undisplaced_elem = _current_elem;
         flag = _xfem->flagQpointInside(undisplaced_elem, _q_point[_qp]);
-        std::cout << "flag = " << flag << ", exact = " << sigma_xx_exact
-                  << ", fem sol = " << RankTwoScalarTools::component(_tensor[_qp], _i, _j)
-                  << std::endl;
+        // std::cout << "Outside : flag = " << flag << ", exact = " << sigma_yy_exact
+        //           << ", fem sol = " << RankTwoScalarTools::component(_tensor[_qp], _i, _j)
+        //           << std::endl;
       }
 
       sum += _JxW[_qp] * _coord[_qp] * error * flag;

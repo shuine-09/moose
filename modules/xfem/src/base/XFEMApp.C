@@ -38,6 +38,7 @@
 #include "RectangleCutUserObject.h"
 
 #include "MaterialTensorIntegralXFEM.h"
+#include "NearTipEnrichmentProblem.h"
 
 template <>
 InputParameters
@@ -84,6 +85,8 @@ XFEMApp__registerObjects(Factory & factory)
 void
 XFEMApp::registerObjects(Factory & factory)
 {
+  registerProblem(NearTipEnrichmentProblem);
+
   // Kernels
   registerKernel(SingleVariableEnrichmentDiffusion);
   registerKernel(EnrichStressDivergenceTensors);

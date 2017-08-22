@@ -12,20 +12,27 @@
 #include "libmesh/dof_map.h"
 #include "libmesh/quadrature.h"
 
-
-template<>
-InputParameters validParams<RankTwoAuxXFEM>()
+template <>
+InputParameters
+validParams<RankTwoAuxXFEM>()
 {
   InputParameters params = validParams<AuxKernel>();
   params.addClassDescription("Access a component of a RankTwoTensor");
-  params.addRequiredParam<MaterialPropertyName>("rank_two_tensor", "The rank two material tensor name");
-  params.addRequiredRangeCheckedParam<unsigned int>("index_i", "index_i >= 0 & index_i <= 2", "The index i of ij for the tensor to output (0, 1, 2)");
-  params.addRequiredRangeCheckedParam<unsigned int>("index_j", "index_j >= 0 & index_j <= 2", "The index j of ij for the tensor to output (0, 1, 2)");
+  params.addRequiredParam<MaterialPropertyName>("rank_two_tensor",
+                                                "The rank two material tensor name");
+  params.addRequiredRangeCheckedParam<unsigned int>(
+      "index_i",
+      "index_i >= 0 & index_i <= 2",
+      "The index i of ij for the tensor to output (0, 1, 2)");
+  params.addRequiredRangeCheckedParam<unsigned int>(
+      "index_j",
+      "index_j >= 0 & index_j <= 2",
+      "The index j of ij for the tensor to output (0, 1, 2)");
   return params;
 }
 
-RankTwoAuxXFEM::RankTwoAuxXFEM(const InputParameters & parameters) :
-    AuxKernel(parameters),
+RankTwoAuxXFEM::RankTwoAuxXFEM(const InputParameters & parameters)
+  : AuxKernel(parameters),
     _tensor(getMaterialProperty<RankTwoTensor>("rank_two_tensor")),
     _i(getParam<unsigned int>("index_i")),
     _j(getParam<unsigned int>("index_j"))
@@ -37,7 +44,6 @@ RankTwoAuxXFEM::RankTwoAuxXFEM(const InputParameters & parameters) :
   _xfem = MooseSharedNamespace::dynamic_pointer_cast<XFEM>(fe_problem->getXFEM());
   if (_xfem == NULL)
     mooseError("Problem casting to XFEM in RankTwoAuxXFEM");
-
 }
 
 void
@@ -45,7 +51,7 @@ RankTwoAuxXFEM::compute()
 {
   Point tip_edge((_current_elem->point(0))(0), 1.0, 0);
   Point tip(0.5, 1.0, 0);
-  if(_current_elem->contains_point(tip))
+  if (_current_elem->contains_point(tip))
   {
     std::vector<Point> intersectionPoints;
 
@@ -64,24 +70,31 @@ RankTwoAuxXFEM::compute()
 
     fe_problem->reinitElemPhys(_current_elem, q_points, 0);
 
-    //fe_problem->prepareShapes(_var.number(), 0);
+    // fe_problem->prepareShapes(_var.number(), 0);
 
     fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
 
     _n_local_dofs = _var.numberOfDofs();
 
-    if (_n_local_dofs==1)  /* p0 */
+    if (_n_local_dofs == 1) /* p0 */
     {
       Real value = 0;
-      for (_qp=0; _qp < q_points.size(); _qp++)
+      for (_qp = 0; _qp < q_points.size(); _qp++)
+      {
+        // std::cout << "weights[" << _qp << "] = " << weights[_qp] << ", value = " <<
+        // computeValue()
+        //          << std::endl;
         value += weights[_qp] * computeValue();
+      }
       value /= (_bnd ? _current_side_volume : _current_elem_volume);
+      std::cout << "i = " << _i << ", j = " << _j << ", value = " << value
+                << ", current_elem_volume = " << _current_elem_volume << std::endl;
       // update the variable data refernced by other kernels.
       // Note that this will update the values at the quadrature points too
       // (because this is an Elemental variable)
       _var.setNodalValue(value);
     }
-    else                   /* high-order */
+    else /* high-order */
     {
       _local_re.resize(_n_local_dofs);
       _local_re.zero();
@@ -104,7 +117,6 @@ RankTwoAuxXFEM::compute()
 
       _var.setNodalValue(_local_sol);
     }
-
   }
   else
     AuxKernel::compute();

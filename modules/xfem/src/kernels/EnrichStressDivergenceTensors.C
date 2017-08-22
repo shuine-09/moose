@@ -14,6 +14,7 @@
 #include "DisplacedProblem.h"
 #include "MooseMesh.h"
 #include "MooseVariable.h"
+#include "MooseUtils.h"
 
 template <>
 InputParameters
@@ -63,17 +64,22 @@ EnrichStressDivergenceTensors::computeResidual()
   Point tip_edge((_current_elem->point(0))(0), 1.0, 0);
   Point tip(0.5, 1.0, 0);
   Real elem_h = std::sqrt(_current_elem->volume());
-  Point tip_split(0.5 - elem_h, 1.0, 0);
-  if (_current_elem->contains_point(tip))
+  // Point tip_split(0.5 - elem_h, 1.0, 0);
+  Point tip_split(0.5 - 0.0476, 1.0, 0);
+  // if (_current_elem->contains_point(tip))
+  if (0)
   {
+    // std::cout << "current_elem_volume = " << _current_elem_volume << std::endl;
     DenseVector<Number> & re = _assembly.residualBlock(_var.number());
     _local_re.resize(re.size());
     _local_re.zero();
 
     std::vector<Point> intersectionPoints;
+    Point newpt((_current_elem->point(1))(0), 1.0, 0);
 
     intersectionPoints.push_back(_current_elem->point(0));
     intersectionPoints.push_back(_current_elem->point(1));
+    intersectionPoints.push_back(newpt);
     intersectionPoints.push_back(_current_elem->point(2));
     intersectionPoints.push_back(_current_elem->point(3));
     intersectionPoints.push_back(tip_edge);
@@ -97,108 +103,111 @@ EnrichStressDivergenceTensors::computeResidual()
 
     re += _local_re;
   }
-  /*
-  else if (_current_elem->contains_point(tip_split))
-  {
-    DenseVector<Number> & re = _assembly.residualBlock(_var.number());
-    _local_re.resize(re.size());
-    _local_re.zero();
-
-    Point top(0.5- elem_h, 1.01, 0.0);
-
-    FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
-
-    const Elem * undisplaced_elem  = NULL;
-    if(fe_problem->getDisplacedProblem() != NULL)
-      undisplaced_elem = fe_problem->getDisplacedProblem()->refMesh().elemPtr(_current_elem->id());
-    else
-      undisplaced_elem = _current_elem;
-
-    bool flag = _xfem->flagQpointInside(undisplaced_elem, top);
-
-
-    Point embed_pt1(_current_elem->point(0)(0), 1.0, 0);
-    Point embed_pt2(_current_elem->point(1)(0), 1.0, 0);
-
-    std::cout << "embed_pt1 = " << embed_pt1 << std::endl;
-    std::cout << "embed_pt2 = " << embed_pt2 << std::endl;
-
-    if (flag > 0.5) //top cut element
-    {
-      std::vector<Point> intersectionPoints;
-      intersectionPoints.push_back(embed_pt1);
-      intersectionPoints.push_back(embed_pt2);
-      intersectionPoints.push_back(_current_elem->point(2));
-      intersectionPoints.push_back(_current_elem->point(3));
-
-      std::vector<Point> q_points;
-      std::vector<Real> weights;
-
-      _xfem->getXFEMqRuleOnSurface(intersectionPoints, q_points, weights);
-
-      fe_problem->reinitElemPhys(_current_elem, q_points, 0);
-
-      _subproblem.prepareShapes(_var.number(), 0);
-
-      fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
-
-      for (_i = 0; _i < _test.size(); _i++)
-        for (_qp = 0; _qp < q_points.size(); _qp++)
-          _local_re(_i) += weights[_qp] * computeQpResidual();
-
-      re += _local_re;
-    }
-    else
-    {
-      std::vector<Point> intersectionPoints;
-      intersectionPoints.push_back(_current_elem->point(0));
-      intersectionPoints.push_back(_current_elem->point(1));
-
-      intersectionPoints.push_back(embed_pt2);
-      intersectionPoints.push_back(embed_pt1);
-
-      std::vector<Point> q_points;
-      std::vector<Real> weights;
-
-      _xfem->getXFEMqRuleOnSurface(intersectionPoints, q_points, weights);
-
-      fe_problem->reinitElemPhys(_current_elem, q_points, 0);
-
-      _subproblem.prepareShapes(_var.number(), 0);
-
-      fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
-
-      for (_i = 0; _i < _test.size(); _i++)
-        for (_qp = 0; _qp < q_points.size(); _qp++)
-          _local_re(_i) += weights[_qp] * computeQpResidual();
-
-      re += _local_re;
-
-    }
-  }
-  */
+  // else if (_current_elem->contains_point(tip_split))
+  // {
+  //   DenseVector<Number> & re = _assembly.residualBlock(_var.number());
+  //   _local_re.resize(re.size());
+  //   _local_re.zero();
+  //
+  //   // Point top(0.5 - elem_h, 1.01, 0.0);
+  //   Point top(0.5 - 0.0476, 1.01, 0.0);
+  //
+  //   FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
+  //
+  //   const Elem * undisplaced_elem = NULL;
+  //   if (fe_problem->getDisplacedProblem() != NULL)
+  //     undisplaced_elem =
+  //     fe_problem->getDisplacedProblem()->refMesh().elemPtr(_current_elem->id());
+  //   else
+  //     undisplaced_elem = _current_elem;
+  //
+  //   bool flag = _xfem->flagQpointInside(undisplaced_elem, top);
+  //
+  //   Point embed_pt1(_current_elem->point(0)(0), 1.0, 0);
+  //   Point embed_pt2(_current_elem->point(1)(0), 1.0, 0);
+  //
+  //   if (flag > 0.5) // top cut element
+  //   {
+  //     std::vector<Point> intersectionPoints;
+  //     intersectionPoints.push_back(embed_pt1);
+  //     intersectionPoints.push_back(embed_pt2);
+  //     intersectionPoints.push_back(_current_elem->point(2));
+  //     intersectionPoints.push_back(_current_elem->point(3));
+  //
+  //     std::vector<Point> q_points;
+  //     std::vector<Real> weights;
+  //
+  //     _xfem->getXFEMqRuleOnSurface(intersectionPoints, q_points, weights);
+  //
+  //     fe_problem->reinitElemPhys(_current_elem, q_points, 0);
+  //
+  //     _subproblem.prepareShapes(_var.number(), 0);
+  //
+  //     fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
+  //
+  //     for (_i = 0; _i < _test.size(); _i++)
+  //       for (_qp = 0; _qp < q_points.size(); _qp++)
+  //         _local_re(_i) += weights[_qp] * computeQpResidual();
+  //
+  //     re += _local_re;
+  //   }
+  //   else
+  //   {
+  //     std::vector<Point> intersectionPoints;
+  //     intersectionPoints.push_back(_current_elem->point(0));
+  //     intersectionPoints.push_back(_current_elem->point(1));
+  //
+  //     intersectionPoints.push_back(embed_pt2);
+  //     intersectionPoints.push_back(embed_pt1);
+  //
+  //     std::vector<Point> q_points;
+  //     std::vector<Real> weights;
+  //
+  //     _xfem->getXFEMqRuleOnSurface(intersectionPoints, q_points, weights);
+  //
+  //     fe_problem->reinitElemPhys(_current_elem, q_points, 0);
+  //
+  //     _subproblem.prepareShapes(_var.number(), 0);
+  //
+  //     fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
+  //
+  //     for (_i = 0; _i < _test.size(); _i++)
+  //       for (_qp = 0; _qp < q_points.size(); _qp++)
+  //         _local_re(_i) += weights[_qp] * computeQpResidual();
+  //
+  //     re += _local_re;
+  //   }
+  // }
   else
+  {
+    FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
+    fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
     Kernel::computeResidual();
+  }
 }
 
 void
 EnrichStressDivergenceTensors::computeJacobian()
 {
+
   Point tip_edge((_current_elem->point(0))(0), 1.0, 0);
   Point tip(0.5, 1.0, 0);
   Real elem_h = std::sqrt(_current_elem->volume());
   Point tip_split(0.5 - elem_h, 1.0, 0);
 
-  if (_current_elem->contains_point(tip))
+  // if (_current_elem->contains_point(tip))
+  if (0)
   {
     DenseMatrix<Number> & ke = _assembly.jacobianBlock(_var.number(), _var.number());
     _local_ke.resize(ke.m(), ke.n());
     _local_ke.zero();
 
     std::vector<Point> intersectionPoints;
+    Point newpt((_current_elem->point(1))(0), 1.0, 0);
 
     intersectionPoints.push_back(_current_elem->point(0));
     intersectionPoints.push_back(_current_elem->point(1));
+    intersectionPoints.push_back(newpt);
     intersectionPoints.push_back(_current_elem->point(2));
     intersectionPoints.push_back(_current_elem->point(3));
     intersectionPoints.push_back(tip_edge);
@@ -223,88 +232,88 @@ EnrichStressDivergenceTensors::computeJacobian()
 
     ke += _local_ke;
   }
-  /*
-  else if (_current_elem->contains_point(tip_split))
-  {
-    DenseMatrix<Number> & ke = _assembly.jacobianBlock(_var.number(), _var.number());
-    _local_ke.resize(ke.m(), ke.n());
-    _local_ke.zero();
-
-    Point top(0.5- elem_h, 1.01, 0.0);
-
-    FEProblem * fe_problem = dynamic_cast<FEProblem *>(&_subproblem);
-
-    const Elem * undisplaced_elem  = NULL;
-    if(fe_problem->getDisplacedProblem() != NULL)
-      undisplaced_elem = fe_problem->getDisplacedProblem()->refMesh().elemPtr(_current_elem->id());
-    else
-      undisplaced_elem = _current_elem;
-
-    bool flag = _xfem->flagQpointInside(undisplaced_elem, top);
-
-
-    Point embed_pt1(_current_elem->point(0)(0), 1.0, 0);
-    Point embed_pt2(_current_elem->point(1)(0), 1.0, 0);
-
-    if (flag > 0.5) //top cut element
-    {
-      std::vector<Point> intersectionPoints;
-      intersectionPoints.push_back(embed_pt1);
-      intersectionPoints.push_back(embed_pt2);
-      intersectionPoints.push_back(_current_elem->point(2));
-      intersectionPoints.push_back(_current_elem->point(3));
-
-      std::vector<Point> q_points;
-      std::vector<Real> weights;
-
-      _xfem->getXFEMqRuleOnSurface(intersectionPoints, q_points, weights);
-
-      fe_problem->reinitElemPhys(_current_elem, q_points, 0);
-
-      _subproblem.prepareShapes(_var.number(), 0);
-
-      fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
-
-      for (_i = 0; _i < _test.size(); _i++)
-        for (_j = 0; _j < _phi.size(); _j++)
-          for (_qp = 0; _qp < q_points.size(); _qp++)
-            _local_ke(_i, _j) += weights[_qp] * computeQpJacobian();
-
-      ke += _local_ke;
-
-    }
-    else
-    {
-      std::vector<Point> intersectionPoints;
-      intersectionPoints.push_back(_current_elem->point(0));
-      intersectionPoints.push_back(_current_elem->point(1));
-
-      intersectionPoints.push_back(embed_pt2);
-      intersectionPoints.push_back(embed_pt1);
-
-      std::vector<Point> q_points;
-      std::vector<Real> weights;
-
-      _xfem->getXFEMqRuleOnSurface(intersectionPoints, q_points, weights);
-
-      fe_problem->reinitElemPhys(_current_elem, q_points, 0);
-
-      _subproblem.prepareShapes(_var.number(), 0);
-
-      fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
-
-      for (_i = 0; _i < _test.size(); _i++)
-        for (_j = 0; _j < _phi.size(); _j++)
-          for (_qp = 0; _qp < q_points.size(); _qp++)
-            _local_ke(_i, _j) += weights[_qp] * computeQpJacobian();
-
-      ke += _local_ke;
-
-    }
-  }
-  */
+  // else if (_current_elem->contains_point(tip_split))
+  // {
+  //   DenseMatrix<Number> & ke = _assembly.jacobianBlock(_var.number(), _var.number());
+  //   _local_ke.resize(ke.m(), ke.n());
+  //   _local_ke.zero();
+  //
+  //   Point top(0.5 - elem_h, 1.01, 0.0);
+  //
+  //   FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
+  //
+  //   const Elem * undisplaced_elem = NULL;
+  //   if (fe_problem->getDisplacedProblem() != NULL)
+  //     undisplaced_elem =
+  //     fe_problem->getDisplacedProblem()->refMesh().elemPtr(_current_elem->id());
+  //   else
+  //     undisplaced_elem = _current_elem;
+  //
+  //   bool flag = _xfem->flagQpointInside(undisplaced_elem, top);
+  //
+  //   Point embed_pt1(_current_elem->point(0)(0), 1.0, 0);
+  //   Point embed_pt2(_current_elem->point(1)(0), 1.0, 0);
+  //
+  //   if (flag > 0.5) // top cut element
+  //   {
+  //     std::vector<Point> intersectionPoints;
+  //     intersectionPoints.push_back(embed_pt1);
+  //     intersectionPoints.push_back(embed_pt2);
+  //     intersectionPoints.push_back(_current_elem->point(2));
+  //     intersectionPoints.push_back(_current_elem->point(3));
+  //
+  //     std::vector<Point> q_points;
+  //     std::vector<Real> weights;
+  //
+  //     _xfem->getXFEMqRuleOnSurface(intersectionPoints, q_points, weights);
+  //
+  //     fe_problem->reinitElemPhys(_current_elem, q_points, 0);
+  //
+  //     _subproblem.prepareShapes(_var.number(), 0);
+  //
+  //     fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
+  //
+  //     for (_i = 0; _i < _test.size(); _i++)
+  //       for (_j = 0; _j < _phi.size(); _j++)
+  //         for (_qp = 0; _qp < q_points.size(); _qp++)
+  //           _local_ke(_i, _j) += weights[_qp] * computeQpJacobian();
+  //
+  //     ke += _local_ke;
+  //   }
+  //   else
+  //   {
+  //     std::vector<Point> intersectionPoints;
+  //     intersectionPoints.push_back(_current_elem->point(0));
+  //     intersectionPoints.push_back(_current_elem->point(1));
+  //
+  //     intersectionPoints.push_back(embed_pt2);
+  //     intersectionPoints.push_back(embed_pt1);
+  //
+  //     std::vector<Point> q_points;
+  //     std::vector<Real> weights;
+  //
+  //     _xfem->getXFEMqRuleOnSurface(intersectionPoints, q_points, weights);
+  //
+  //     fe_problem->reinitElemPhys(_current_elem, q_points, 0);
+  //
+  //     _subproblem.prepareShapes(_var.number(), 0);
+  //
+  //     fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
+  //
+  //     for (_i = 0; _i < _test.size(); _i++)
+  //       for (_j = 0; _j < _phi.size(); _j++)
+  //         for (_qp = 0; _qp < q_points.size(); _qp++)
+  //           _local_ke(_i, _j) += weights[_qp] * computeQpJacobian();
+  //
+  //     ke += _local_ke;
+  //   }
+  // }
   else
+  {
+    FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
+    fe_problem->reinitMaterials(_current_elem->subdomain_id(), 0, false);
     Kernel::computeJacobian();
+  }
 }
 
 Real
@@ -345,8 +354,8 @@ EnrichStressDivergenceTensors::computeQpResidual()
 
     Real r = std::sqrt(x_local * x_local + y_local * y_local);
 
-    if (r < 0.001)
-      r = 0.001;
+    if (r < 0.0001)
+      r = 0.0001;
 
     Real theta = std::atan2(y_local, x_local);
 
@@ -356,7 +365,7 @@ EnrichStressDivergenceTensors::computeQpResidual()
     BI[i][3] = std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
   }
 
-  Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 0.5, 0)
+  Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 1.0, 0)
   Point q_pt = _q_point[_qp];
 
   Real x_to_tip = q_pt(0) - crack_tip(0);
@@ -369,8 +378,8 @@ EnrichStressDivergenceTensors::computeQpResidual()
 
   Real r = std::sqrt(x_local * x_local + y_local * y_local);
 
-  if (r < 0.001)
-    r = 0.001;
+  if (r < 0.0001)
+    r = 0.0001;
 
   Real theta = std::atan2(y_local, x_local);
 
@@ -408,8 +417,6 @@ EnrichStressDivergenceTensors::computeQpResidual()
   {
     Bx[i] = Bxl[i] * std::cos(alpha) - Byl[i] * std::sin(alpha);
     By[i] = Bxl[i] * std::sin(alpha) + Byl[i] * std::cos(alpha);
-    // std::cout << "Bx[" << i << "] = " << Bx[i] << std::endl;
-    // std::cout << "By[" << i << "] = " << By[i] << std::endl;
   }
 
   RealVectorValue grad_B(Bx[_enrichment_component], By[_enrichment_component], 0.0);
@@ -457,8 +464,8 @@ EnrichStressDivergenceTensors::computeQpJacobian()
 
     Real r = std::sqrt(x_local * x_local + y_local * y_local);
 
-    if (r < 0.001)
-      r = 0.001;
+    if (r < 0.0001)
+      r = 0.0001;
 
     Real theta = std::atan2(y_local, x_local);
 
@@ -481,8 +488,8 @@ EnrichStressDivergenceTensors::computeQpJacobian()
 
   Real r = std::sqrt(x_local * x_local + y_local * y_local);
 
-  if (r < 0.001)
-    r = 0.001;
+  if (r < 0.0001)
+    r = 0.0001;
 
   Real theta = std::atan2(y_local, x_local);
 
@@ -588,8 +595,8 @@ EnrichStressDivergenceTensors::computeQpOffDiagJacobian(unsigned int jvar)
 
       Real r = std::sqrt(x_local * x_local + y_local * y_local);
 
-      if (r < 0.001)
-        r = 0.001;
+      if (r < 0.0001)
+        r = 0.0001;
 
       Real theta = std::atan2(y_local, x_local);
 
@@ -612,8 +619,8 @@ EnrichStressDivergenceTensors::computeQpOffDiagJacobian(unsigned int jvar)
 
     Real r = std::sqrt(x_local * x_local + y_local * y_local);
 
-    if (r < 0.001)
-      r = 0.001;
+    if (r < 0.0001)
+      r = 0.0001;
 
     Real theta = std::atan2(y_local, x_local);
 
