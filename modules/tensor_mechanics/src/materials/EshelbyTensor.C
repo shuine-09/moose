@@ -27,7 +27,7 @@ validParams<EshelbyTensor>()
 }
 
 EshelbyTensor::EshelbyTensor(const InputParameters & parameters)
-  : Material(parameters),
+  : DerivativeMaterialInterface<Material>(parameters),
   _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
   _sed(declareProperty<Real>(_base_name + "strain_energy_density")),
   _sed_old(getMaterialPropertyOld<Real>(_base_name + "strain_energy_density")),
@@ -35,7 +35,14 @@ EshelbyTensor::EshelbyTensor(const InputParameters & parameters)
   _stress(getMaterialProperty<RankTwoTensor>(_base_name + "stress")),
   _stress_old(getMaterialPropertyOld<RankTwoTensor>(_base_name + "stress")),
   _strain_increment(getMaterialProperty<RankTwoTensor>(_base_name + "strain_increment")),
-  _grad_disp(3)
+  _grad_disp(3),
+  _J_thermal_term_vec(declareProperty<RealVectorValue>("J_thermal_term_vec")),
+  _eigenstrain_names(getParam<std::vector<MaterialPropertyName>>("eigenstrain_names")),
+  _deigenstrain_dT(_eigenstrain_names.size()),
+  _temp_var(isParamValid("temperature")
+            ? &_subproblem.getVariable(_tid, getParam<NonlinearVariableName>("temperature"))
+            : NULL),
+  _grad_temp(coupledGradient("temperature"))
 {
   unsigned int ndisp = coupledComponents("displacements");
 
@@ -51,6 +58,14 @@ EshelbyTensor::EshelbyTensor(const InputParameters & parameters)
   // set unused dimensions to zero
   for (unsigned i = ndisp; i < 3; ++i)
     _grad_disp[i] = &_grad_zero;
+
+  // Get the materials containing the derivatives of the eigenstrains wrt temperature
+  if (_temp_var)
+  {
+    for (unsigned int i = 0; i < _deigenstrain_dT.size(); ++i)
+      _deigenstrain_dT[i] = &getMaterialPropertyDerivative<RankTwoTensor>(
+         _base_name + _eigenstrain_names[i], _temp_var->name());
+  }
 }
 
 void
@@ -82,4 +97,18 @@ EshelbyTensor::computeQpProperties()
   WI *= (_sed[_qp] * detF);
 
   _eshelby_tensor[_qp] = WI - FTP;
+
+  if (_temp_var && _deigenstrain_dT.size() > 0)
+  {
+    Real sigma_alpha = 0.0;
+
+    RankTwoTensor total_deigenstrain_dT((*_deigenstrain_dT[0])[_qp]);
+    for (unsigned int i = 1; i < _deigenstrain_dT.size(); ++i)
+      total_deigenstrain_dT += (*_deigenstrain_dT[i])[_qp];
+    sigma_alpha += _stress[_qp].doubleContraction(total_deigenstrain_dT);
+
+    _J_thermal_term_vec[_qp] = sigma_alpha * _grad_temp[_qp];
+  }
+  else
+    _J_thermal_term_vec[_qp].zero();
 }
