@@ -1,9 +1,3 @@
-[GlobalParams]
-  order = FIRST
-  family = LAGRANGE
-  displacements = 'disp_x disp_y'
-[]
-
 [XFEM]
   geometric_cut_userobjects = 'line_seg_cut_uo'
   qrule = volfrac
@@ -13,9 +7,17 @@
 [UserObjects]
   [./line_seg_cut_uo]
     type = LineSegmentCutUserObject
-    cut_data = '0.0 1.0 0.5 1.0'
+    cut_data = '0.0 1.0 0.4 1.0'
     time_start_cut = 0.0
     time_end_cut = 0.0
+  [../]
+  [./crack_tip]
+    type = CrackFrontDefinition
+    crack_direction_method = CrackDirectionVector
+    crack_front_points = '0.5 1.0 0'
+    crack_direction_vector = '1 0 0'
+    2d = true
+    axis_2d = 2
   [../]
 []
 
@@ -53,24 +55,44 @@
 
 [Variables]
   [./disp_x]
+    order = FIRST
+    family = LAGRANGE
   [../]
   [./disp_y]
+    order = FIRST
+    family = LAGRANGE
   [../]
   [./enrich1_x]
+    order = FIRST
+    family = LAGRANGE
   [../]
   [./enrich1_y]
+    order = FIRST
+    family = LAGRANGE
   [../]
   [./enrich2_x]
+    order = FIRST
+    family = LAGRANGE
   [../]
   [./enrich2_y]
+    order = FIRST
+    family = LAGRANGE
   [../]
   [./enrich3_x]
+    order = FIRST
+    family = LAGRANGE
   [../]
   [./enrich3_y]
+    order = FIRST
+    family = LAGRANGE
   [../]
   [./enrich4_x]
+    order = FIRST
+    family = LAGRANGE
   [../]
   [./enrich4_y]
+    order = FIRST
+    family = LAGRANGE
   [../]
 []
 
@@ -99,67 +121,75 @@
 
 [Kernels]
   [./TensorMechanics]
-    use_displaced_mesh = false
+    displacements = 'disp_x disp_y'
   [../]
   [./enrich1_x]
-    type = EnrichStressDivergenceTensors
+    type = CrackTipEnrichmentStressDivergenceTensors
     variable = enrich1_x
+    crack_front_definition = crack_tip
     component = 0
     enrichment_component = 0
     enrichment_displacement_var = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
     enrichment_displacement = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
   [../]
   [./enrich1_y]
-    type = EnrichStressDivergenceTensors
+    type = CrackTipEnrichmentStressDivergenceTensors
     variable = enrich1_y
+    crack_front_definition = crack_tip
     component = 1
     enrichment_component = 0
     enrichment_displacement_var = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
     enrichment_displacement = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
   [../]
   [./enrich2_x]
-    type = EnrichStressDivergenceTensors
+    type = CrackTipEnrichmentStressDivergenceTensors
     variable = enrich2_x
+    crack_front_definition = crack_tip
     component = 0
     enrichment_component = 1
     enrichment_displacement_var = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
     enrichment_displacement = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
   [../]
   [./enrich2_y]
-    type = EnrichStressDivergenceTensors
+    type = CrackTipEnrichmentStressDivergenceTensors
     variable = enrich2_y
+    crack_front_definition = crack_tip
     component = 1
     enrichment_component = 1
     enrichment_displacement_var = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
     enrichment_displacement = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
   [../]
   [./enrich3_x]
-    type = EnrichStressDivergenceTensors
+    type = CrackTipEnrichmentStressDivergenceTensors
     variable = enrich3_x
+    crack_front_definition = crack_tip
     component = 0
     enrichment_component = 2
     enrichment_displacement_var = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
     enrichment_displacement = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
   [../]
   [./enrich3_y]
-    type = EnrichStressDivergenceTensors
+    type = CrackTipEnrichmentStressDivergenceTensors
     variable = enrich3_y
+    crack_front_definition = crack_tip
     component = 1
     enrichment_component = 2
     enrichment_displacement_var = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
     enrichment_displacement = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
   [../]
   [./enrich4_x]
-    type = EnrichStressDivergenceTensors
+    type = CrackTipEnrichmentStressDivergenceTensors
     variable = enrich4_x
+    crack_front_definition = crack_tip
     component = 0
     enrichment_component = 3
     enrichment_displacement_var = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
     enrichment_displacement = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
   [../]
   [./enrich4_y]
-    type = EnrichStressDivergenceTensors
+    type = CrackTipEnrichmentStressDivergenceTensors
     variable = enrich4_y
+    crack_front_definition = crack_tip
     component = 1
     enrichment_component = 3
     enrichment_displacement_var = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
@@ -205,14 +235,14 @@
   [./top_y]
     type = Pressure
     variable = disp_y
-    boundary = top_trac_y
+    boundary = top
     component = 1
     factor = -1
   [../]
   [./bottom_y]
     type = Pressure
     variable = disp_y
-    boundary = top_trac_y
+    boundary = bottom
     component = 1
     factor = -1
   [../]
@@ -239,56 +269,64 @@
     boundary = all
     variable = enrich1_x
     value =  0
-    cut_off_radius = 0.0345
+    cut_off_radius = 0.2
+    crack_front_definition = crack_tip
   [../]
   [./enrich1y_bc]
     type = CrackTipEnrichmentCutOffBC
     boundary = all
     variable = enrich1_y
     value =  0
-    cut_off_radius = 0.0345
+    cut_off_radius = 0.2
+    crack_front_definition = crack_tip
   [../]
  [./enrich2x_bc]
     type = CrackTipEnrichmentCutOffBC
     boundary = all
     variable = enrich2_x
     value =  0
-    cut_off_radius = 0.0345
+    cut_off_radius = 0.2
+    crack_front_definition = crack_tip
   [../]
  [./enrich2y_bc]
     type = CrackTipEnrichmentCutOffBC
     boundary = all
     variable = enrich2_y
     value =  0
-    cut_off_radius = 0.0345
+    cut_off_radius = 0.2
+    crack_front_definition = crack_tip
   [../]
  [./enrich3x_bc]
     type = CrackTipEnrichmentCutOffBC
     boundary = all
     variable = enrich3_x
     value =  0
-    cut_off_radius = 0.0345
+    cut_off_radius = 0.2
+    crack_front_definition = crack_tip
   [../]
  [./enrich3y_bc]
     type = CrackTipEnrichmentCutOffBC
     boundary = all
     variable = enrich3_y
     value =  0
-    cut_off_radius = 0.0345
+    cut_off_radius = 0.2
+    crack_front_definition = crack_tip
   [../]
  [./enrich4x_bc]
     type = CrackTipEnrichmentCutOffBC
     boundary = all
     variable = enrich4_x
     value =  0
-    cut_off_radius = 0.0345
+    cut_off_radius = 0.2
+    crack_front_definition = crack_tip
   [../]
   [./enrich4y_bc]
     type = CrackTipEnrichmentCutOffBC
     boundary = all
     variable = enrich4_y
     value =  0
-    cut_off_radius = 0.0345
+    cut_off_radius = 0.2
+    crack_front_definition = crack_tip
   [../]
 []
 
@@ -300,9 +338,10 @@
   [../]
 
   [./strain]
-    type = ComputeEnrichStrain
+    type = ComputeCrackTipEnrichmentSmallStrain
     displacements = 'disp_x disp_y'
     enrichment_displacement = 'enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y'
+    crack_front_definition = crack_tip
   [../]
 
   [./stress]
@@ -314,26 +353,16 @@
   type = Transient
 
   solve_type = 'PJFNK'
-#  petsc_options_iname = '-ksp_gmres_restart -pc_type -pc_hypre_type -pc_hypre_boomeramg_max_iter'
-#  petsc_options_value = '201                hypre    boomeramg      8'
-
-#  petsc_options_iname = '-pc_type'
-#  petsc_options_value = 'lu'
 
   petsc_options_iname = '-pc_type -pc_factor_mat_solver_package'
   petsc_options_value = 'lu     superlu_dist'
 
   line_search = 'none'
 
-#  [./Quadrature]
-#    type = GAUSS
-#    order = TWENTIETH
-#  [../]
-
-#  [./Quadrature]
-#    order = FOURTH
-#    type = MONOMIAL
-#  [../]
+  [./Quadrature]
+    type = GAUSS
+    order = SIXTH
+  [../]
 
   [./Predictor]
     type = SimplePredictor
@@ -341,8 +370,8 @@
   [../]
 
 # controls for linear iterations
-  l_max_its = 20
-  l_tol = 1e-2
+  l_max_its = 100
+  l_tol = 1e-5
 
 # controls for nonlinear iterations
   nl_max_its = 100
@@ -369,6 +398,6 @@
   [./console]
     type = Console
     perf_log = true
-    linear_residuals = true
+    output_linear = true
   [../]
 []

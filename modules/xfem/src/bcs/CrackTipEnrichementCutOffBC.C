@@ -14,22 +14,25 @@ validParams<CrackTipEnrichmentCutOffBC>()
   InputParameters p = validParams<PresetBC>();
   p.addParam<Real>("cut_off_radius", 0.1, "Radius");
   p.set<bool>("use_displaced_mesh") = false;
+  p.addRequiredParam<UserObjectName>("crack_front_definition",
+                                     "The CrackFrontDefinition user object name");
   return p;
 }
 
 CrackTipEnrichmentCutOffBC::CrackTipEnrichmentCutOffBC(const InputParameters & parameters)
-  : PresetBC(parameters), _cut_off_radius(getParam<Real>("cut_off_radius"))
+  : PresetBC(parameters),
+    _cut_off_radius(getParam<Real>("cut_off_radius")),
+    _crack_front_definition(&getUserObject<CrackFrontDefinition>("crack_front_definition"))
 {
 }
 
 bool
 CrackTipEnrichmentCutOffBC::shouldApply()
 {
-  // TODO: crack tip coordinate
-  Real dist = std::sqrt(((*_current_node)(0) - 0.5) * ((*_current_node)(0) - 0.5) +
-                        ((*_current_node)(1) - 1.0) * ((*_current_node)(1) - 1.0));
+  Real r, theta;
+  _crack_front_definition->calculateRThetaToCrackFront((*_current_node), 0, r, theta);
 
-  if (dist > _cut_off_radius)
+  if (r > _cut_off_radius)
     return true;
   else
     return false;

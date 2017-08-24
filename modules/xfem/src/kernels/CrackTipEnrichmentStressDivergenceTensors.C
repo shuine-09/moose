@@ -32,6 +32,8 @@ validParams<CrackTipEnrichmentStressDivergenceTensors>()
   params.addRequiredCoupledVar("enrichment_displacement_var",
                                "The string of displacements suitable for the problem statement");
   params.addParam<std::string>("base_name", "Material property base name");
+  params.addRequiredParam<UserObjectName>("crack_front_definition",
+                                          "The CrackFrontDefinition user object name");
   params.set<bool>("use_displaced_mesh") = false;
   return params;
 }
@@ -44,7 +46,8 @@ CrackTipEnrichmentStressDivergenceTensors::CrackTipEnrichmentStressDivergenceTen
     _Jacobian_mult(getMaterialPropertyByName<RankFourTensor>(_base_name + "Jacobian_mult")),
     _component(getParam<unsigned int>("component")),
     _enrichment_component(getParam<unsigned int>("enrichment_component")),
-    _nl_vnames(getParam<std::vector<NonlinearVariableName>>("enrichment_displacement"))
+    _nl_vnames(getParam<std::vector<NonlinearVariableName>>("enrichment_displacement")),
+    _crack_front_definition(&getUserObject<CrackFrontDefinition>("crack_front_definition"))
 {
   _enrich_disp_var.resize(_nl_vnames.size());
   for (unsigned int i = 0; i < _nl_vnames.size(); ++i)
@@ -64,106 +67,68 @@ Real
 CrackTipEnrichmentStressDivergenceTensors::computeQpResidual()
 {
   // calculate the near-tip enrichement function
-  std::vector<Real> B, Bx, By, Br, Bt, Bxl, Byl;
-  // Br  : derivative w.r.t r
-  // Bt  : derivative w.r.t theta
-  // Bxl : derivative w.r.t local x (crack tip coordinate)
-  // Byl : derivative w.r.t local y (crack tip coordinate)
-  // Bx  : derivative w.r.t global x
-  // By  : derivative w.r.t global y
-  B.resize(4);
-  Bx.resize(4);
-  By.resize(4);
-  Br.resize(4);
-  Bt.resize(4);
-  Bxl.resize(4);
-  Byl.resize(4);
-
+  std::vector<Real> B;
+  std::vector<RealVectorValue> dBX, dBx;
   std::vector<std::vector<Real>> BI;
+
+  B.resize(4);
+  dBX.resize(4);
+  dBx.resize(4);
   BI.resize(4);
+
+  Real r, theta;
+
   for (unsigned int i = 0; i < BI.size(); ++i)
   {
     BI[i].resize(4);
 
-    Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 0.5, 0)
-    Node * node_i = _current_elem->get_node(i);
+    _crack_front_definition->calculateRThetaToCrackFront(
+        *(_current_elem->get_node(i)), 0, r, theta);
 
-    Real x_to_tip = (*node_i)(0) - crack_tip(0);
-    Real y_to_tip = (*node_i)(1) - crack_tip(1);
+    Real st = std::sin(theta);
+    Real st2 = std::sin(theta / 2.0);
+    Real ct2 = std::cos(theta / 2.0);
+    Real sr = std::sqrt(r);
 
-    Real alpha = 0.0; // crack direction
-
-    Real x_local = std::cos(alpha) * x_to_tip + std::sin(alpha) * y_to_tip;
-    Real y_local = -std::sin(alpha) * x_to_tip + std::cos(alpha) * y_to_tip;
-
-    Real r = std::sqrt(x_local * x_local + y_local * y_local);
-
-    if (r < 0.0001)
-      r = 0.0001;
-
-    Real theta = std::atan2(y_local, x_local);
-
-    BI[i][0] = std::sqrt(r) * std::sin(theta / 2.0);
-    BI[i][1] = std::sqrt(r) * std::cos(theta / 2.0);
-    BI[i][2] = std::sqrt(r) * std::sin(theta / 2.0) * std::sin(theta);
-    BI[i][3] = std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
+    BI[i][0] = sr * st2;
+    BI[i][1] = sr * ct2;
+    BI[i][2] = sr * st2 * st;
+    BI[i][3] = sr * ct2 * st;
   }
 
-  Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 1.0, 0)
-  Point q_pt = _q_point[_qp];
+  _crack_front_definition->calculateRThetaToCrackFront(_q_point[_qp], 0, r, theta);
 
-  Real x_to_tip = q_pt(0) - crack_tip(0);
-  Real y_to_tip = q_pt(1) - crack_tip(1);
+  Real st = std::sin(theta);
+  Real ct = std::cos(theta);
+  Real st2 = std::sin(theta / 2.0);
+  Real ct2 = std::cos(theta / 2.0);
+  Real st15 = std::sin(1.5 * theta);
+  Real ct15 = std::cos(1.5 * theta);
+  Real sr = std::sqrt(r);
 
-  Real alpha = 0.0; // crack direction
+  B[0] = sr * st2;
+  B[1] = sr * ct2;
+  B[2] = sr * st2 * st;
+  B[3] = sr * ct2 * st;
 
-  Real x_local = std::cos(alpha) * x_to_tip + std::sin(alpha) * y_to_tip;
-  Real y_local = -std::sin(alpha) * x_to_tip + std::cos(alpha) * y_to_tip;
-
-  Real r = std::sqrt(x_local * x_local + y_local * y_local);
-
-  if (r < 0.0001)
-    r = 0.0001;
-
-  Real theta = std::atan2(y_local, x_local);
-
-  B[0] = std::sqrt(r) * std::sin(theta / 2.0);
-  B[1] = std::sqrt(r) * std::cos(theta / 2.0);
-  B[2] = std::sqrt(r) * std::sin(theta / 2.0) * std::sin(theta);
-  B[3] = std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
-
-  Br[0] = 0.5 / std::sqrt(r) * std::sin(theta / 2.0);
-  Bt[0] = std::sqrt(r) / 2.0 * std::cos(theta / 2.0);
-  Br[1] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0);
-  Bt[1] = -std::sqrt(r) / 2.0 * std::sin(theta / 2.0);
-  Br[2] = 0.5 / std::sqrt(r) * std::sin(theta / 2.0) * std::sin(theta);
-  Bt[2] = std::sqrt(r) *
-          (0.5 * std::cos(theta / 2.0) * std::sin(theta) + std::sin(theta / 2.0) * std::cos(theta));
-  Br[2] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
-  Bt[2] = std::sqrt(r) * (-0.5 * std::sin(theta / 2.0) * std::sin(theta) +
-                          std::cos(theta / 2.0) * std::cos(theta));
-
-  // Real r_xl = std::cos(theta);
-  // Real r_yl = std::sin(theta);
-  // Real t_xl = -std::sin(theta) / r;
-  // Real t_yl = std::cos(theta) / r;
-
-  Bxl[0] = -0.5 / std::sqrt(r) * std::sin(theta / 2.0);
-  Byl[0] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0);
-  Bxl[1] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0);
-  Byl[1] = 0.5 / std::sqrt(r) * std::sin(theta / 2.0);
-  Bxl[2] = -0.5 / std::sqrt(r) * std::sin(1.5 * theta) * std::sin(theta);
-  Byl[2] = 0.5 / std::sqrt(r) * (std::sin(theta / 2.0) + std::sin(1.5 * theta) * std::cos(theta));
-  Bxl[3] = -0.5 / std::sqrt(r) * std::cos(1.5 * theta) * std::sin(theta);
-  Byl[3] = 0.5 / std::sqrt(r) * (std::cos(theta / 2.0) + std::cos(1.5 * theta) * std::cos(theta));
+  dBx[0](0) = -0.5 / sr * st2;
+  dBx[0](1) = 0.5 / sr * ct2;
+  dBx[0](2) = 0.0;
+  dBx[1](0) = 0.5 / sr * ct2;
+  dBx[1](1) = 0.5 / sr * st2;
+  dBx[1](2) = 0.0;
+  dBx[2](0) = -0.5 / sr * st15 * st;
+  dBx[2](1) = 0.5 / sr * (st2 + st15 * ct);
+  dBx[2](2) = 0.0;
+  dBx[3](0) = -0.5 / sr * ct15 * st;
+  dBx[3](1) = 0.5 / sr * (ct2 + ct15 * ct);
+  dBx[3](2) = 0.0;
 
   for (unsigned int i = 0; i < 4; ++i)
-  {
-    Bx[i] = Bxl[i] * std::cos(alpha) - Byl[i] * std::sin(alpha);
-    By[i] = Bxl[i] * std::sin(alpha) + Byl[i] * std::cos(alpha);
-  }
+    dBX[i] = _crack_front_definition->rotateFromCrackFrontCoordsToGlobal(dBx[i],
+                                                                         0); // TODO: point index
 
-  RealVectorValue grad_B(Bx[_enrichment_component], By[_enrichment_component], 0.0);
+  RealVectorValue grad_B(dBX[_enrichment_component]);
 
   return _stress[_qp].row(_component) *
          (_grad_test[_i][_qp] * (B[_enrichment_component] - BI[_i][_enrichment_component]) +
@@ -174,106 +139,69 @@ Real
 CrackTipEnrichmentStressDivergenceTensors::computeQpJacobian()
 {
   // calculate the near-tip enrichement function
-  std::vector<Real> B, Bx, By, Br, Bt, Bxl, Byl;
-  // Br  : derivative w.r.t r
-  // Bt  : derivative w.r.t theta
-  // Bxl : derivative w.r.t local x (crack tip coordinate)
-  // Byl : derivative w.r.t local y (crack tip coordinate)
-  // Bx  : derivative w.r.t global x
-  // By  : derivative w.r.t global y
-  B.resize(4);
-  Bx.resize(4);
-  By.resize(4);
-  Br.resize(4);
-  Bt.resize(4);
-  Bxl.resize(4);
-  Byl.resize(4);
-
+  std::vector<Real> B;
+  std::vector<RealVectorValue> dBX, dBx;
   std::vector<std::vector<Real>> BI;
+
+  B.resize(4);
+  dBX.resize(4);
+  dBx.resize(4);
   BI.resize(4);
+
+  Real r, theta;
+
   for (unsigned int i = 0; i < BI.size(); ++i)
   {
     BI[i].resize(4);
 
-    Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 0.5, 0)
-    Node * node_i = _current_elem->get_node(i);
+    _crack_front_definition->calculateRThetaToCrackFront(
+        *(_current_elem->get_node(i)), 0, r, theta);
 
-    Real x_to_tip = (*node_i)(0) - crack_tip(0);
-    Real y_to_tip = (*node_i)(1) - crack_tip(1);
+    Real st = std::sin(theta);
+    Real st2 = std::sin(theta / 2.0);
+    Real ct2 = std::cos(theta / 2.0);
+    Real sr = std::sqrt(r);
 
-    Real alpha = 0.0; // crack direction
-
-    Real x_local = std::cos(alpha) * x_to_tip + std::sin(alpha) * y_to_tip;
-    Real y_local = -std::sin(alpha) * x_to_tip + std::cos(alpha) * y_to_tip;
-
-    Real r = std::sqrt(x_local * x_local + y_local * y_local);
-
-    if (r < 0.0001)
-      r = 0.0001;
-
-    Real theta = std::atan2(y_local, x_local);
-
-    BI[i][0] = std::sqrt(r) * std::sin(theta / 2.0);
-    BI[i][1] = std::sqrt(r) * std::cos(theta / 2.0);
-    BI[i][2] = std::sqrt(r) * std::sin(theta / 2.0) * std::sin(theta);
-    BI[i][3] = std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
+    BI[i][0] = sr * st2;
+    BI[i][1] = sr * ct2;
+    BI[i][2] = sr * st2 * st;
+    BI[i][3] = sr * ct2 * st;
   }
 
-  Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 0.5, 0)
-  Point q_pt = _q_point[_qp];
+  _crack_front_definition->calculateRThetaToCrackFront(_q_point[_qp], 0, r, theta);
 
-  Real x_to_tip = q_pt(0) - crack_tip(0);
-  Real y_to_tip = q_pt(1) - crack_tip(1);
+  Real st = std::sin(theta);
+  Real ct = std::cos(theta);
+  Real st2 = std::sin(theta / 2.0);
+  Real ct2 = std::cos(theta / 2.0);
+  Real st15 = std::sin(1.5 * theta);
+  Real ct15 = std::cos(1.5 * theta);
+  Real sr = std::sqrt(r);
 
-  Real alpha = 0.0; // crack direction
+  B[0] = sr * st2;
+  B[1] = sr * ct2;
+  B[2] = sr * st2 * st;
+  B[3] = sr * ct2 * st;
 
-  Real x_local = std::cos(alpha) * x_to_tip + std::sin(alpha) * y_to_tip;
-  Real y_local = -std::sin(alpha) * x_to_tip + std::cos(alpha) * y_to_tip;
-
-  Real r = std::sqrt(x_local * x_local + y_local * y_local);
-
-  if (r < 0.0001)
-    r = 0.0001;
-
-  Real theta = std::atan2(y_local, x_local);
-
-  B[0] = std::sqrt(r) * std::sin(theta / 2.0);
-  B[1] = std::sqrt(r) * std::cos(theta / 2.0);
-  B[2] = std::sqrt(r) * std::sin(theta / 2.0) * std::sin(theta);
-  B[3] = std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
-
-  Br[0] = 0.5 / std::sqrt(r) * std::sin(theta / 2.0);
-  Bt[0] = std::sqrt(r) / 2.0 * std::cos(theta / 2.0);
-  Br[1] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0);
-  Bt[1] = -std::sqrt(r) / 2.0 * std::sin(theta / 2.0);
-  Br[2] = 0.5 / std::sqrt(r) * std::sin(theta / 2.0) * std::sin(theta);
-  Bt[2] = std::sqrt(r) *
-          (0.5 * std::cos(theta / 2.0) * std::sin(theta) + std::sin(theta / 2.0) * std::cos(theta));
-  Br[2] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
-  Bt[2] = std::sqrt(r) * (-0.5 * std::sin(theta / 2.0) * std::sin(theta) +
-                          std::cos(theta / 2.0) * std::cos(theta));
-
-  // Real r_xl = std::cos(theta);
-  // Real r_yl = std::sin(theta);
-  // Real t_xl = -std::sin(theta) / r;
-  // Real t_yl = std::cos(theta) / r;
-
-  Bxl[0] = -0.5 / std::sqrt(r) * std::sin(theta / 2.0);
-  Byl[0] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0);
-  Bxl[1] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0);
-  Byl[1] = 0.5 / std::sqrt(r) * std::sin(theta / 2.0);
-  Bxl[2] = -0.5 / std::sqrt(r) * std::sin(1.5 * theta) * std::sin(theta);
-  Byl[2] = 0.5 / std::sqrt(r) * (std::sin(theta / 2.0) + std::sin(1.5 * theta) * std::cos(theta));
-  Bxl[3] = -0.5 / std::sqrt(r) * std::cos(1.5 * theta) * std::sin(theta);
-  Byl[3] = 0.5 / std::sqrt(r) * (std::cos(theta / 2.0) + std::cos(1.5 * theta) * std::cos(theta));
+  dBx[0](0) = -0.5 / sr * st2;
+  dBx[0](1) = 0.5 / sr * ct2;
+  dBx[0](2) = 0.0;
+  dBx[1](0) = 0.5 / sr * ct2;
+  dBx[1](1) = 0.5 / sr * st2;
+  dBx[1](2) = 0.0;
+  dBx[2](0) = -0.5 / sr * st15 * st;
+  dBx[2](1) = 0.5 / sr * (st2 + st15 * ct);
+  dBx[2](2) = 0.0;
+  dBx[3](0) = -0.5 / sr * ct15 * st;
+  dBx[3](1) = 0.5 / sr * (ct2 + ct15 * ct);
+  dBx[3](2) = 0.0;
 
   for (unsigned int i = 0; i < 4; ++i)
-  {
-    Bx[i] = Bxl[i] * std::cos(alpha) - Byl[i] * std::sin(alpha);
-    By[i] = Bxl[i] * std::sin(alpha) + Byl[i] * std::cos(alpha);
-  }
+    dBX[i] = _crack_front_definition->rotateFromCrackFrontCoordsToGlobal(dBx[i],
+                                                                         0); // TODO: point index
 
-  RealVectorValue grad_B(Bx[_enrichment_component], By[_enrichment_component], 0.0);
+  RealVectorValue grad_B(dBX[_enrichment_component]);
+
   RealVectorValue grad_test =
       _grad_test[_i][_qp] * (B[_enrichment_component] - BI[_i][_enrichment_component]) +
       _test[_i][_qp] * grad_B;
@@ -305,108 +233,70 @@ CrackTipEnrichmentStressDivergenceTensors::computeQpOffDiagJacobian(unsigned int
   if (active)
   {
     // calculate the near-tip enrichement function
-    std::vector<Real> B, Bx, By, Br, Bt, Bxl, Byl;
-    // Br  : derivative w.r.t r
-    // Bt  : derivative w.r.t theta
-    // Bxl : derivative w.r.t local x (crack tip coordinate)
-    // Byl : derivative w.r.t local y (crack tip coordinate)
-    // Bx  : derivative w.r.t global x
-    // By  : derivative w.r.t global y
-    B.resize(4);
-    Bx.resize(4);
-    By.resize(4);
-    Br.resize(4);
-    Bt.resize(4);
-    Bxl.resize(4);
-    Byl.resize(4);
-
+    std::vector<Real> B;
+    std::vector<RealVectorValue> dBX, dBx;
     std::vector<std::vector<Real>> BI;
+
+    B.resize(4);
+    dBX.resize(4);
+    dBx.resize(4);
     BI.resize(4);
+
+    Real r, theta;
+
     for (unsigned int i = 0; i < BI.size(); ++i)
     {
       BI[i].resize(4);
 
-      Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 0.5, 0)
-      Node * node_i = _current_elem->get_node(i);
+      _crack_front_definition->calculateRThetaToCrackFront(
+          *(_current_elem->get_node(i)), 0, r, theta);
 
-      Real x_to_tip = (*node_i)(0) - crack_tip(0);
-      Real y_to_tip = (*node_i)(1) - crack_tip(1);
+      Real st = std::sin(theta);
+      Real st2 = std::sin(theta / 2.0);
+      Real ct2 = std::cos(theta / 2.0);
+      Real sr = std::sqrt(r);
 
-      Real alpha = 0.0; // crack direction
-
-      Real x_local = std::cos(alpha) * x_to_tip + std::sin(alpha) * y_to_tip;
-      Real y_local = -std::sin(alpha) * x_to_tip + std::cos(alpha) * y_to_tip;
-
-      Real r = std::sqrt(x_local * x_local + y_local * y_local);
-
-      if (r < 0.0001)
-        r = 0.0001;
-
-      Real theta = std::atan2(y_local, x_local);
-
-      BI[i][0] = std::sqrt(r) * std::sin(theta / 2.0);
-      BI[i][1] = std::sqrt(r) * std::cos(theta / 2.0);
-      BI[i][2] = std::sqrt(r) * std::sin(theta / 2.0) * std::sin(theta);
-      BI[i][3] = std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
+      BI[i][0] = sr * st2;
+      BI[i][1] = sr * ct2;
+      BI[i][2] = sr * st2 * st;
+      BI[i][3] = sr * ct2 * st;
     }
 
-    Point crack_tip(0.5, 1.0, 0); // crack tip is at (0.5, 0.5, 0)
-    Point q_pt = _q_point[_qp];
+    _crack_front_definition->calculateRThetaToCrackFront(_q_point[_qp], 0, r, theta);
 
-    Real x_to_tip = q_pt(0) - crack_tip(0);
-    Real y_to_tip = q_pt(1) - crack_tip(1);
+    Real st = std::sin(theta);
+    Real ct = std::cos(theta);
+    Real st2 = std::sin(theta / 2.0);
+    Real ct2 = std::cos(theta / 2.0);
+    Real st15 = std::sin(1.5 * theta);
+    Real ct15 = std::cos(1.5 * theta);
+    Real sr = std::sqrt(r);
 
-    Real alpha = 0.0; // crack direction
+    B[0] = sr * st2;
+    B[1] = sr * ct2;
+    B[2] = sr * st2 * st;
+    B[3] = sr * ct2 * st;
 
-    Real x_local = std::cos(alpha) * x_to_tip + std::sin(alpha) * y_to_tip;
-    Real y_local = -std::sin(alpha) * x_to_tip + std::cos(alpha) * y_to_tip;
-
-    Real r = std::sqrt(x_local * x_local + y_local * y_local);
-
-    if (r < 0.0001)
-      r = 0.0001;
-
-    Real theta = std::atan2(y_local, x_local);
-
-    B[0] = std::sqrt(r) * std::sin(theta / 2.0);
-    B[1] = std::sqrt(r) * std::cos(theta / 2.0);
-    B[2] = std::sqrt(r) * std::sin(theta / 2.0) * std::sin(theta);
-    B[3] = std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
-
-    Br[0] = 0.5 / std::sqrt(r) * std::sin(theta / 2.0);
-    Bt[0] = std::sqrt(r) / 2.0 * std::cos(theta / 2.0);
-    Br[1] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0);
-    Bt[1] = -std::sqrt(r) / 2.0 * std::sin(theta / 2.0);
-    Br[2] = 0.5 / std::sqrt(r) * std::sin(theta / 2.0) * std::sin(theta);
-    Bt[2] = std::sqrt(r) * (0.5 * std::cos(theta / 2.0) * std::sin(theta) +
-                            std::sin(theta / 2.0) * std::cos(theta));
-    Br[2] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0) * std::sin(theta);
-    Bt[2] = std::sqrt(r) * (-0.5 * std::sin(theta / 2.0) * std::sin(theta) +
-                            std::cos(theta / 2.0) * std::cos(theta));
-
-    // Real r_xl = std::cos(theta);
-    // Real r_yl = std::sin(theta);
-    // Real t_xl = -std::sin(theta) / r;
-    // Real t_yl = std::cos(theta) / r;
-
-    Bxl[0] = -0.5 / std::sqrt(r) * std::sin(theta / 2.0);
-    Byl[0] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0);
-    Bxl[1] = 0.5 / std::sqrt(r) * std::cos(theta / 2.0);
-    Byl[1] = 0.5 / std::sqrt(r) * std::sin(theta / 2.0);
-    Bxl[2] = -0.5 / std::sqrt(r) * std::sin(1.5 * theta) * std::sin(theta);
-    Byl[2] = 0.5 / std::sqrt(r) * (std::sin(theta / 2.0) + std::sin(1.5 * theta) * std::cos(theta));
-    Bxl[3] = -0.5 / std::sqrt(r) * std::cos(1.5 * theta) * std::sin(theta);
-    Byl[3] = 0.5 / std::sqrt(r) * (std::cos(theta / 2.0) + std::cos(1.5 * theta) * std::cos(theta));
+    dBx[0](0) = -0.5 / sr * st2;
+    dBx[0](1) = 0.5 / sr * ct2;
+    dBx[0](2) = 0.0;
+    dBx[1](0) = 0.5 / sr * ct2;
+    dBx[1](1) = 0.5 / sr * st2;
+    dBx[1](2) = 0.0;
+    dBx[2](0) = -0.5 / sr * st15 * st;
+    dBx[2](1) = 0.5 / sr * (st2 + st15 * ct);
+    dBx[2](2) = 0.0;
+    dBx[3](0) = -0.5 / sr * ct15 * st;
+    dBx[3](1) = 0.5 / sr * (ct2 + ct15 * ct);
+    dBx[3](2) = 0.0;
 
     for (unsigned int i = 0; i < 4; ++i)
-    {
-      Bx[i] = Bxl[i] * std::cos(alpha) - Byl[i] * std::sin(alpha);
-      By[i] = Bxl[i] * std::sin(alpha) + Byl[i] * std::cos(alpha);
-    }
+      dBX[i] = _crack_front_definition->rotateFromCrackFrontCoordsToGlobal(dBx[i],
+                                                                           0); // TODO: point index
 
-    RealVectorValue grad_B_test(Bx[_enrichment_component], By[_enrichment_component], 0.0);
-    RealVectorValue grad_B_phi(
-        Bx[coupled_enrichment_component], By[coupled_enrichment_component], 0.0);
+    RealVectorValue grad_B_test(dBX[_enrichment_component]);
+    RealVectorValue grad_B_phi(dBX[coupled_enrichment_component]);
+
     RealVectorValue grad_test =
         _grad_test[_i][_qp] * (B[_enrichment_component] - BI[_i][_enrichment_component]) +
         _test[_i][_qp] * grad_B_test;

@@ -1,0 +1,9 @@
+[Tests]
+  [./crack_tip_enrichement_edge_2d]
+    type = Exodiff
+    input = edge_crack_2d.i
+    exodiff = 'edge_crack_2d_out.e'
+    map = false
+    unique_id = true
+  [../]
+[]

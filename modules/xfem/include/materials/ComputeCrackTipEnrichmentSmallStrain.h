@@ -13,6 +13,7 @@
 #include "RotationTensor.h"
 #include "DerivativeMaterialInterface.h"
 #include "Assembly.h"
+#include "CrackFrontDefinition.h"
 
 /**
  * ComputeCrackTipEnrichmentSmallStrain calcualte the sum of standard strain and enrichement strain
@@ -24,9 +25,11 @@ public:
   virtual ~ComputeCrackTipEnrichmentSmallStrain() {}
 
 protected:
-  virtual void initQpStatefulProperties();
+  virtual void initQpStatefulProperties() override;
 
-  virtual void computeQpProperties();
+  virtual void computeProperties() override;
+
+  virtual void computeQpProperties() override;
 
   std::vector<Real> _enrich_disp;
   std::vector<RealVectorValue> _grad_enrich_disp;
@@ -53,6 +56,18 @@ protected:
   MaterialProperty<RankTwoTensor> & _total_strain;
 
   const MaterialProperty<RankTwoTensor> & _eigenstrain;
+
+private:
+  const CrackFrontDefinition * _crack_front_definition;
+  std::vector<Real> _B;
+  std::vector<RealVectorValue> _dBX, _dBx;
+  std::vector<std::vector<Real>> _BI;
+  Real _r;
+  Real _theta;
+  const std::vector<std::vector<Real>> * _fe_phi;
+  const std::vector<std::vector<RealGradient>> * _fe_dphi;
+  NonlinearSystem * _nl;
+  const NumericVector<Number> * _sln;
 };
 
 #endif // COMPUTECRACKTIPENRICHMENTSMALLSTRAIN_H
