@@ -7,7 +7,6 @@
 
 #include "ComputeCrackTipEnrichmentSmallStrain.h"
 #include "MooseMesh.h"
-#include "NonlinearSystem.h"
 #include "libmesh/fe_interface.h"
 #include "libmesh/string_to_enum.h"
 
@@ -49,23 +48,19 @@ ComputeCrackTipEnrichmentSmallStrain::ComputeCrackTipEnrichmentSmallStrain(
     _crack_front_definition(&getUserObject<CrackFrontDefinition>("crack_front_definition")),
     _B(4),
     _dBX(4),
-    _dBx(4),
-    _BI(4)
+    _dBx(4)
 {
   for (unsigned int i = 0; i < _enrich_variable.size(); ++i)
-    _enrich_variable[i].resize(3); // TODO 3D
+    _enrich_variable[i].resize(_ndisp);
 
   const std::vector<NonlinearVariableName> & nl_vnames =
       getParam<std::vector<NonlinearVariableName>>("enrichment_displacement");
   NonlinearSystem & nl = _fe_problem.getNonlinearSystem();
 
-  unsigned int num_enrichment_funcs = 4; // TODO!!!
-  for (unsigned int i = 0; i < num_enrichment_funcs;
-       ++i) // TODO : total 4 enrichment functions per node along one direction
-  {
-    _enrich_variable[i][0] = &(nl.getVariable(0, nl_vnames[i * _ndisp]));
-    _enrich_variable[i][1] = &(nl.getVariable(0, nl_vnames[i * _ndisp + 1]));
-  }
+  unsigned int num_enrichment_funcs = 4;
+  for (unsigned int i = 0; i < num_enrichment_funcs; ++i)
+    for (unsigned int j = 0; j < _ndisp; ++j)
+      _enrich_variable[i][j] = &(nl.getVariable(0, nl_vnames[i * _ndisp + j]));
 
   // Checking for consistency between mesh size and length of the provided displacements vector
   if (_ndisp != _mesh.dimension())
@@ -86,6 +81,11 @@ ComputeCrackTipEnrichmentSmallStrain::ComputeCrackTipEnrichmentSmallStrain(
     _grad_disp[i] = &_grad_zero;
   }
 
+  if (_mesh.dimension() == 2)
+    _BI.resize(4); // QUAD4
+  else if (_mesh.dimension() == 3)
+    _BI.resize(8); // HEX8
+
   for (unsigned int i = 0; i < _BI.size(); ++i)
     _BI[i].resize(4);
 
@@ -95,7 +95,8 @@ ComputeCrackTipEnrichmentSmallStrain::ComputeCrackTipEnrichmentSmallStrain(
 void
 ComputeCrackTipEnrichmentSmallStrain::computeQpProperties()
 {
-  _crack_front_definition->calculateRThetaToCrackFront(_q_point[_qp], 0, _r, _theta);
+  unsigned int crack_front_point_index =
+      _crack_front_definition->calculateRThetaToCrackFront(_q_point[_qp], _r, _theta);
 
   if (MooseUtils::absoluteFuzzyEqual(_r, 0.0))
     mooseError("ComputeCrackTipEnrichmentSmallStrain: the distance between a point and the crack "
@@ -129,7 +130,7 @@ ComputeCrackTipEnrichmentSmallStrain::computeQpProperties()
 
   for (unsigned int i = 0; i < 4; ++i)
     _dBX[i] = _crack_front_definition->rotateFromCrackFrontCoordsToGlobal(_dBx[i],
-                                                                          0); // TODO: point index
+                                                                          crack_front_point_index);
 
   _sln = _nl->currentSolution();
 
@@ -180,6 +181,9 @@ ComputeCrackTipEnrichmentSmallStrain::initQpStatefulProperties()
 void
 ComputeCrackTipEnrichmentSmallStrain::computeProperties()
 {
+  if (isBoundaryMaterial())
+    return;
+
   FEType fe_type(Utility::string_to_enum<Order>("first"),
                  Utility::string_to_enum<FEFamily>("lagrange"));
   const unsigned int dim = _current_elem->dim();
@@ -191,8 +195,7 @@ ComputeCrackTipEnrichmentSmallStrain::computeProperties()
 
   for (unsigned int i = 0; i < _BI.size(); ++i)
   {
-    _crack_front_definition->calculateRThetaToCrackFront(
-        *(_current_elem->get_node(i)), 0, _r, _theta);
+    _crack_front_definition->calculateRThetaToCrackFront(*(_current_elem->get_node(i)), _r, _theta);
 
     Real st = std::sin(_theta);
     Real st2 = std::sin(_theta / 2.0);

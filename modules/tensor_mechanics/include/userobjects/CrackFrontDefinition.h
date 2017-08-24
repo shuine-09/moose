@@ -64,6 +64,7 @@ public:
                                    const unsigned int point_index,
                                    Real & r,
                                    Real & theta) const;
+  unsigned int calculateRThetaToCrackFront(const Point qp, Real & r, Real & theta) const;
   bool isNodeOnIntersectingBoundary(const Node * const node) const;
   bool isPointWithIndexOnIntersectingBoundary(const unsigned int point_index) const;
   Real getCrackFrontTangentialStrain(const unsigned int node_index) const;

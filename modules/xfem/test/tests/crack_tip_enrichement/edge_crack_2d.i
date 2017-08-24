@@ -26,7 +26,6 @@
   dim = 2
   nx = 21
   ny = 41
-  nz = 0
   xmin = 0.0
   xmax = 1.0
   ymin = 0.0

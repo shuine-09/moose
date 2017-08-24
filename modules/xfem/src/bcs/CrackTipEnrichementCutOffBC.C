@@ -30,7 +30,7 @@ bool
 CrackTipEnrichmentCutOffBC::shouldApply()
 {
   Real r, theta;
-  _crack_front_definition->calculateRThetaToCrackFront((*_current_node), 0, r, theta);
+  _crack_front_definition->calculateRThetaToCrackFront((*_current_node), r, theta);
 
   if (r > _cut_off_radius)
     return true;

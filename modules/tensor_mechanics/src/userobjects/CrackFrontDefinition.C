@@ -1221,6 +1221,123 @@ CrackFrontDefinition::calculateRThetaToCrackFront(const Point qp,
     mooseError("Invalid distance r in CrackFrontDefinition::calculateRThetaToCrackFront");
 }
 
+unsigned int
+CrackFrontDefinition::calculateRThetaToCrackFront(const Point qp, Real & r, Real & theta) const
+{
+  unsigned int num_points = getNumCrackFrontPoints();
+
+  // Loop over crack front points to find the one closest to the point qp
+  Real min_dist = std::numeric_limits<Real>::max();
+  unsigned int point_index = 0;
+  for (unsigned int pit = 0; pit != num_points; ++pit)
+  {
+    const Point * crack_front_point = getCrackFrontPoint(pit);
+    RealVectorValue crack_point_to_current_point = qp - *crack_front_point;
+    Real dist = crack_point_to_current_point.norm();
+
+    if (dist < min_dist)
+    {
+      min_dist = dist;
+      point_index = pit;
+    }
+  }
+
+  Point closest_point(0.0);
+  RealVectorValue closest_point_to_p;
+
+  const Point * crack_front_point = getCrackFrontPoint(point_index);
+  RealVectorValue crack_front_point_rot = rotateToCrackFrontCoords(*crack_front_point, point_index);
+
+  RealVectorValue crack_front_edge =
+      rotateToCrackFrontCoords(_tangent_directions[point_index], point_index);
+
+  Point p_rot = rotateToCrackFrontCoords(qp, point_index);
+  p_rot = p_rot - crack_front_point_rot;
+
+  if (_treat_as_2d)
+  {
+    // In 2D, the closest node is the crack tip node and the position of the crack tip node is
+    // (0,0,0) in the crack front coordinate system
+    // In case this is a 3D mesh treated as 2D, project point onto same plane as crack front node.
+    // Note: In the crack front coordinate system, z is always in the tangent direction to the
+    // crack front
+    p_rot(2) = closest_point(2);
+    closest_point_to_p = p_rot;
+
+    // Find r, the distance between the qp and the crack front
+    RealVectorValue r_vec = p_rot;
+    r = r_vec.norm();
+  }
+  else
+  {
+    closest_point = *crack_front_point;
+
+    // Rotate coordinates to crack front coordinate system
+    closest_point = rotateToCrackFrontCoords(closest_point, point_index);
+    closest_point = closest_point - crack_front_point_rot;
+
+    // Find r, the distance between the qp and the crack front
+    Real edge_length_sq = crack_front_edge.norm_sq();
+    closest_point_to_p = p_rot - closest_point;
+    Real perp = crack_front_edge * closest_point_to_p;
+    Real dist_along_edge = perp / edge_length_sq;
+    RealVectorValue point_on_edge = closest_point + crack_front_edge * dist_along_edge;
+    RealVectorValue r_vec = p_rot - point_on_edge;
+    r = r_vec.norm();
+  }
+
+  // Find theta, the angle between r and the crack front plane
+  RealVectorValue crack_plane_normal = rotateToCrackFrontCoords(_crack_plane_normal, point_index);
+  Real p_to_plane_dist = std::abs(closest_point_to_p * crack_plane_normal);
+
+  // Determine if qp is above or below the crack plane
+  Real y_local = p_rot(1) - closest_point(1);
+
+  // Determine if qp is in front of or behind the crack front
+  RealVectorValue p2(p_rot);
+  p2(1) = 0;
+  RealVectorValue p2_vec = p2 - closest_point;
+  Real ahead = crack_front_edge(2) * p2_vec(0) - crack_front_edge(0) * p2_vec(2);
+
+  Real x_local(0);
+  if (ahead >= 0)
+    x_local = 1;
+  else
+    x_local = -1;
+
+  // Calculate theta based on in which quadrant in the crack front coordinate
+  // system the qp is located
+  if (r > 0)
+  {
+    Real theta_quadrant1(0.0);
+    if (MooseUtils::absoluteFuzzyEqual(r, p_to_plane_dist, _tol))
+      theta_quadrant1 = 0.5 * libMesh::pi;
+    else if (p_to_plane_dist > r)
+      mooseError("Invalid distance p_to_plane_dist in "
+                 "CrackFrontDefinition::calculateRThetaToCrackFront");
+    else
+      theta_quadrant1 = std::asin(p_to_plane_dist / r);
+
+    if (x_local >= 0 && y_local >= 0)
+      theta = theta_quadrant1;
+
+    else if (x_local < 0 && y_local >= 0)
+      theta = libMesh::pi - theta_quadrant1;
+
+    else if (x_local < 0 && y_local < 0)
+      theta = -(libMesh::pi - theta_quadrant1);
+
+    else if (x_local >= 0 && y_local < 0)
+      theta = -theta_quadrant1;
+  }
+  else if (r == 0)
+    theta = 0;
+  else
+    mooseError("Invalid distance r in CrackFrontDefinition::calculateRThetaToCrackFront");
+
+  return point_index;
+}
+
 bool
 CrackFrontDefinition::isNodeOnIntersectingBoundary(const Node * const node) const
 {

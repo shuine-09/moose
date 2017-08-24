@@ -16,7 +16,6 @@
 class CrackTipEnrichmentStressDivergenceTensors;
 class RankTwoTensor;
 class RankFourTensor;
-class XFEM;
 
 template <>
 InputParameters validParams<CrackTipEnrichmentStressDivergenceTensors>();
@@ -32,9 +31,10 @@ public:
   CrackTipEnrichmentStressDivergenceTensors(const InputParameters & parameters);
 
 protected:
-  virtual Real computeQpResidual();
-  virtual Real computeQpJacobian();
-  virtual Real computeQpOffDiagJacobian(unsigned int jvar);
+  virtual Real computeQpResidual() override;
+  virtual Real computeQpJacobian() override;
+  virtual Real computeQpOffDiagJacobian(unsigned int jvar) override;
+  virtual void prepareCrackTipEnrichementFunctionAtNode();
 
   std::string _base_name;
 
@@ -54,8 +54,12 @@ protected:
   std::vector<unsigned int> _enrich_disp_var;
 
 private:
-  MooseSharedPointer<XFEM> _xfem;
   const CrackFrontDefinition * _crack_front_definition;
+  std::vector<Real> _B;
+  std::vector<RealVectorValue> _dBX, _dBx;
+  std::vector<std::vector<Real>> _BI;
+  Real _r;
+  Real _theta;
 };
 
 #endif // CRACKTIPENRICHMENTSTRESSDIVERGENCETENSORS_H
