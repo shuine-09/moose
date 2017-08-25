@@ -2,7 +2,6 @@
   order = FIRST
   family = LAGRANGE
   crack_front_definition = crack_front
-  enrichment_displacement_var = 'enrich1_x enrich1_y enrich1_z enrich2_x enrich2_y enrich2_z enrich3_x enrich3_y enrich3_z enrich4_x enrich4_y enrich4_z'
   enrichment_displacement = 'enrich1_x enrich1_y enrich1_z enrich2_x enrich2_y enrich2_z enrich3_x enrich3_y enrich3_z enrich4_x enrich4_y enrich4_z'
   cut_off_radius = 0.15
 []

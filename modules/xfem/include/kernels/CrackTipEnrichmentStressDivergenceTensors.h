@@ -49,8 +49,7 @@ protected:
   const unsigned int _enrichment_component;
 
   /// Coupled displacement variables
-  unsigned int _ndisp;
-  const std::vector<NonlinearVariableName> & _nl_vnames;
+  unsigned int _nenrich_disp;
   std::vector<unsigned int> _enrich_disp_var;
 
 private:

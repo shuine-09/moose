@@ -7,7 +7,6 @@
 
 #include "CrackTipEnrichmentStressDivergenceTensors.h"
 #include "ElasticityTensorTools.h"
-#include "MooseMesh.h"
 
 template <>
 InputParameters
@@ -20,9 +19,7 @@ validParams<CrackTipEnrichmentStressDivergenceTensors>()
                                         "this kernel acts in. (0 for x, 1 for y, 2 for z)");
   params.addRequiredParam<unsigned int>("enrichment_component",
                                         "The component of the enrichement functions");
-  params.addRequiredParam<std::vector<NonlinearVariableName>>(
-      "enrichment_displacement", "The string of displacements suitable for the problem statement");
-  params.addRequiredCoupledVar("enrichment_displacement_var",
+  params.addRequiredCoupledVar("enrichment_displacement",
                                "The string of displacements suitable for the problem statement");
   params.addParam<std::string>("base_name", "Material property base name");
   params.addRequiredParam<UserObjectName>("crack_front_definition",
@@ -39,19 +36,19 @@ CrackTipEnrichmentStressDivergenceTensors::CrackTipEnrichmentStressDivergenceTen
     _Jacobian_mult(getMaterialPropertyByName<RankFourTensor>(_base_name + "Jacobian_mult")),
     _component(getParam<unsigned int>("component")),
     _enrichment_component(getParam<unsigned int>("enrichment_component")),
-    _nl_vnames(getParam<std::vector<NonlinearVariableName>>("enrichment_displacement")),
+    _nenrich_disp(coupledComponents("enrichment_displacement")),
     _crack_front_definition(&getUserObject<CrackFrontDefinition>("crack_front_definition")),
     _B(4),
     _dBX(4),
     _dBx(4)
 {
-  _enrich_disp_var.resize(_nl_vnames.size());
-  for (unsigned int i = 0; i < _nl_vnames.size(); ++i)
-    _enrich_disp_var[i] = coupled("enrichment_displacement_var", i);
+  _enrich_disp_var.resize(_nenrich_disp);
+  for (unsigned int i = 0; i < _nenrich_disp; ++i)
+    _enrich_disp_var[i] = coupled("enrichment_displacement", i);
 
-  if (_mesh.dimension() == 2)
+  if (_nenrich_disp == 8)
     _BI.resize(4); // QUAD4
-  else if (_mesh.dimension() == 3)
+  else if (_nenrich_disp == 12)
     _BI.resize(8); // HEX8
 
   for (unsigned int i = 0; i < _BI.size(); ++i)
@@ -184,8 +181,8 @@ CrackTipEnrichmentStressDivergenceTensors::computeQpOffDiagJacobian(unsigned int
   {
     if (jvar == _enrich_disp_var[i])
     {
-      coupled_component = i % (_mesh.dimension());
-      coupled_enrichment_component = i / _mesh.dimension();
+      coupled_component = i / 4;
+      coupled_enrichment_component = i % 4;
       active = true;
     }
   }

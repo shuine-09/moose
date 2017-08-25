@@ -57,10 +57,9 @@ ComputeCrackTipEnrichmentSmallStrain::ComputeCrackTipEnrichmentSmallStrain(
       getParam<std::vector<NonlinearVariableName>>("enrichment_displacement");
   NonlinearSystem & nl = _fe_problem.getNonlinearSystem();
 
-  unsigned int num_enrichment_funcs = 4;
-  for (unsigned int i = 0; i < num_enrichment_funcs; ++i)
-    for (unsigned int j = 0; j < _ndisp; ++j)
-      _enrich_variable[i][j] = &(nl.getVariable(0, nl_vnames[i * _ndisp + j]));
+  for (unsigned int j = 0; j < _ndisp; ++j)
+    for (unsigned int i = 0; i < 4; ++i)
+      _enrich_variable[i][j] = &(nl.getVariable(0, nl_vnames[j * 4 + i]));
 
   // Checking for consistency between mesh size and length of the provided displacements vector
   if (_ndisp != _mesh.dimension())
@@ -81,9 +80,9 @@ ComputeCrackTipEnrichmentSmallStrain::ComputeCrackTipEnrichmentSmallStrain(
     _grad_disp[i] = &_grad_zero;
   }
 
-  if (_mesh.dimension() == 2)
+  if (_ndisp == 2)
     _BI.resize(4); // QUAD4
-  else if (_mesh.dimension() == 3)
+  else if (_ndisp == 3)
     _BI.resize(8); // HEX8
 
   for (unsigned int i = 0; i < _BI.size(); ++i)
@@ -134,7 +133,7 @@ ComputeCrackTipEnrichmentSmallStrain::computeQpProperties()
 
   _sln = _nl->currentSolution();
 
-  for (unsigned int m = 0; m < _ndisp; ++m) // TODO: 3D
+  for (unsigned int m = 0; m < _ndisp; ++m)
   {
     _enrich_disp[m] = 0.0;
     _grad_enrich_disp[m].zero();

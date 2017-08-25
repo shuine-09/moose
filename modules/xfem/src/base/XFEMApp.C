@@ -136,6 +136,8 @@ XFEMApp::associateSyntax(Syntax & syntax, ActionFactory & action_factory)
   syntax.addDependency("setup_xfem", "setup_adaptivity");
   registerAction(XFEMAction, "add_aux_variable");
   registerAction(XFEMAction, "add_aux_kernel");
+  registerAction(XFEMAction, "add_variable");
+  registerAction(XFEMAction, "add_kernel");
 
   registerSyntax("XFEMAction", "XFEM");
 }

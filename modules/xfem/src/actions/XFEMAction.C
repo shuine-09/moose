@@ -17,6 +17,7 @@
 #include "Factory.h"
 
 #include "GeometricCutUserObject.h"
+#include "CrackFrontDefinition.h"
 
 #include "libmesh/transient_system.h"
 #include "libmesh/string_to_enum.h"
@@ -38,6 +39,14 @@ validParams<XFEMAction>()
   params.addParam<bool>("output_cut_plane", false, "Output the XFEM cut plane and volume fraction");
   params.addParam<bool>("use_crack_growth_increment", false, "Use fixed crack growth increment");
   params.addParam<Real>("crack_growth_increment", 0.1, "Crack growth increment");
+  params.addParam<bool>("use_crack_tip_enrichment", false, "Use crack tip enrichment functions");
+  params.addParam<Real>("crack_tip_enrichment_cutoff_radius",
+                        0.0,
+                        "Cut-off radius of crack tip enrichment functions");
+  params.addParam<UserObjectName>("crack_front_definition",
+                                  "The CrackFrontDefinition user object name");
+  params.addParam<NonlinearVariableName>("enrichment_displacement",
+                                         "String of enrichment displacement, , ");
   return params;
 }
 
@@ -47,12 +56,20 @@ XFEMAction::XFEMAction(InputParameters params)
     _xfem_qrule(getParam<std::string>("qrule")),
     _xfem_cut_plane(false),
     _xfem_use_crack_growth_increment(getParam<bool>("use_crack_growth_increment")),
-    _xfem_crack_growth_increment(getParam<Real>("crack_growth_increment"))
+    _xfem_crack_growth_increment(getParam<Real>("crack_growth_increment")),
+    _use_crack_tip_enrichment(getParam<bool>("use_crack_tip_enrichment")),
+    _crack_tip_enrichment_cutoff_radius(getParam<Real>("crack_tip_enrichment_cutoff_radius"))
 {
   _order = "CONSTANT";
   _family = "MONOMIAL";
   if (isParamValid("output_cut_plane"))
     _xfem_cut_plane = getParam<bool>("output_cut_plane");
+
+  if (_use_crack_tip_enrichment)
+  {
+    _crack_front_definition = getParam<UserObjectName>("crack_front_definition");
+    _enrich_displacement = getParam<std::vector<NonlinearVariableName>>("enrichment_displacement");
+  }
 }
 
 void
@@ -95,6 +112,41 @@ XFEMAction::act()
       const UserObject * uo = &(_problem->getUserObjectBase(_geom_cut_userobjects[i]));
       xfem->addGeometricCut(dynamic_cast<const GeometricCutUserObject *>(uo));
     }
+  }
+  else if (_current_task == "add_variable" && _use_crack_tip_enrichment)
+  {
+
+    // for (const auto & enrich_disp : _enrich_displacement)
+    //   _problem->addVariable(enrich_disp,
+    //                         FEType(Utility::string_to_enum<Order>("FIRST"),
+    //                                Utility::string_to_enum<FEFamily>("LAGRANGE")),
+    //                         1.0);
+  }
+  else if (_current_task == "add_kernel" && _use_crack_tip_enrichment)
+  {
+    for (const auto & enrich_disp : _enrich_displacement)
+    {
+    }
+
+    // unsigned int dim = _problem->mesh().dimension();
+    // InputParameters params =
+    // _factory.getValidParams("CrackTipEnrichmentStressDivergenceTensors");
+    // params.set<NonlinearVariableName>("variable") = "enrich1_x";
+    // params.set<unsigned int>("component") = 0;
+    // params.set<unsigned int>("enrichment_component") = 0;
+    // params.set<UserObjectName>("crack_front_definition") = _crack_front_definition_name;
+    // if (dim == 2)
+    // {
+    //   params.set<std::vector<NonlinearVariableName>>("enrichment_displacement") =
+    //       "enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y";
+    // }
+    // else if (dim == 3)
+    // {
+    //   params.set<std::vector<NonlinearVariableName>>("enrichment_displacement") =
+    //       "enrich1_x enrich1_y enrich1_z enrich2_x enrich2_y enrich2_z enrich3_x enrich3_y "
+    //       "enrich3_z enrich4_x enrich4_y enrich4_z";
+    // }
+    // _problem->addKernel("CrackTipEnrichmentStressDivergenceTensors", "enrich1_x", params);
   }
   else if (_current_task == "add_aux_variable" && _xfem_cut_plane)
   {
