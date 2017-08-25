@@ -34,7 +34,7 @@ protected:
   virtual Real computeQpResidual() override;
   virtual Real computeQpJacobian() override;
   virtual Real computeQpOffDiagJacobian(unsigned int jvar) override;
-  virtual void prepareCrackTipEnrichementFunctionAtNode();
+  void prepareCrackTipEnrichementFunctionAtNode(Node * node, std::vector<Real> & B);
 
   std::string _base_name;
 
@@ -56,7 +56,8 @@ private:
   const CrackFrontDefinition * _crack_front_definition;
   std::vector<Real> _B;
   std::vector<RealVectorValue> _dBX, _dBx;
-  std::vector<std::vector<Real>> _BI;
+  std::vector<Real> _BI;
+  std::vector<Real> _BJ;
   Real _r;
   Real _theta;
 };

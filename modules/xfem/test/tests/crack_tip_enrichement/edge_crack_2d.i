@@ -4,10 +4,6 @@
   output_cut_plane = true
 []
 
-[GlobalParams]
-  enrichment_displacement = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
-[]
-
 [UserObjects]
   [./line_seg_cut_uo]
     type = LineSegmentCutUserObject
@@ -132,6 +128,7 @@
     crack_front_definition = crack_tip
     component = 0
     enrichment_component = 0
+    enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
   [../]
   [./enrich1_y]
     type = CrackTipEnrichmentStressDivergenceTensors
@@ -139,6 +136,7 @@
     crack_front_definition = crack_tip
     component = 1
     enrichment_component = 0
+    enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
   [../]
   [./enrich2_x]
     type = CrackTipEnrichmentStressDivergenceTensors
@@ -146,6 +144,7 @@
     crack_front_definition = crack_tip
     component = 0
     enrichment_component = 1
+    enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
   [../]
   [./enrich2_y]
     type = CrackTipEnrichmentStressDivergenceTensors
@@ -153,6 +152,7 @@
     crack_front_definition = crack_tip
     component = 1
     enrichment_component = 1
+    enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
   [../]
   [./enrich3_x]
     type = CrackTipEnrichmentStressDivergenceTensors
@@ -160,6 +160,7 @@
     crack_front_definition = crack_tip
     component = 0
     enrichment_component = 2
+    enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
   [../]
   [./enrich3_y]
     type = CrackTipEnrichmentStressDivergenceTensors
@@ -167,6 +168,7 @@
     crack_front_definition = crack_tip
     component = 1
     enrichment_component = 2
+    enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
   [../]
   [./enrich4_x]
     type = CrackTipEnrichmentStressDivergenceTensors
@@ -174,6 +176,7 @@
     crack_front_definition = crack_tip
     component = 0
     enrichment_component = 3
+    enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
   [../]
   [./enrich4_y]
     type = CrackTipEnrichmentStressDivergenceTensors
@@ -181,6 +184,7 @@
     crack_front_definition = crack_tip
     component = 1
     enrichment_component = 3
+    enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
   [../]
 []
 
@@ -323,13 +327,12 @@
     youngs_modulus = 1e6
     poissons_ratio = 0.3
   [../]
-
   [./strain]
     type = ComputeCrackTipEnrichmentSmallStrain
     displacements = 'disp_x disp_y'
     crack_front_definition = crack_tip
+    enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
   [../]
-
   [./stress]
     type = ComputeLinearElasticStress
   [../]

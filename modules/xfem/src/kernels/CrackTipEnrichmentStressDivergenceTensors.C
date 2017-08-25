@@ -19,7 +19,7 @@ validParams<CrackTipEnrichmentStressDivergenceTensors>()
                                         "this kernel acts in. (0 for x, 1 for y, 2 for z)");
   params.addRequiredParam<unsigned int>("enrichment_component",
                                         "The component of the enrichement functions");
-  params.addRequiredCoupledVar("enrichment_displacement",
+  params.addRequiredCoupledVar("enrichment_displacements",
                                "The string of displacements suitable for the problem statement");
   params.addParam<std::string>("base_name", "Material property base name");
   params.addRequiredParam<UserObjectName>("crack_front_definition",
@@ -36,48 +36,41 @@ CrackTipEnrichmentStressDivergenceTensors::CrackTipEnrichmentStressDivergenceTen
     _Jacobian_mult(getMaterialPropertyByName<RankFourTensor>(_base_name + "Jacobian_mult")),
     _component(getParam<unsigned int>("component")),
     _enrichment_component(getParam<unsigned int>("enrichment_component")),
-    _nenrich_disp(coupledComponents("enrichment_displacement")),
+    _nenrich_disp(coupledComponents("enrichment_displacements")),
     _crack_front_definition(&getUserObject<CrackFrontDefinition>("crack_front_definition")),
     _B(4),
     _dBX(4),
-    _dBx(4)
+    _dBx(4),
+    _BI(4),
+    _BJ(4)
 {
   _enrich_disp_var.resize(_nenrich_disp);
   for (unsigned int i = 0; i < _nenrich_disp; ++i)
-    _enrich_disp_var[i] = coupled("enrichment_displacement", i);
-
-  if (_nenrich_disp == 8)
-    _BI.resize(4); // QUAD4
-  else if (_nenrich_disp == 12)
-    _BI.resize(8); // HEX8
-
-  for (unsigned int i = 0; i < _BI.size(); ++i)
-    _BI[i].resize(4);
+    _enrich_disp_var[i] = coupled("enrichment_displacements", i);
 }
 
 void
-CrackTipEnrichmentStressDivergenceTensors::prepareCrackTipEnrichementFunctionAtNode()
+CrackTipEnrichmentStressDivergenceTensors::prepareCrackTipEnrichementFunctionAtNode(
+    Node * node, std::vector<Real> & B)
 {
-  for (unsigned int i = 0; i < _BI.size(); ++i)
-  {
-    _crack_front_definition->calculateRThetaToCrackFront(*(_current_elem->get_node(i)), _r, _theta);
+  // _i-th node
+  _crack_front_definition->calculateRThetaToCrackFront(*node, _r, _theta);
 
-    Real st = std::sin(_theta);
-    Real st2 = std::sin(_theta / 2.0);
-    Real ct2 = std::cos(_theta / 2.0);
-    Real sr = std::sqrt(_r);
+  Real st = std::sin(_theta);
+  Real st2 = std::sin(_theta / 2.0);
+  Real ct2 = std::cos(_theta / 2.0);
+  Real sr = std::sqrt(_r);
 
-    _BI[i][0] = sr * st2;
-    _BI[i][1] = sr * ct2;
-    _BI[i][2] = sr * st2 * st;
-    _BI[i][3] = sr * ct2 * st;
-  }
+  B[0] = sr * st2;
+  B[1] = sr * ct2;
+  B[2] = sr * st2 * st;
+  B[3] = sr * ct2 * st;
 }
 
 Real
 CrackTipEnrichmentStressDivergenceTensors::computeQpResidual()
 {
-  prepareCrackTipEnrichementFunctionAtNode();
+  prepareCrackTipEnrichementFunctionAtNode(_current_elem->get_node(_i), _BI);
 
   unsigned int crack_front_point_index =
       _crack_front_definition->calculateRThetaToCrackFront(_q_point[_qp], _r, _theta);
@@ -115,14 +108,15 @@ CrackTipEnrichmentStressDivergenceTensors::computeQpResidual()
   RealVectorValue grad_B(_dBX[_enrichment_component]);
 
   return _stress[_qp].row(_component) *
-         (_grad_test[_i][_qp] * (_B[_enrichment_component] - _BI[_i][_enrichment_component]) +
+         (_grad_test[_i][_qp] * (_B[_enrichment_component] - _BI[_enrichment_component]) +
           _test[_i][_qp] * grad_B);
 }
 
 Real
 CrackTipEnrichmentStressDivergenceTensors::computeQpJacobian()
 {
-  prepareCrackTipEnrichementFunctionAtNode();
+  prepareCrackTipEnrichementFunctionAtNode(_current_elem->get_node(_i), _BI);
+  prepareCrackTipEnrichementFunctionAtNode(_current_elem->get_node(_j), _BJ);
 
   unsigned int crack_front_point_index =
       _crack_front_definition->calculateRThetaToCrackFront(_q_point[_qp], _r, _theta);
@@ -160,10 +154,10 @@ CrackTipEnrichmentStressDivergenceTensors::computeQpJacobian()
   RealVectorValue grad_B(_dBX[_enrichment_component]);
 
   RealVectorValue grad_test =
-      _grad_test[_i][_qp] * (_B[_enrichment_component] - _BI[_i][_enrichment_component]) +
+      _grad_test[_i][_qp] * (_B[_enrichment_component] - _BI[_enrichment_component]) +
       _test[_i][_qp] * grad_B;
   RealVectorValue grad_phi =
-      _grad_phi[_j][_qp] * (_B[_enrichment_component] - _BI[_j][_enrichment_component]) +
+      _grad_phi[_j][_qp] * (_B[_enrichment_component] - _BJ[_enrichment_component]) +
       _phi[_j][_qp] * grad_B;
 
   return ElasticityTensorTools::elasticJacobian(
@@ -189,7 +183,8 @@ CrackTipEnrichmentStressDivergenceTensors::computeQpOffDiagJacobian(unsigned int
 
   if (active)
   {
-    prepareCrackTipEnrichementFunctionAtNode();
+    prepareCrackTipEnrichementFunctionAtNode(_current_elem->get_node(_i), _BI);
+    prepareCrackTipEnrichementFunctionAtNode(_current_elem->get_node(_j), _BJ);
 
     unsigned int crack_front_point_index =
         _crack_front_definition->calculateRThetaToCrackFront(_q_point[_qp], _r, _theta);
@@ -228,10 +223,10 @@ CrackTipEnrichmentStressDivergenceTensors::computeQpOffDiagJacobian(unsigned int
     RealVectorValue grad_B_phi(_dBX[coupled_enrichment_component]);
 
     RealVectorValue grad_test =
-        _grad_test[_i][_qp] * (_B[_enrichment_component] - _BI[_i][_enrichment_component]) +
+        _grad_test[_i][_qp] * (_B[_enrichment_component] - _BI[_enrichment_component]) +
         _test[_i][_qp] * grad_B_test;
     RealVectorValue grad_phi = _grad_phi[_j][_qp] * (_B[coupled_enrichment_component] -
-                                                     _BI[_j][coupled_enrichment_component]) +
+                                                     _BJ[coupled_enrichment_component]) +
                                _phi[_j][_qp] * grad_B_phi;
 
     return ElasticityTensorTools::elasticJacobian(

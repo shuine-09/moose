@@ -45,8 +45,12 @@ validParams<XFEMAction>()
                         "Cut-off radius of crack tip enrichment functions");
   params.addParam<UserObjectName>("crack_front_definition",
                                   "The CrackFrontDefinition user object name");
-  params.addParam<NonlinearVariableName>("enrichment_displacement",
-                                         "String of enrichment displacement, , ");
+  params.addParam<std::vector<VariableName>>("enrichment_displacements",
+                                             "String of enrichment displacement");
+  params.addParam<std::vector<BoundaryName>>(
+      "cut_off_boundary", "Select all nodes and fix the DOFs away from crack tip");
+  params.addParam<Real>(
+      "cut_off_radius", 0.1, "The cut off radius of crack tip enrichment functions");
   return params;
 }
 
@@ -68,7 +72,9 @@ XFEMAction::XFEMAction(InputParameters params)
   if (_use_crack_tip_enrichment)
   {
     _crack_front_definition = getParam<UserObjectName>("crack_front_definition");
-    _enrich_displacement = getParam<std::vector<NonlinearVariableName>>("enrichment_displacement");
+    _enrich_displacements = getParam<std::vector<VariableName>>("enrichment_displacements");
+    _cut_off_bc = getParam<std::vector<BoundaryName>>("cut_off_boundary");
+    _cut_off_radius = getParam<Real>("cut_off_radius");
   }
 }
 
@@ -115,38 +121,39 @@ XFEMAction::act()
   }
   else if (_current_task == "add_variable" && _use_crack_tip_enrichment)
   {
-
-    // for (const auto & enrich_disp : _enrich_displacement)
-    //   _problem->addVariable(enrich_disp,
-    //                         FEType(Utility::string_to_enum<Order>("FIRST"),
-    //                                Utility::string_to_enum<FEFamily>("LAGRANGE")),
-    //                         1.0);
+    for (const auto & enrich_disp : _enrich_displacements)
+      _problem->addVariable(enrich_disp,
+                            FEType(Utility::string_to_enum<Order>("FIRST"),
+                                   Utility::string_to_enum<FEFamily>("LAGRANGE")),
+                            1.0);
   }
   else if (_current_task == "add_kernel" && _use_crack_tip_enrichment)
   {
-    for (const auto & enrich_disp : _enrich_displacement)
+    for (unsigned int i = 0; i < _enrich_displacements.size(); ++i)
     {
+      InputParameters params = _factory.getValidParams("CrackTipEnrichmentStressDivergenceTensors");
+      params.set<NonlinearVariableName>("variable") = _enrich_displacements[i];
+      params.set<unsigned int>("component") = i / 4;
+      params.set<unsigned int>("enrichment_component") = i % 4;
+      params.set<UserObjectName>("crack_front_definition") = _crack_front_definition;
+      params.set<std::vector<VariableName>>("enrichment_displacements") = _enrich_displacements;
+      _problem->addKernel(
+          "CrackTipEnrichmentStressDivergenceTensors", _enrich_displacements[i], params);
     }
-
-    // unsigned int dim = _problem->mesh().dimension();
-    // InputParameters params =
-    // _factory.getValidParams("CrackTipEnrichmentStressDivergenceTensors");
-    // params.set<NonlinearVariableName>("variable") = "enrich1_x";
-    // params.set<unsigned int>("component") = 0;
-    // params.set<unsigned int>("enrichment_component") = 0;
-    // params.set<UserObjectName>("crack_front_definition") = _crack_front_definition_name;
-    // if (dim == 2)
-    // {
-    //   params.set<std::vector<NonlinearVariableName>>("enrichment_displacement") =
-    //       "enrich1_x enrich1_y enrich2_x enrich2_y enrich3_x enrich3_y enrich4_x enrich4_y";
-    // }
-    // else if (dim == 3)
-    // {
-    //   params.set<std::vector<NonlinearVariableName>>("enrichment_displacement") =
-    //       "enrich1_x enrich1_y enrich1_z enrich2_x enrich2_y enrich2_z enrich3_x enrich3_y "
-    //       "enrich3_z enrich4_x enrich4_y enrich4_z";
-    // }
-    // _problem->addKernel("CrackTipEnrichmentStressDivergenceTensors", "enrich1_x", params);
+  }
+  else if (_current_task == "add_bc" && _use_crack_tip_enrichment)
+  {
+    for (unsigned int i = 0; i < _enrich_displacements.size(); ++i)
+    {
+      InputParameters params = _factory.getValidParams("CrackTipEnrichmentCutOffBC");
+      params.set<NonlinearVariableName>("variable") = _enrich_displacements[i];
+      params.set<Real>("value") = 0;
+      params.set<std::vector<BoundaryName>>("boundary") = _cut_off_bc;
+      params.set<Real>("cut_off_radius") = _cut_off_radius;
+      params.set<UserObjectName>("crack_front_definition") = _crack_front_definition;
+      _problem->addBoundaryCondition(
+          "CrackTipEnrichmentCutOffBC", _enrich_displacements[i], params);
+    }
   }
   else if (_current_task == "add_aux_variable" && _xfem_cut_plane)
   {

@@ -15,7 +15,7 @@ InputParameters
 validParams<ComputeCrackTipEnrichmentSmallStrain>()
 {
   InputParameters params = validParams<Material>();
-  params.addRequiredParam<std::vector<NonlinearVariableName>>("enrichment_displacement",
+  params.addRequiredParam<std::vector<NonlinearVariableName>>("enrichment_displacements",
                                                               "The enrichment displacement");
   params.addRequiredCoupledVar(
       "displacements",
@@ -54,7 +54,7 @@ ComputeCrackTipEnrichmentSmallStrain::ComputeCrackTipEnrichmentSmallStrain(
     _enrich_variable[i].resize(_ndisp);
 
   const std::vector<NonlinearVariableName> & nl_vnames =
-      getParam<std::vector<NonlinearVariableName>>("enrichment_displacement");
+      getParam<std::vector<NonlinearVariableName>>("enrichment_displacements");
   NonlinearSystem & nl = _fe_problem.getNonlinearSystem();
 
   for (unsigned int j = 0; j < _ndisp; ++j)

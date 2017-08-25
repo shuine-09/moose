@@ -34,7 +34,9 @@ protected:
   bool _use_crack_tip_enrichment;
   Real _crack_tip_enrichment_cutoff_radius;
   UserObjectName _crack_front_definition;
-  std::vector<NonlinearVariableName> _enrich_displacement;
+  std::vector<VariableName> _enrich_displacements;
+  std::vector<BoundaryName> _cut_off_bc;
+  Real _cut_off_radius;
 };
 
 #endif // XFEMACTION_H

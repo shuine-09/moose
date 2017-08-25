@@ -12,7 +12,7 @@ InputParameters
 validParams<CrackTipEnrichmentCutOffBC>()
 {
   InputParameters p = validParams<PresetBC>();
-  p.addParam<Real>("cut_off_radius", 0.1, "Radius");
+  p.addParam<Real>("cut_off_radius", 0.1, "The cut off radius of crack tip enrichment functions");
   p.set<bool>("use_displaced_mesh") = false;
   p.addRequiredParam<UserObjectName>("crack_front_definition",
                                      "The CrackFrontDefinition user object name");
