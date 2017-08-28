@@ -94,13 +94,18 @@ XFEMMaterialManager::execute()
   // loop over all elements that have extra QPs
   for (auto extra_qps : _extra_qp_map)
   {
-    // number of extra QPs
+    // number of extra QPs in this timestep
     const auto n_extra_qps = extra_qps.second.size();
 
     // fetch property history for this element
     auto & item = (*_map)[extra_qps.first];
     auto & item_old = (*_map_old)[extra_qps.first];
     auto & item_older = (*_map_older)[extra_qps.first];
+
+    // number of extra QPs in the previous timestep (might have added QPs)
+    const auto n_old_extra_qps = item.size();
+    mooseAssert(n_old_extra_qps == item_old.size(), "Inconsistent history item sizes");
+    mooseAssert(n_old_extra_qps == item_older.size(), "Inconsistent history item sizes");
 
     // make sure the items have room for the correct number of properties
     while (item.size() < _props.size())
@@ -115,6 +120,18 @@ XFEMMaterialManager::execute()
     item_old.resizeItems(n_extra_qps);
     item_older.resizeItems(n_extra_qps);
 
+    // if we added new QPs we need to initialize the history by calling initQpStatefulProperties
+    if (n_extra_qps > n_old_extra_qps)
+    {
+      for (auto & material : _materials)
+        material->initStatefulProperties(n_extra_qps);
+
+      // copy into history old position
+      for (auto i = beginIndex(_props_old); i < _props_old.size(); ++i)
+        for (unsigned int qp = n_old_extra_qps; qp < n_extra_qps; ++qp)
+          _props[i]->swap(item_old[i]);
+    }
+
     // swap the history in for all properties
     for (auto i = beginIndex(_props); i < _props.size(); ++i)
       _props[i]->swap(item[i]);
@@ -128,7 +145,7 @@ XFEMMaterialManager::execute()
 
     // loop over QPs
     for (unsigned int qp = 0; qp < extra_qps.second.size(); ++qp)
-      // loop over materials
+      // loop over materials (may have to handle exceptions to swap properties back!)
       for (auto & material : _materials)
         material->computePropertiesAtQp(qp);
 
