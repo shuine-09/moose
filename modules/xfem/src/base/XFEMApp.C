@@ -16,6 +16,7 @@
 #include "XFEMCutPlaneAux.h"
 #include "XFEMMarkerAux.h"
 #include "XFEMMarkerUserObject.h"
+#include "XFEMMaterialManager.h"
 #include "XFEMMaterialTensorMarkerUserObject.h"
 #include "XFEMRankTwoTensorMarkerUserObject.h"
 #include "XFEMAction.h"
@@ -89,6 +90,7 @@ XFEMApp::registerObjects(Factory & factory)
 
   // UserObjects
   registerUserObject(XFEMMarkerUserObject);
+  registerUserObject(XFEMMaterialManager);
   registerUserObject(XFEMMaterialTensorMarkerUserObject);
   registerUserObject(XFEMRankTwoTensorMarkerUserObject);
 
