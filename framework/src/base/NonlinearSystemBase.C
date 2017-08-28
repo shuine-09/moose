@@ -1017,53 +1017,54 @@ NonlinearSystemBase::constraintResiduals(NumericVector<Number> & residual, bool 
   {
     GeometricSearchData & geom_search_data = _fe_problem.geomSearchData();
     element_pair_locators = &geom_search_data._element_pair_locators;
-  }
-  else
-  {
-    GeometricSearchData & displaced_geom_search_data =
-        _fe_problem.getDisplacedProblem()->geomSearchData();
-    element_pair_locators = &displaced_geom_search_data._element_pair_locators;
-  }
+    // }
+    // else
+    // {
+    //   GeometricSearchData & displaced_geom_search_data =
+    //       _fe_problem.getDisplacedProblem()->geomSearchData();
+    //   element_pair_locators = &displaced_geom_search_data._element_pair_locators;
+    // }
 
-  for (const auto & it : *element_pair_locators)
-  {
-    ElementPairLocator & elem_pair_loc = *(it.second);
-
-    if (_constraints.hasActiveElemElemConstraints(it.first))
+    for (const auto & it : *element_pair_locators)
     {
-      // ElemElemConstraint objects
-      const auto & _element_constraints = _constraints.getActiveElemElemConstraints(it.first);
+      ElementPairLocator & elem_pair_loc = *(it.second);
 
-      // go over pair elements
-      const std::list<std::pair<const Elem *, const Elem *>> & elem_pairs =
-          elem_pair_loc.getElemPairs();
-      for (const auto & pr : elem_pairs)
+      if (_constraints.hasActiveElemElemConstraints(it.first))
       {
-        const Elem * elem1 = pr.first;
-        const Elem * elem2 = pr.second;
+        // ElemElemConstraint objects
+        const auto & _element_constraints = _constraints.getActiveElemElemConstraints(it.first);
 
-        if (elem1->processor_id() != processor_id())
-          continue;
-
-        const ElementPairInfo & info = elem_pair_loc.getElemPairInfo(pr);
-
-        // for each element process constraints on the
-        for (const auto & ec : _element_constraints)
+        // go over pair elements
+        const std::list<std::pair<const Elem *, const Elem *>> & elem_pairs =
+            elem_pair_loc.getElemPairs();
+        for (const auto & pr : elem_pairs)
         {
-          _fe_problem.setCurrentSubdomainID(elem1, tid);
-          _fe_problem.reinitElemPhys(elem1, info._elem1_constraint_q_point, tid);
-          _fe_problem.setNeighborSubdomainID(elem2, tid);
-          _fe_problem.reinitNeighborPhys(elem2, info._elem2_constraint_q_point, tid);
+          const Elem * elem1 = pr.first;
+          const Elem * elem2 = pr.second;
 
-          ec->subProblem().prepareShapes(ec->variable().number(), tid);
-          ec->subProblem().prepareNeighborShapes(ec->variable().number(), tid);
+          if (elem1->processor_id() != processor_id())
+            continue;
 
-          ec->reinit(info);
-          ec->computeResidual();
-          _fe_problem.cacheResidual(tid);
-          _fe_problem.cacheResidualNeighbor(tid);
+          const ElementPairInfo & info = elem_pair_loc.getElemPairInfo(pr);
+
+          // for each element process constraints on the
+          for (const auto & ec : _element_constraints)
+          {
+            _fe_problem.setCurrentSubdomainID(elem1, tid);
+            _fe_problem.reinitElemPhys(elem1, info._elem1_constraint_q_point, tid);
+            _fe_problem.setNeighborSubdomainID(elem2, tid);
+            _fe_problem.reinitNeighborPhys(elem2, info._elem2_constraint_q_point, tid);
+
+            ec->subProblem().prepareShapes(ec->variable().number(), tid);
+            ec->subProblem().prepareNeighborShapes(ec->variable().number(), tid);
+
+            ec->reinit(info);
+            ec->computeResidual();
+            _fe_problem.cacheResidual(tid);
+            _fe_problem.cacheResidualNeighbor(tid);
+          }
+          _fe_problem.addCachedResidual(tid);
         }
-        _fe_problem.addCachedResidual(tid);
       }
     }
   }
@@ -1725,53 +1726,54 @@ NonlinearSystemBase::constraintJacobians(SparseMatrix<Number> & jacobian, bool d
   {
     GeometricSearchData & geom_search_data = _fe_problem.geomSearchData();
     element_pair_locators = &geom_search_data._element_pair_locators;
-  }
-  else
-  {
-    GeometricSearchData & displaced_geom_search_data =
-        _fe_problem.getDisplacedProblem()->geomSearchData();
-    element_pair_locators = &displaced_geom_search_data._element_pair_locators;
-  }
+    // }
+    // else
+    // {
+    //   GeometricSearchData & displaced_geom_search_data =
+    //       _fe_problem.getDisplacedProblem()->geomSearchData();
+    //   element_pair_locators = &displaced_geom_search_data._element_pair_locators;
+    // }
 
-  for (const auto & it : *element_pair_locators)
-  {
-    ElementPairLocator & elem_pair_loc = *(it.second);
-
-    if (_constraints.hasActiveElemElemConstraints(it.first))
+    for (const auto & it : *element_pair_locators)
     {
-      // ElemElemConstraint objects
-      const auto & _element_constraints = _constraints.getActiveElemElemConstraints(it.first);
+      ElementPairLocator & elem_pair_loc = *(it.second);
 
-      // go over pair elements
-      const std::list<std::pair<const Elem *, const Elem *>> & elem_pairs =
-          elem_pair_loc.getElemPairs();
-      for (const auto & pr : elem_pairs)
+      if (_constraints.hasActiveElemElemConstraints(it.first))
       {
-        const Elem * elem1 = pr.first;
-        const Elem * elem2 = pr.second;
+        // ElemElemConstraint objects
+        const auto & _element_constraints = _constraints.getActiveElemElemConstraints(it.first);
 
-        if (elem1->processor_id() != processor_id())
-          continue;
-
-        const ElementPairInfo & info = elem_pair_loc.getElemPairInfo(pr);
-
-        // for each element process constraints on the
-        for (const auto & ec : _element_constraints)
+        // go over pair elements
+        const std::list<std::pair<const Elem *, const Elem *>> & elem_pairs =
+            elem_pair_loc.getElemPairs();
+        for (const auto & pr : elem_pairs)
         {
-          _fe_problem.setCurrentSubdomainID(elem1, tid);
-          _fe_problem.reinitElemPhys(elem1, info._elem1_constraint_q_point, tid);
-          _fe_problem.setNeighborSubdomainID(elem2, tid);
-          _fe_problem.reinitNeighborPhys(elem2, info._elem2_constraint_q_point, tid);
+          const Elem * elem1 = pr.first;
+          const Elem * elem2 = pr.second;
 
-          ec->subProblem().prepareShapes(ec->variable().number(), tid);
-          ec->subProblem().prepareNeighborShapes(ec->variable().number(), tid);
+          if (elem1->processor_id() != processor_id())
+            continue;
 
-          ec->reinit(info);
-          ec->computeJacobian();
-          _fe_problem.cacheJacobian(tid);
-          _fe_problem.cacheJacobianNeighbor(tid);
+          const ElementPairInfo & info = elem_pair_loc.getElemPairInfo(pr);
+
+          // for each element process constraints on the
+          for (const auto & ec : _element_constraints)
+          {
+            _fe_problem.setCurrentSubdomainID(elem1, tid);
+            _fe_problem.reinitElemPhys(elem1, info._elem1_constraint_q_point, tid);
+            _fe_problem.setNeighborSubdomainID(elem2, tid);
+            _fe_problem.reinitNeighborPhys(elem2, info._elem2_constraint_q_point, tid);
+
+            ec->subProblem().prepareShapes(ec->variable().number(), tid);
+            ec->subProblem().prepareNeighborShapes(ec->variable().number(), tid);
+
+            ec->reinit(info);
+            ec->computeJacobian();
+            _fe_problem.cacheJacobian(tid);
+            _fe_problem.cacheJacobianNeighbor(tid);
+          }
+          _fe_problem.addCachedJacobian(jacobian, tid);
         }
-        _fe_problem.addCachedJacobian(jacobian, tid);
       }
     }
   }

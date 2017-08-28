@@ -4,6 +4,10 @@
 #include "AppFactory.h"
 #include "MooseSyntax.h"
 
+#include "ExtraQPTest.h"
+#include "ManagedSourceTest.h"
+#include "StatefulTestMaterial.h"
+
 template <>
 InputParameters
 validParams<XFEMTestApp>()
@@ -52,8 +56,11 @@ XFEMTestApp__registerObjects(Factory & factory)
   XFEMTestApp::registerObjects(factory);
 }
 void
-XFEMTestApp::registerObjects(Factory & /*factory*/)
+XFEMTestApp::registerObjects(Factory & factory)
 {
+  registerUserObject(ExtraQPTest);
+  registerDiracKernel(ManagedSourceTest);
+  registerMaterial(StatefulTestMaterial);
 }
 
 // External entry point for dynamic syntax association

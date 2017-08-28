@@ -16,6 +16,8 @@
 #include "XFEMCutPlaneAux.h"
 #include "XFEMMarkerAux.h"
 #include "XFEMMarkerUserObject.h"
+#include "XFEMMaterialManager.h"
+#include "XFEMElemPairMaterialManager.h"
 #include "XFEMMaterialTensorMarkerUserObject.h"
 #include "XFEMRankTwoTensorMarkerUserObject.h"
 #include "XFEMAction.h"
@@ -24,6 +26,11 @@
 #include "CrackTipEnrichmentStressDivergenceTensors.h"
 #include "CrackTipEnrichmentCutOffBC.h"
 #include "ComputeCrackTipEnrichmentSmallStrain.h"
+#include "StatefulMaterialJump.h"
+#include "XFEMSingleVariableConstraintStatefulTest.h"
+#include "XFEMCohesiveConstraint.h"
+#include "MaximumNormalSeparation.h"
+#include "XFEMElementPairQPProvider.h"
 
 #include "GeometricCutUserObject.h"
 #include "LineSegmentCutUserObject.h"
@@ -95,11 +102,16 @@ XFEMApp::registerObjects(Factory & factory)
 
   // Constraints
   registerConstraint(XFEMSingleVariableConstraint);
+  registerConstraint(XFEMSingleVariableConstraintStatefulTest);
+  registerConstraint(XFEMCohesiveConstraint);
 
   // UserObjects
   registerUserObject(XFEMMarkerUserObject);
+  registerUserObject(XFEMMaterialManager);
+  registerUserObject(XFEMElemPairMaterialManager);
   registerUserObject(XFEMMaterialTensorMarkerUserObject);
   registerUserObject(XFEMRankTwoTensorMarkerUserObject);
+  registerUserObject(XFEMElementPairQPProvider);
 
   // Geometric Cut User Objects
   registerUserObject(LineSegmentCutUserObject);
@@ -123,6 +135,9 @@ XFEMApp::registerObjects(Factory & factory)
 
   // BC's
   registerBoundaryCondition(CrackTipEnrichmentCutOffBC);
+  // Material
+  registerMaterial(StatefulMaterialJump);
+  registerMaterial(MaximumNormalSeparation);
 }
 
 void

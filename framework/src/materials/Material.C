@@ -76,7 +76,7 @@ Material::Material(const InputParameters & parameters)
     BlockRestrictable(this),
     BoundaryRestrictable(this, blockIDs(), false), // false for being _not_ nodal
     SetupInterface(this),
-    Coupleable(this, false),
+    NeighborCoupleable(this, false, false),
     MooseVariableDependencyInterface(),
     ScalarCoupleable(this),
     FunctionInterface(this),
@@ -139,9 +139,10 @@ Material::initStatefulProperties(unsigned int n_points)
   for (auto & prop : _supplied_props)
     if (_material_data->getMaterialPropertyStorage().isStatefulProp(prop) &&
         !_overrides_init_stateful_props)
-      mooseError(std::string("Material \"") + name() + "\" provides one or more stateful "
-                                                       "properties but initQpStatefulProperties() "
-                                                       "was not overridden in the derived class.");
+      mooseError(std::string("Material \"") + name() +
+                 "\" provides one or more stateful "
+                 "properties but initQpStatefulProperties() "
+                 "was not overridden in the derived class.");
 }
 
 void

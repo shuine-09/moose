@@ -1254,6 +1254,9 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
   // Add new elements
   std::map<unsigned int, std::vector<const Elem *>> temporary_parent_children_map;
 
+  std::map<unique_id_type, const Elem *> temp_elem_pair_unique_id_map;
+  _elem_pair_unique_id_map.clear();
+
   for (unsigned int i = 0; i < new_elements.size(); ++i)
   {
     unsigned int parent_id = new_elements[i]->getParent()->id();
@@ -1267,9 +1270,15 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
          ++it)
     {
       if (parent_elem == it->first)
+      {
+        temp_elem_pair_unique_id_map[it->first->unique_id()] = libmesh_elem;
         it->first = libmesh_elem;
+      }
       else if (parent_elem == it->second)
+      {
+        temp_elem_pair_unique_id_map[it->second->unique_id()] = libmesh_elem;
         it->second = libmesh_elem;
+      }
     }
 
     // parent has at least two children
@@ -1541,8 +1550,19 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
     }
   }
 
+  for (std::map<unique_id_type, const Elem *>::iterator it = temp_elem_pair_unique_id_map.begin();
+       it != temp_elem_pair_unique_id_map.end();
+       ++it)
+  {
+    // std::cout << "old unique id = " << it->first << ", new unique id = " <<
+    // it->second->unique_id()
+    //           << std::endl;
+    _elem_pair_unique_id_map[it->first] = it->second->unique_id();
+  }
+
   // clear the temporary map
   temporary_parent_children_map.clear();
+  temp_elem_pair_unique_id_map.clear();
 
   // Store information about crack tip elements
   if (mesh_changed)

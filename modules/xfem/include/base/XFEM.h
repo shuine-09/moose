@@ -178,6 +178,11 @@ public:
   bool has_secondary_cut() { return _has_secondary_cut; }
   Real flagQpoint(const Elem * elem, const Point & p) const;
 
+  std::map<unique_id_type, unique_id_type> & getElemPairUniqueIDMap()
+  {
+    return _elem_pair_unique_id_map;
+  }
+
 private:
   void getFragmentEdges(const Elem * elem,
                         EFAElement2D * CEMElem,
@@ -197,6 +202,7 @@ private:
   std::vector<const GeometricCutUserObject *> _geometric_cuts;
 
   std::map<unique_id_type, XFEMCutElem *> _cut_elem_map;
+  std::map<unique_id_type, unique_id_type> _elem_pair_unique_id_map;
   std::set<const Elem *> _crack_tip_elems;
   ElementPairLocator::ElementPairList _sibling_elems;
   ElementPairLocator::ElementPairList _sibling_displaced_elems;
