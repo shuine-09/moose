@@ -26,10 +26,21 @@ public:
   virtual void execute() override;
   virtual void finalize() override;
 
-  /// Public API to instruct the object to swap in properties
+  /// API call to swap in properties
   void swapInProperties(dof_id_type elem_id) const;
 
+  ///@{ API calls to fetch a materialProperty
+  template <typename T>
+  const T & getMaterialProperty(const std::string & name);
+  template <typename T>
+  const T & getMaterialPropertyOld(const std::string & name);
+  template <typename T>
+  const T & getMaterialPropertyOlder(const std::string & name);
+  ///@}
+
 protected:
+  unsigned int materialPropertyIndex(const std::string & name);
+
   /// underlying libMesh mesh
   const MeshBase & _mesh;
 
@@ -52,10 +63,47 @@ protected:
   std::unique_ptr<HistoryStorage> _map_older;
   ///@}
 
+  /// ...
   std::map<dof_id_type, std::vector<Point>> _extra_qp_map;
+
+  /// map from property names to indes into _props etc.
+  std::map<std::string, unsigned int> _managed_properties;
 };
 
 template <>
 InputParameters validParams<XFEMMaterialManager>();
+
+template <typename T>
+const T &
+XFEMMaterialManager::getMaterialProperty(const std::string & name)
+{
+  auto prop = dynamic_cast<T *>(_props[materialPropertyIndex(name)]);
+  if (prop == nullptr)
+    mooseError("Property '", name, "' was requested using the wrong type");
+
+  return *prop;
+}
+
+template <typename T>
+const T &
+XFEMMaterialManager::getMaterialPropertyOld(const std::string & name)
+{
+  auto prop = dynamic_cast<T *>(_props[materialPropertyIndex(name)]);
+  if (prop == nullptr)
+    mooseError("Property '", name, "' was requested using the wrong type");
+
+  return *prop;
+}
+
+template <typename T>
+const T &
+XFEMMaterialManager::getMaterialPropertyOlder(const std::string & name)
+{
+  auto prop = dynamic_cast<T *>(_props[materialPropertyIndex(name)]);
+  if (prop == nullptr)
+    mooseError("Property '", name, "' was requested using the wrong type");
+
+  return *prop;
+}
 
 #endif // XFEMMATERIALMANAGER_H
