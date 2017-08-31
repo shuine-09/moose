@@ -34,7 +34,7 @@ XFEMMaterialManager::XFEMMaterialManager(const InputParameters & parameters)
   // get MaterialData entries for all listed material properties
   for (auto name : getParam<std::vector<std::string>>("material_names"))
   {
-    auto & material = getMaterial(name);
+    auto & material = getMaterialByName(name);
 
     // get the material properties
     auto prop_list = material.getSuppliedItems();

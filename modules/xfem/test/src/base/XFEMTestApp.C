@@ -14,8 +14,15 @@
 #include "AppFactory.h"
 #include "MooseSyntax.h"
 
+<<<<<<< HEAD
 defineLegacyParams(XFEMTestApp);
 
+=======
+#include "ExtraQPTest.h"
+#include "ManagedSourceTest.h"
+
+template <>
+>>>>>>> work on test
 InputParameters
 XFEMTestApp::validParams()
 {
@@ -66,6 +73,8 @@ XFEMTestApp::associateSyntax(Syntax & /*syntax*/, ActionFactory & action_factory
 void
 XFEMTestApp::registerExecFlags(Factory & /*factory*/)
 {
+  registerUserObject(ExtraQPTest);
+  registerDiracKernel(ManagedSourceTest);
 }
 
 extern "C" void
