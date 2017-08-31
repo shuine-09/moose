@@ -63,8 +63,8 @@ protected:
   std::unique_ptr<HistoryStorage> _map_older;
   ///@}
 
-  /// ...
-  std::map<dof_id_type, std::vector<Point>> _extra_qp_map;
+  /// Extra QPs
+  const std::map<dof_id_type, std::vector<Point>> & _extra_qp_map;
 
   /// map from property names to indes into _props etc.
   std::map<std::string, unsigned int> _managed_properties;

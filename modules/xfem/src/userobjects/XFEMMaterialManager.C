@@ -9,6 +9,7 @@
 
 #include "MooseMesh.h"
 #include "Material.h"
+#include "ExtraQPProvider.h"
 
 #include "libmesh/mesh_base.h"
 
@@ -20,12 +21,15 @@ validParams<XFEMMaterialManager>()
   params.addClassDescription("Manage the execution of stateful materials on extra QPs");
   params.addRequiredParam<std::vector<std::string>>("material_names",
                                                     "List of recompute material objects manage");
+  params.addRequiredParam<UserObjectName>("extra_qps", "Object that provides the extra QPs");
   params.set<MultiMooseEnum>("execute_on") = "initial linear";
   return params;
 }
 
 XFEMMaterialManager::XFEMMaterialManager(const InputParameters & parameters)
-  : GeneralUserObject(parameters), _mesh(_fe_problem.mesh().getMesh())
+  : GeneralUserObject(parameters),
+    _mesh(_fe_problem.mesh().getMesh()),
+    _extra_qp_map(getUserObject<ExtraQPProvider>("extra_qps").getExtraQPMap())
 {
   // get MaterialData entries for all listed material properties
   for (auto name : getParam<std::vector<std::string>>("material_names"))
