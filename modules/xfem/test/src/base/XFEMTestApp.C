@@ -20,6 +20,7 @@ defineLegacyParams(XFEMTestApp);
 =======
 #include "ExtraQPTest.h"
 #include "ManagedSourceTest.h"
+#include "StatefulTestMaterial.h"
 
 template <>
 >>>>>>> work on test
@@ -75,6 +76,7 @@ XFEMTestApp::registerExecFlags(Factory & /*factory*/)
 {
   registerUserObject(ExtraQPTest);
   registerDiracKernel(ManagedSourceTest);
+  registerMaterial(StatefulTestMaterial);
 }
 
 extern "C" void
