@@ -9,16 +9,20 @@
 #define XFEMMATERIALMANAGER_H
 
 #include "GeneralUserObject.h"
+#include "ExtraQPProvider.h"
 
 /**
  * Manage the history of stateful extra QP material properties. This is sooper-dee-dooper
  * experimental!
  */
-class XFEMMaterialManager : public GeneralUserObject
+class XFEMMaterialManager : public GeneralUserObject, public ExtraQPProvider
 {
 public:
   XFEMMaterialManager(const InputParameters & parameters);
   ~XFEMMaterialManager();
+
+  virtual void timestepSetup() override;
+  virtual void initialSetup() override;
 
   virtual void rewind();
 
@@ -27,19 +31,27 @@ public:
   virtual void finalize() override;
 
   /// API call to swap in properties
+  void swapInProperties(dof_id_type elem_id);
+  void swapOutProperties(dof_id_type elem_id);
   void swapInProperties(dof_id_type elem_id) const;
+  void swapOutProperties(dof_id_type elem_id) const;
+
+  virtual const std::map<dof_id_type, std::vector<Point>> & getExtraQPMap() const override
+  {
+    return _extra_qp_map;
+  };
 
   ///@{ API calls to fetch a materialProperty
   template <typename T>
-  const T & getMaterialProperty(const std::string & name);
+  const MaterialProperty<T> & getMaterialProperty(const std::string & name) const;
   template <typename T>
-  const T & getMaterialPropertyOld(const std::string & name);
+  const MaterialProperty<T> & getMaterialPropertyOld(const std::string & name) const;
   template <typename T>
-  const T & getMaterialPropertyOlder(const std::string & name);
+  const MaterialProperty<T> & getMaterialPropertyOlder(const std::string & name) const;
   ///@}
 
 protected:
-  unsigned int materialPropertyIndex(const std::string & name);
+  unsigned int materialPropertyIndex(const std::string & name) const;
 
   /// underlying libMesh mesh
   const MeshBase & _mesh;
@@ -74,10 +86,10 @@ template <>
 InputParameters validParams<XFEMMaterialManager>();
 
 template <typename T>
-const T &
-XFEMMaterialManager::getMaterialProperty(const std::string & name)
+const MaterialProperty<T> &
+XFEMMaterialManager::getMaterialProperty(const std::string & name) const
 {
-  auto prop = dynamic_cast<T *>(_props[materialPropertyIndex(name)]);
+  auto prop = dynamic_cast<MaterialProperty<T> *>(_props[materialPropertyIndex(name)]);
   if (prop == nullptr)
     mooseError("Property '", name, "' was requested using the wrong type");
 
@@ -85,10 +97,10 @@ XFEMMaterialManager::getMaterialProperty(const std::string & name)
 }
 
 template <typename T>
-const T &
-XFEMMaterialManager::getMaterialPropertyOld(const std::string & name)
+const MaterialProperty<T> &
+XFEMMaterialManager::getMaterialPropertyOld(const std::string & name) const
 {
-  auto prop = dynamic_cast<T *>(_props[materialPropertyIndex(name)]);
+  auto prop = dynamic_cast<MaterialProperty<T> *>(_props[materialPropertyIndex(name)]);
   if (prop == nullptr)
     mooseError("Property '", name, "' was requested using the wrong type");
 
@@ -96,10 +108,10 @@ XFEMMaterialManager::getMaterialPropertyOld(const std::string & name)
 }
 
 template <typename T>
-const T &
-XFEMMaterialManager::getMaterialPropertyOlder(const std::string & name)
+const MaterialProperty<T> &
+XFEMMaterialManager::getMaterialPropertyOlder(const std::string & name) const
 {
-  auto prop = dynamic_cast<T *>(_props[materialPropertyIndex(name)]);
+  auto prop = dynamic_cast<MaterialProperty<T> *>(_props[materialPropertyIndex(name)]);
   if (prop == nullptr)
     mooseError("Property '", name, "' was requested using the wrong type");
 

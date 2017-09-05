@@ -6,6 +6,7 @@
 
 #include "ExtraQPTest.h"
 #include "ManagedSourceTest.h"
+#include "StatefulTestMaterial.h"
 
 template <>
 InputParameters
@@ -59,6 +60,7 @@ XFEMTestApp::registerObjects(Factory & factory)
 {
   registerUserObject(ExtraQPTest);
   registerDiracKernel(ManagedSourceTest);
+  registerMaterial(StatefulTestMaterial);
 }
 
 // External entry point for dynamic syntax association
