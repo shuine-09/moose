@@ -36,6 +36,8 @@ XFEMMaterialManager::XFEMMaterialManager(const InputParameters & parameters)
 void
 XFEMMaterialManager::initialSetup()
 {
+  std::cout << "XFEMMaterialManager::initialSetup()\n";
+
   // get MaterialData entries for all listed material properties
   for (auto name : getParam<std::vector<std::string>>("material_names"))
   {
@@ -81,12 +83,12 @@ XFEMMaterialManager::timestepSetup()
 XFEMMaterialManager::~XFEMMaterialManager()
 {
   // destroy extra QP stateful property storage
-  for (auto & item : *_map)
-    item.second.destroy();
-  for (auto & item : *_map_old)
-    item.second.destroy();
-  for (auto & item : *_map_older)
-    item.second.destroy();
+  // for (auto & item : *_map)
+  //   item.second.destroy();
+  // for (auto & item : *_map_old)
+  //   item.second.destroy();
+  // for (auto & item : *_map_older)
+  //   item.second.destroy();
 }
 
 void
