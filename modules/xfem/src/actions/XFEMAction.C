@@ -40,9 +40,6 @@ validParams<XFEMAction>()
   params.addParam<bool>("use_crack_growth_increment", false, "Use fixed crack growth increment");
   params.addParam<Real>("crack_growth_increment", 0.1, "Crack growth increment");
   params.addParam<bool>("use_crack_tip_enrichment", false, "Use crack tip enrichment functions");
-  params.addParam<Real>("crack_tip_enrichment_cutoff_radius",
-                        0.0,
-                        "Cut-off radius of crack tip enrichment functions");
   params.addParam<UserObjectName>("crack_front_definition",
                                   "The CrackFrontDefinition user object name");
   params.addParam<std::vector<VariableName>>("enrichment_displacements",
@@ -61,8 +58,7 @@ XFEMAction::XFEMAction(InputParameters params)
     _xfem_cut_plane(false),
     _xfem_use_crack_growth_increment(getParam<bool>("use_crack_growth_increment")),
     _xfem_crack_growth_increment(getParam<Real>("crack_growth_increment")),
-    _use_crack_tip_enrichment(getParam<bool>("use_crack_tip_enrichment")),
-    _crack_tip_enrichment_cutoff_radius(getParam<Real>("crack_tip_enrichment_cutoff_radius"))
+    _use_crack_tip_enrichment(getParam<bool>("use_crack_tip_enrichment"))
 {
   _order = "CONSTANT";
   _family = "MONOMIAL";

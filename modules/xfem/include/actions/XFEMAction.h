@@ -32,7 +32,6 @@ protected:
   bool _xfem_use_crack_growth_increment;
   Real _xfem_crack_growth_increment;
   bool _use_crack_tip_enrichment;
-  Real _crack_tip_enrichment_cutoff_radius;
   UserObjectName _crack_front_definition;
   std::vector<VariableName> _enrich_displacements;
   std::vector<BoundaryName> _cut_off_bc;

@@ -3,7 +3,6 @@
   qrule = volfrac
   output_cut_plane = true
   use_crack_tip_enrichment = true
-  crack_tip_enrichment_cutoff_radius = 0.15
   crack_front_definition = crack_tip
   enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
   cut_off_boundary = all
