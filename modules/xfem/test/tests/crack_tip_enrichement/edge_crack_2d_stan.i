@@ -2,11 +2,6 @@
   geometric_cut_userobjects = 'line_seg_cut_uo'
   qrule = volfrac
   output_cut_plane = true
-  use_crack_tip_enrichment = true
-  crack_front_definition = crack_tip
-  enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
-  cut_off_boundary = all
-  cut_off_radius = 0.05
 []
 
 [UserObjects]
@@ -16,21 +11,13 @@
     time_start_cut = 0.0
     time_end_cut = 0.0
   [../]
-  [./crack_tip]
-    type = CrackFrontDefinition
-    crack_direction_method = CrackDirectionVector
-    crack_front_points = '0.5 1.0 0'
-    crack_direction_vector = '1 0 0'
-    2d = true
-    axis_2d = 2
-  [../]
 []
 
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 61
-  ny = 121
+  nx = 21
+  ny = 41
   xmin = 0.0
   xmax = 1.0
   ymin = 0.0
@@ -206,10 +193,8 @@
     poissons_ratio = 0.3
   [../]
   [./strain]
-    type = ComputeCrackTipEnrichmentSmallStrain
+    type = ComputeSmallStrain
     displacements = 'disp_x disp_y'
-    crack_front_definition = crack_tip
-    enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
   [../]
   [./stress]
     type = ComputeLinearElasticStress
@@ -250,7 +235,7 @@
 
   [./Quadrature]
     type = GAUSS
-    order = SIXTH
+    order = SECOND
   [../]
 
   [./Predictor]
@@ -283,6 +268,7 @@
 
 
 [Outputs]
+  file_base = edge_no_enrich_analy
   exodus = true
   [./console]
     type = Console

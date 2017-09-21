@@ -14,11 +14,12 @@ InputParameters
 validParams<EshelbyTensor>()
 {
   InputParameters params = validParams<Material>();
-  params.addClassDescription(
-      "Stuff");
+  params.addClassDescription("Stuff");
   params.addRequiredCoupledVar(
       "displacements",
       "The displacements appropriate for the simulation geometry and coordinate system");
+  params.addParam<std::vector<MaterialPropertyName>>("eigenstrain_names", "Eigenstrain names.");
+  params.addCoupledVar("temperature", "The temperature for the simulation.");
   params.addParam<std::string>("base_name",
                                "Optional parameter that allows the user to define "
                                "multiple mechanics material systems on the same "
@@ -28,21 +29,21 @@ validParams<EshelbyTensor>()
 
 EshelbyTensor::EshelbyTensor(const InputParameters & parameters)
   : DerivativeMaterialInterface<Material>(parameters),
-  _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
-  _sed(declareProperty<Real>(_base_name + "strain_energy_density")),
-  _sed_old(getMaterialPropertyOld<Real>(_base_name + "strain_energy_density")),
-  _eshelby_tensor(declareProperty<RankTwoTensor>(_base_name + "Eshelby_tensor")),
-  _stress(getMaterialProperty<RankTwoTensor>(_base_name + "stress")),
-  _stress_old(getMaterialPropertyOld<RankTwoTensor>(_base_name + "stress")),
-  _strain_increment(getMaterialProperty<RankTwoTensor>(_base_name + "strain_increment")),
-  _grad_disp(3),
-  _J_thermal_term_vec(declareProperty<RealVectorValue>("J_thermal_term_vec")),
-  _eigenstrain_names(getParam<std::vector<MaterialPropertyName>>("eigenstrain_names")),
-  _deigenstrain_dT(_eigenstrain_names.size()),
-  _temp_var(isParamValid("temperature")
-            ? &_subproblem.getVariable(_tid, getParam<NonlinearVariableName>("temperature"))
-            : NULL),
-  _grad_temp(coupledGradient("temperature"))
+    _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
+    _sed(declareProperty<Real>(_base_name + "strain_energy_density")),
+    _sed_old(getMaterialPropertyOld<Real>(_base_name + "strain_energy_density")),
+    _eshelby_tensor(declareProperty<RankTwoTensor>(_base_name + "Eshelby_tensor")),
+    _stress(getMaterialProperty<RankTwoTensor>(_base_name + "stress")),
+    _stress_old(getMaterialPropertyOld<RankTwoTensor>(_base_name + "stress")),
+    _strain(getMaterialProperty<RankTwoTensor>(_base_name + "mechanical_strain")),
+    _grad_disp(3),
+    _J_thermal_term_vec(declareProperty<RealVectorValue>("J_thermal_term_vec")),
+    _eigenstrain_names(getParam<std::vector<MaterialPropertyName>>("eigenstrain_names")),
+    _deigenstrain_dT(_eigenstrain_names.size()),
+    _temp_var(isParamValid("temperature")
+                  ? &_subproblem.getVariable(_tid, getParam<NonlinearVariableName>("temperature"))
+                  : NULL),
+    _grad_temp(coupledGradient("temperature"))
 {
   unsigned int ndisp = coupledComponents("displacements");
 
@@ -64,7 +65,7 @@ EshelbyTensor::EshelbyTensor(const InputParameters & parameters)
   {
     for (unsigned int i = 0; i < _deigenstrain_dT.size(); ++i)
       _deigenstrain_dT[i] = &getMaterialPropertyDerivative<RankTwoTensor>(
-         _base_name + _eigenstrain_names[i], _temp_var->name());
+          _base_name + _eigenstrain_names[i], _temp_var->name());
   }
 }
 
@@ -77,12 +78,14 @@ EshelbyTensor::initQpStatefulProperties()
 void
 EshelbyTensor::computeQpProperties()
 {
-  _sed[_qp] = _sed_old[_qp] + _stress[_qp].doubleContraction(_strain_increment[_qp]) / 2.0 +
-              _stress_old[_qp].doubleContraction(_strain_increment[_qp]) / 2.0;
+  // _sed[_qp] = _sed_old[_qp] + _stress[_qp].doubleContraction(_strain_increment[_qp]) / 2.0 +
+  //             _stress_old[_qp].doubleContraction(_strain_increment[_qp]) / 2.0;
+  _sed[_qp] = _stress[_qp].doubleContraction(_strain[_qp]) / 2.0;
 
   RankTwoTensor F((*_grad_disp[0])[_qp],
-		  (*_grad_disp[1])[_qp],
-		  (*_grad_disp[2])[_qp]); // Deformation gradient
+                  (*_grad_disp[1])[_qp],
+                  (*_grad_disp[2])[_qp]); // Deformation gradient
+  RankTwoTensor H(F);
   F.addIa(1.0);
   Real detF = F.det();
   RankTwoTensor FinvT(F.inverse().transpose());
@@ -91,12 +94,21 @@ EshelbyTensor::computeQpProperties()
   RankTwoTensor P = detF * _stress[_qp] * FinvT;
 
   // FTP = F^T * P = F^T * detF * sigma * FinvT;
-  RankTwoTensor FTP = F.transpose() * P;
+  RankTwoTensor FTP = H.transpose() * P;
 
   RankTwoTensor WI = RankTwoTensor(RankTwoTensor::initIdentity);
   WI *= (_sed[_qp] * detF);
 
   _eshelby_tensor[_qp] = WI - FTP;
+
+  // RankTwoTensor F((*_grad_disp[0])[_qp],
+  //                 (*_grad_disp[1])[_qp],
+  //                 (*_grad_disp[2])[_qp]); // Deformation gradient
+  //
+  // RankTwoTensor WI = RankTwoTensor(RankTwoTensor::initIdentity);
+  // WI *= (_sed[_qp]);
+  //
+  // _eshelby_tensor[_qp] = WI - F.transpose() * _stress[_qp];
 
   if (_temp_var && _deigenstrain_dT.size() > 0)
   {

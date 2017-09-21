@@ -83,9 +83,9 @@ JIntegral::computeQpIntegral()
   for (unsigned int i = 0; i < _current_elem->n_nodes(); ++i)
   {
     scalar_q += phi_curr_elem[i][_qp] * _q_curr_elem[i];
-
-    for (unsigned int j = 0; j < _current_elem->dim(); ++j)
-      grad_of_scalar_q(j) += dphi_curr_elem[i][_qp](j) * _q_curr_elem[i];
+    grad_of_scalar_q += dphi_curr_elem[i][_qp] * _q_curr_elem[i];
+    // for (unsigned int j = 0; j < _current_elem->dim(); ++j)
+    //   grad_of_scalar_q(j) += dphi_curr_elem[i][_qp](j) * _q_curr_elem[i];
   }
 
   RankTwoTensor grad_of_vector_q;
@@ -122,6 +122,12 @@ JIntegral::computeQpIntegral()
 
   Real etot = -eq + eq_thermal;
 
+  // if (scalar_q > 0.5)
+  // {
+  //   std::cout << "elem id = " << _current_elem->id() << ", qp = " << _qp
+  //             << ", grad_of_scalar_q = " << grad_of_scalar_q << ", eq = " << eq << std::endl;
+  // }
+
   return etot / q_avg_seg;
 }
 
@@ -142,17 +148,17 @@ JIntegral::computeIntegral()
 
   // calculate q for all nodes in this element
   _q_curr_elem.clear();
-  unsigned int ring_base = (_q_function_type == "TOPOLOGY") ? 0 : 1;
+  unsigned int ring_base = (_q_function_type == "Topology") ? 0 : 1;
 
   for (unsigned int i = 0; i < _current_elem->n_nodes(); ++i)
   {
     Node * this_node = _current_elem->get_node(i);
     Real q_this_node;
 
-    if (_q_function_type == "GEOMETRY")
+    if (_q_function_type == "Geometry")
       q_this_node = _crack_front_definition->DomainIntegralQFunction(
           _crack_front_point_index, _ring_index - ring_base, this_node);
-    else if (_q_function_type == "TOPOLOGY")
+    else if (_q_function_type == "Topology")
       q_this_node = _crack_front_definition->DomainIntegralTopologicalQFunction(
           _crack_front_point_index, _ring_index - ring_base, this_node);
 

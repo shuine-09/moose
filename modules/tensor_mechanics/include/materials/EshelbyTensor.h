@@ -31,12 +31,12 @@ protected:
   MaterialProperty<RankTwoTensor> & _eshelby_tensor;
   const MaterialProperty<RankTwoTensor> & _stress;
   const MaterialProperty<RankTwoTensor> & _stress_old;
-  const MaterialProperty<RankTwoTensor> & _strain_increment;
+  const MaterialProperty<RankTwoTensor> & _strain;
   std::vector<const VariableGradient *> _grad_disp;
 
   MaterialProperty<RealVectorValue> & _J_thermal_term_vec;
   const std::vector<MaterialPropertyName> _eigenstrain_names;
-  std::vector<const MaterialProperty<RankTwoTensor> *> _deigenstrain_dT; 
+  std::vector<const MaterialProperty<RankTwoTensor> *> _deigenstrain_dT;
   MooseVariable * _temp_var;
   const VariableGradient & _grad_temp;
 

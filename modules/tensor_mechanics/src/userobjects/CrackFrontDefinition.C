@@ -1089,17 +1089,12 @@ RealVectorValue
 CrackFrontDefinition::rotateFromCrackFrontCoordsToGlobal(const RealVectorValue vector,
                                                          const unsigned int point_index) const
 {
-  ColumnMajorMatrix vec3x1;
-  vec3x1 = _rot_matrix[point_index].transpose() * vector;
-  RealVectorValue vec;
-  vec(0) = vec3x1(0, 0);
-  vec(1) = vec3x1(1, 0);
-  vec(2) = vec3x1(2, 0);
+  RealVectorValue vec = _rot_matrix[point_index].transpose() * vector;
   return vec;
 }
 
-ColumnMajorMatrix
-CrackFrontDefinition::rotateToCrackFrontCoords(const SymmTensor tensor,
+RankTwoTensor
+CrackFrontDefinition::rotateToCrackFrontCoords(const RankTwoTensor tensor,
                                                const unsigned int point_index) const
 {
   RankTwoTensor tmp_tensor(tensor);

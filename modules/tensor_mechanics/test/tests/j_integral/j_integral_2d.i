@@ -46,7 +46,7 @@
 
 [Modules/TensorMechanics/Master]
   [./master]
-    strain = FINITE
+    strain = SMALL
     add_variables = true
     incremental = true
     generate_output = 'stress_xx stress_yy stress_zz vonmises_stress'
@@ -93,7 +93,9 @@
     poissons_ratio = 0.3
   [../]
   [./elastic_stress]
-    type = ComputeFiniteStrainElasticStress
+     #type = ComputeStrainIncrementBasedStress
+     type = ComputeFiniteStrainElasticStress
+     #type = ComputeLinearElasticStress
   [../]
   [./eshelby]
     type = EshelbyTensor

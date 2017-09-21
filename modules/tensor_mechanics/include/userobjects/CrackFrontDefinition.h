@@ -56,8 +56,6 @@ public:
                                          const unsigned int point_index) const;
   RealVectorValue rotateFromCrackFrontCoordsToGlobal(const RealVectorValue vector,
                                                      const unsigned int point_index) const;
-  ColumnMajorMatrix rotateToCrackFrontCoords(const SymmTensor tensor,
-                                             const unsigned int point_index) const;
   ColumnMajorMatrix rotateToCrackFrontCoords(const ColumnMajorMatrix tensor,
                                              const unsigned int point_index) const;
   void calculateRThetaToCrackFront(const Point qp,
