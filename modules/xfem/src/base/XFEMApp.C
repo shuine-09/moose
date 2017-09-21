@@ -24,6 +24,7 @@
 #include "CrackTipEnrichmentStressDivergenceTensors.h"
 #include "CrackTipEnrichmentCutOffBC.h"
 #include "ComputeCrackTipEnrichmentSmallStrain.h"
+#include "MaterialTensorIntegralXFEM.h"
 
 #include "GeometricCutUserObject.h"
 #include "LineSegmentCutUserObject.h"
@@ -113,6 +114,9 @@ XFEMApp::registerObjects(Factory & factory)
 
   // BC's
   registerBoundaryCondition(CrackTipEnrichmentCutOffBC);
+
+  // PP's
+  registerPostprocessor(MaterialTensorIntegralXFEM);
 }
 
 void
