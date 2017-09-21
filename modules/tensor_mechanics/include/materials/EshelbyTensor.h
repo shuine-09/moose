@@ -32,6 +32,7 @@ protected:
   const MaterialProperty<RankTwoTensor> & _stress;
   const MaterialProperty<RankTwoTensor> & _stress_old;
   const MaterialProperty<RankTwoTensor> & _strain;
+  const MaterialProperty<RankTwoTensor> & _grad_disp_enrich;
   std::vector<const VariableGradient *> _grad_disp;
 
   MaterialProperty<RealVectorValue> & _J_thermal_term_vec;

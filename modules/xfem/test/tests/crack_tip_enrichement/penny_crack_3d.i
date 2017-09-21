@@ -2,8 +2,8 @@
   order = FIRST
   family = LAGRANGE
   crack_front_definition = crack_front
-  enrichment_displacements = 'enrich1_x enrich1_y enrich1_z enrich2_x enrich2_y enrich2_z enrich3_x enrich3_y enrich3_z enrich4_x enrich4_y enrich4_z'
-  cut_off_radius = 0.15
+  enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y enrich1_z enrich2_z enrich3_z enrich4_z'
+  cut_off_radius = 0.1
 []
 
 [XFEM]
@@ -50,7 +50,7 @@
   dim = 3
   nx = 21
   ny = 21
-  nz = 14
+  nz = 11
   xmin = -1.0
   xmax = 1.0
   ymin = -1.0
@@ -356,7 +356,7 @@
 
   [./Quadrature]
     type = GAUSS
-    order = SIXTH
+    order = FOURTH
   [../]
 
 # controls for linear iterations

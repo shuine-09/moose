@@ -36,6 +36,7 @@ EshelbyTensor::EshelbyTensor(const InputParameters & parameters)
     _stress(getMaterialProperty<RankTwoTensor>(_base_name + "stress")),
     _stress_old(getMaterialPropertyOld<RankTwoTensor>(_base_name + "stress")),
     _strain(getMaterialProperty<RankTwoTensor>(_base_name + "mechanical_strain")),
+    _grad_disp_enrich(getMaterialProperty<RankTwoTensor>(_base_name + "grad_disp_enrich")),
     _grad_disp(3),
     _J_thermal_term_vec(declareProperty<RealVectorValue>("J_thermal_term_vec")),
     _eigenstrain_names(getParam<std::vector<MaterialPropertyName>>("eigenstrain_names")),
@@ -82,9 +83,12 @@ EshelbyTensor::computeQpProperties()
   //             _stress_old[_qp].doubleContraction(_strain_increment[_qp]) / 2.0;
   _sed[_qp] = _stress[_qp].doubleContraction(_strain[_qp]) / 2.0;
 
-  RankTwoTensor F((*_grad_disp[0])[_qp],
-                  (*_grad_disp[1])[_qp],
-                  (*_grad_disp[2])[_qp]); // Deformation gradient
+  // RankTwoTensor F((*_grad_disp[0])[_qp],
+  //                 (*_grad_disp[1])[_qp],
+  //                 (*_grad_disp[2])[_qp]); // Deformation gradient
+
+  RankTwoTensor F(_grad_disp_enrich[_qp]);
+
   RankTwoTensor H(F);
   F.addIa(1.0);
   Real detF = F.det();

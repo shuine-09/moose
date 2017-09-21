@@ -44,6 +44,7 @@ ComputeCrackTipEnrichmentSmallStrain::ComputeCrackTipEnrichmentSmallStrain(
     _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
     _mechanical_strain(declareProperty<RankTwoTensor>(_base_name + "mechanical_strain")),
     _total_strain(declareProperty<RankTwoTensor>(_base_name + "total_strain")),
+    _grad_disp_enrich(declareProperty<RankTwoTensor>(_base_name + "grad_disp_enrich")),
     _eigenstrain(getDefaultMaterialProperty<RankTwoTensor>(_base_name + "stress_free_strain")),
     _crack_front_definition(&getUserObject<CrackFrontDefinition>("crack_front_definition")),
     _B(4),
@@ -158,6 +159,8 @@ ComputeCrackTipEnrichmentSmallStrain::computeQpProperties()
   _enrich_strain[_qp] = (grad_tensor_enrich + grad_tensor_enrich.transpose()) / 2.0;
 
   RankTwoTensor grad_tensor((*_grad_disp[0])[_qp], (*_grad_disp[1])[_qp], (*_grad_disp[2])[_qp]);
+
+  _grad_disp_enrich[_qp] = grad_tensor + grad_tensor_enrich;
 
   _total_strain[_qp] = (grad_tensor + grad_tensor.transpose()) / 2.0;
 

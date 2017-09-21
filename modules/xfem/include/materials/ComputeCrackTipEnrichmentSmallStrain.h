@@ -55,6 +55,8 @@ protected:
 
   MaterialProperty<RankTwoTensor> & _total_strain;
 
+  MaterialProperty<RankTwoTensor> & _grad_disp_enrich;
+
   const MaterialProperty<RankTwoTensor> & _eigenstrain;
 
 private:

@@ -6,7 +6,7 @@
   crack_front_definition = crack_tip
   enrichment_displacements = 'enrich1_x enrich2_x enrich3_x enrich4_x enrich1_y enrich2_y enrich3_y enrich4_y'
   cut_off_boundary = all
-  cut_off_radius = 0.05
+  cut_off_radius = 0.1
 []
 
 [UserObjects]
@@ -29,8 +29,8 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 61
-  ny = 121
+  nx = 41
+  ny = 81
   xmin = 0.0
   xmax = 1.0
   ymin = 0.0
