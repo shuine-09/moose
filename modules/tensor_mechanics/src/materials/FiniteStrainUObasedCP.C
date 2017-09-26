@@ -412,12 +412,12 @@ FiniteStrainUObasedCP::solveStress()
   calcResidJacob();
   if (_err_tol)
   {
-//#ifdef DEBUG
+#ifdef DEBUG
     mooseWarning("FiniteStrainUObasedCP: Slip increment exceeds tolerance - Element number ",
                  _current_elem->id(),
                  " Gauss point = ",
                  _qp);
-//#endif
+#endif
     return;
   }
 
@@ -434,12 +434,12 @@ FiniteStrainUObasedCP::solveStress()
 
     if (_err_tol)
     {
-//#ifdef DEBUG
+#ifdef DEBUG
       mooseWarning("FiniteStrainUObasedCP: Slip increment exceeds tolerance - Element number ",
                    _current_elem->id(),
                    " Gauss point = ",
                    _qp);
-//#endif
+#endif
       return;
     }
 
@@ -448,9 +448,9 @@ FiniteStrainUObasedCP::solveStress()
 
     if (_use_line_search && rnorm > rnorm_prev && !lineSearchUpdate(rnorm_prev, dpk2))
     {
-//#ifdef DEBUG
+#ifdef DEBUG
       mooseWarning("FiniteStrainUObasedCP: Failed with line search");
-//#endif
+#endif
       _err_tol = true;
       return;
     }

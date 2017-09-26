@@ -3898,6 +3898,8 @@ FEProblemBase::restoreOldSolutions()
 void
 FEProblemBase::outputStep(ExecFlagType type)
 {
+  _nl->solution().close();
+  _aux->solution().close();
   _nl->update();
   _aux->update();
   if (_displaced_problem != NULL)
