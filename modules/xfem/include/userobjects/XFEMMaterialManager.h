@@ -100,7 +100,7 @@ template <typename T>
 const MaterialProperty<T> &
 XFEMMaterialManager::getMaterialPropertyOld(const std::string & name) const
 {
-  auto prop = dynamic_cast<MaterialProperty<T> *>(_props[materialPropertyIndex(name)]);
+  auto prop = dynamic_cast<MaterialProperty<T> *>(_props_old[materialPropertyIndex(name)]);
   if (prop == nullptr)
     mooseError("Property '", name, "' was requested using the wrong type");
 
@@ -111,7 +111,7 @@ template <typename T>
 const MaterialProperty<T> &
 XFEMMaterialManager::getMaterialPropertyOlder(const std::string & name) const
 {
-  auto prop = dynamic_cast<MaterialProperty<T> *>(_props[materialPropertyIndex(name)]);
+  auto prop = dynamic_cast<MaterialProperty<T> *>(_props_older[materialPropertyIndex(name)]);
   if (prop == nullptr)
     mooseError("Property '", name, "' was requested using the wrong type");
 
