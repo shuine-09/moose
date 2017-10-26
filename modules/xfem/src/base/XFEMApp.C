@@ -17,11 +17,14 @@
 #include "XFEMMarkerAux.h"
 #include "XFEMMarkerUserObject.h"
 #include "XFEMMaterialManager.h"
+#include "XFEMElemPairMaterialManager.h"
 #include "XFEMMaterialTensorMarkerUserObject.h"
 #include "XFEMRankTwoTensorMarkerUserObject.h"
 #include "XFEMAction.h"
 #include "XFEMSingleVariableConstraint.h"
 #include "XFEMPressure.h"
+#include "StatefulMaterialJump.h"
+#include "XFEMSingleVariableConstraintStatefulTest.h"
 
 #include "GeometricCutUserObject.h"
 #include "LineSegmentCutUserObject.h"
@@ -87,10 +90,12 @@ XFEMApp::registerObjects(Factory & factory)
 
   // Constraints
   registerConstraint(XFEMSingleVariableConstraint);
+  registerConstraint(XFEMSingleVariableConstraintStatefulTest);
 
   // UserObjects
   registerUserObject(XFEMMarkerUserObject);
   registerUserObject(XFEMMaterialManager);
+  registerUserObject(XFEMElemPairMaterialManager);
   registerUserObject(XFEMMaterialTensorMarkerUserObject);
   registerUserObject(XFEMRankTwoTensorMarkerUserObject);
 
@@ -103,6 +108,9 @@ XFEMApp::registerObjects(Factory & factory)
 
   // DiracKernels
   registerDiracKernel(XFEMPressure);
+
+  // Material
+  registerMaterial(StatefulMaterialJump);
 }
 
 void
