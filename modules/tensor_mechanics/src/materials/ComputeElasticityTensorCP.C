@@ -59,9 +59,13 @@ ComputeElasticityTensorCP::computeQpElasticityTensor()
 
   //RealTensorValue RR(-1.0/std::sqrt(6.0), -1.0/std::sqrt(6.0), 2.0/std::sqrt(6.0), 1.0/std::sqrt(2.0), -1.0/std::sqrt(2.0), 0, 1.0/std::sqrt(3.0), 1.0/std::sqrt(3.0), 1.0/std::sqrt(3.0));
   
+  //RealTensorValue RR(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+  RealTensorValue RR(-0.5774, -0.5774, 0.5774, 0.4082, -0.8165, -0.4082, 0.7071, 0, 0.7071);
+  //RealTensorValue RR(0.7071, -0.7071, 0, 0.4082, 0.4082, -0.8165, 0.5774, 0.5774, 0.5774);
+
   //RealTensorValue RR(0.4082, -0.8165, -0.4082, 0.5774, 0.5774, -0.5774, 0.7071, 0, 0.7071);
   
-  RealTensorValue RR(0.5547, 0.8321, 0, -0.8321, 0.5547, 0, 0, 0, 1);
+  //RealTensorValue RR(0.5547, 0.8321, 0, -0.8321, 0.5547, 0, 0, 0, 1);
 
   _R.assign(RR);
   //_crysrot[_qp] = _R.transpose();
