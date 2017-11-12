@@ -24,12 +24,13 @@ class TestLapBC : public IntegratedBC
 public:
   static InputParameters validParams();
 
+
   TestLapBC(const InputParameters & parameters);
-  virtual ~TestLapBC() {}
+
 
 protected:
-  virtual Real computeQpResidual();
-  virtual Real computeQpJacobian();
+  virtual Real computeQpResidual() override;
+  virtual Real computeQpJacobian() override;
 
   const VariableSecond & _second_u;
   const VariablePhiSecond & _second_phi;

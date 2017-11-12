@@ -307,8 +307,8 @@ Assembly::buildFaceFE(FEType type) const
 
     _fe_face[dim][type]->get_phi();
     _fe_face[dim][type]->get_dphi();
-    if (_need_second_derivative.find(type) != _need_second_derivative.end())
-      _fe_face[dim][type]->get_d2phi();
+    // if (_need_second_derivative.find(type) != _need_second_derivative.end())
+    _fe_face[dim][type]->get_d2phi();
   }
 }
 
