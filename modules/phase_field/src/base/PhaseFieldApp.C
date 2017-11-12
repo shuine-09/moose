@@ -83,6 +83,8 @@
 #include "SwitchingFunctionConstraintEta.h"
 #include "SwitchingFunctionConstraintLagrange.h"
 #include "SwitchingFunctionPenalty.h"
+#include "VesicleVolumeAreaPenalty.h"
+#include "VesicleShapeDeformation.h"
 
 // Remove this once the PFFracIntVar -> Reaction deprecation is expired:
 #include "Reaction.h"
@@ -114,6 +116,7 @@
 #include "ThumbIC.h"
 #include "Tricrystal2CircleGrainsIC.h"
 #include "TricrystalTripleJunctionIC.h"
+#include "VesicleIC.h"
 
 /*
  * Boundary Conditions
@@ -396,6 +399,8 @@ PhaseFieldApp::registerObjects(Factory & factory)
   registerKernel(SwitchingFunctionConstraintEta);
   registerKernel(SwitchingFunctionConstraintLagrange);
   registerKernel(SwitchingFunctionPenalty);
+  registerKernel(VesicleShapeDeformation);
+  registerKernel(VesicleVolumeAreaPenalty);
 
   registerInitialCondition(BimodalInverseSuperellipsoidsIC);
   registerInitialCondition(BimodalSuperellipsoidsIC);
@@ -421,6 +426,7 @@ PhaseFieldApp::registerObjects(Factory & factory)
   registerInitialCondition(ThumbIC);
   registerInitialCondition(Tricrystal2CircleGrainsIC);
   registerInitialCondition(TricrystalTripleJunctionIC);
+  registerInitialCondition(VesicleIC);
 
   registerBoundaryCondition(CahnHilliardAnisoFluxBC);
   registerBoundaryCondition(CahnHilliardFluxBC);
