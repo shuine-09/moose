@@ -76,6 +76,7 @@ validParams<DomainIntegralAction>()
                         "Set to true if the solid_mechanics system is "
                         "used. This option is only needed for "
                         "interaction integrals.");
+  params.addParam<bool>("closed_loop", false, "Set of points forms forms a closed loop");
   params.addParam<std::vector<MaterialPropertyName>>(
       "eigenstrain_names", "List of eigenstrains applied in the strain calculation");
   return params;
@@ -102,7 +103,8 @@ DomainIntegralAction::DomainIntegralAction(const InputParameters & params)
     _get_equivalent_k(getParam<bool>("equivalent_k")),
     _use_displaced_mesh(false),
     _output_q(getParam<bool>("output_q")),
-    _solid_mechanics(getParam<bool>("solid_mechanics"))
+    _solid_mechanics(getParam<bool>("solid_mechanics")),
+    _closed_loop(getParam<bool>("closed_loop"))
 {
   if (_q_function_type == GEOMETRY)
   {
@@ -312,6 +314,7 @@ DomainIntegralAction::act()
 
     params.set<unsigned int>("nrings") = nrings;
     params.set<MooseEnum>("q_function_type") = _q_function_type;
+    params.set<bool>("closed_loop") = _closed_loop;
 
     _problem->addUserObject(uo_type_name, uo_name, params);
   }

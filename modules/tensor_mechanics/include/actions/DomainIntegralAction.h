@@ -83,6 +83,7 @@ protected:
   bool _output_q;
   std::vector<unsigned int> _ring_vec;
   bool _solid_mechanics;
+  bool _closed_loop;
 };
 
 #endif // DOMAININTEGRALACTION_H
