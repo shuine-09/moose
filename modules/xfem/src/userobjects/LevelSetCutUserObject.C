@@ -1,0 +1,154 @@
+/****************************************************************/
+/* MOOSE - Multiphysics Object Oriented Simulation Environment  */
+/*                                                              */
+/*          All contents are licensed under LGPL V2.1           */
+/*             See LICENSE for full restrictions                */
+/****************************************************************/
+#include "LevelSetCutUserObject.h"
+#include "AuxiliarySystem.h"
+#include "MooseVariable.h"
+#include "libmesh/string_to_enum.h"
+
+template <>
+InputParameters
+validParams<LevelSetCutUserObject>()
+{
+  InputParameters params = validParams<GeometricCutUserObject>();
+  params.addRequiredParam<NonlinearVariableName>(
+      "level_set_var", "The name of level set variable used to represent the interface");
+  params.addClassDescription("XFEM mesh cut by level set function");
+  return params;
+}
+
+LevelSetCutUserObject::LevelSetCutUserObject(const InputParameters & parameters)
+  : GeometricCutUserObject(parameters),
+    _ls_var_name(parameters.get<NonlinearVariableName>("level_set_var")),
+    _ls_var(_fe_problem.getVariable(_tid, _ls_var_name)),
+    _aux_system(_fe_problem.getAuxiliarySystem()),
+    _aux_solution(_aux_system.currentSolution())
+{
+}
+
+bool LevelSetCutUserObject::active(Real /*time*/) const { return true; }
+
+bool
+LevelSetCutUserObject::cutElementByGeometry(const Elem * elem,
+                                            std::vector<CutEdge> & cut_edges,
+                                            std::vector<CutNode> & /*cut_nodes*/,
+                                            Real /*time*/) const
+{
+  bool cut_elem = false;
+
+  unsigned int n_sides = elem->n_sides();
+
+  for (unsigned int i = 0; i < n_sides; ++i)
+  {
+    UniquePtr<Elem> curr_side = elem->side(i);
+
+    if (curr_side->type() != EDGE2)
+      mooseError("In LevelSetCutUserObject element side must be EDGE2, but type is: ",
+                 libMesh::Utility::enum_to_string(curr_side->type()),
+                 " base element type is: ",
+                 libMesh::Utility::enum_to_string(elem->type()));
+
+    const Node * node1 = curr_side->get_node(0);
+    const Node * node2 = curr_side->get_node(1);
+
+    dof_id_type ls_dof_id_1 = node1->dof_number(_aux_system.number(), _ls_var.number(), 0);
+    dof_id_type ls_dof_id_2 = node2->dof_number(_aux_system.number(), _ls_var.number(), 0);
+
+    Number ls_node_1 = (*_serialized_aux_solution)(ls_dof_id_1);
+    Number ls_node_2 = (*_serialized_aux_solution)(ls_dof_id_2);
+
+    if (ls_node_1 * ls_node_2 < 0)
+    {
+      cut_elem = true;
+      CutEdge mycut;
+      mycut.id1 = node1->id();
+      mycut.id2 = node2->id();
+      Real seg_int_frac = std::abs(ls_node_1) / std::abs(ls_node_1 - ls_node_2);
+      mycut.distance = seg_int_frac;
+      mycut.host_side_id = i;
+      cut_edges.push_back(mycut);
+    }
+  }
+
+  return cut_elem;
+}
+
+bool
+LevelSetCutUserObject::cutElementByGeometry(const Elem * elem,
+                                            std::vector<CutFace> & cut_faces,
+                                            Real /*time*/) const
+{
+  bool cut_elem = false;
+
+  for (unsigned int i = 0; i < elem->n_sides(); ++i)
+  {
+    // This returns the lowest-order type of side.
+    std::unique_ptr<Elem> curr_side = elem->side(i);
+    if (curr_side->dim() != 2)
+      mooseError("In LevelSetCutUserObject dimension of side must be 2, but it is ",
+                 curr_side->dim());
+    unsigned int n_edges = curr_side->n_sides();
+
+    std::vector<unsigned int> cut_edges;
+    std::vector<Real> cut_pos;
+
+    for (unsigned int j = 0; j < n_edges; j++)
+    {
+      // This returns the lowest-order type of side.
+      std::unique_ptr<Elem> curr_edge = curr_side->side(j);
+      if (curr_edge->type() != EDGE2)
+        mooseError("In LevelSetCutUserObject face edge must be EDGE2, but type is: ",
+                   libMesh::Utility::enum_to_string(curr_edge->type()),
+                   " base element type is: ",
+                   libMesh::Utility::enum_to_string(elem->type()));
+
+      const Node * node1 = curr_edge->get_node(0);
+      const Node * node2 = curr_edge->get_node(1);
+
+      dof_id_type ls_dof_id_1 = node1->dof_number(_aux_system.number(), _ls_var.number(), 0);
+      dof_id_type ls_dof_id_2 = node2->dof_number(_aux_system.number(), _ls_var.number(), 0);
+
+      Number ls_node_1 = (*_serialized_aux_solution)(ls_dof_id_1);
+      Number ls_node_2 = (*_serialized_aux_solution)(ls_dof_id_2);
+
+      if (ls_node_1 * ls_node_2 < 0)
+      {
+        Real seg_int_frac = std::abs(ls_node_1) / std::abs(ls_node_1 - ls_node_2);
+        cut_edges.push_back(j);
+        cut_pos.push_back(seg_int_frac);
+      }
+    }
+
+    if (cut_edges.size() == 2)
+    {
+      cut_elem = true;
+      CutFace mycut;
+      mycut.face_id = i;
+      mycut.face_edge.push_back(cut_edges[0]);
+      mycut.face_edge.push_back(cut_edges[1]);
+      mycut.position.push_back(cut_pos[0]);
+      mycut.position.push_back(cut_pos[1]);
+      cut_faces.push_back(mycut);
+    }
+  }
+  return cut_elem;
+}
+
+bool
+LevelSetCutUserObject::cutFragmentByGeometry(std::vector<std::vector<Point>> & /*frag_edges*/,
+                                             std::vector<CutEdge> & /*cut_edges*/,
+                                             Real /*time*/) const
+{
+  return false;
+}
+
+bool
+LevelSetCutUserObject::cutFragmentByGeometry(std::vector<std::vector<Point>> & /*frag_faces*/,
+                                             std::vector<CutFace> & /*cut_faces*/,
+                                             Real /*time*/) const
+{
+  return false;
+}

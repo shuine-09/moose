@@ -5,28 +5,30 @@
 
 [Mesh]
   type = GeneratedMesh
-  dim = 2
-  nx = 5
-  ny = 6
+  dim = 3
+  nx = 11
+  ny = 11
+  nz = 11
   xmin = 0.0
   xmax = 1.0
   ymin = 0.0
   ymax = 1.0
-  elem_type = QUAD4
+  zmin = 0.0
+  zmax = 1.0
+  elem_type = HEX8
 []
 
 [XFEM]
-  geometric_cut_userobjects = 'line_seg_cut_uo'
+  geometric_cut_userobjects = 'level_set_cut_uo'
   qrule = volfrac
   output_cut_plane = true
 []
 
 [UserObjects]
-  [./line_seg_cut_uo]
-    type = LineSegmentCutUserObject
-    cut_data = '0.5 1.0 0.5 0.0'
-    time_start_cut = 0.0
-    time_end_cut = 0.0
+  [./level_set_cut_uo]
+    type = LevelSetCutUserObject
+    level_set_var = ls
+    execute_on = 'nonlinear'
   [../]
 []
 
@@ -39,8 +41,26 @@
   [./u_left]
     type = PiecewiseLinear
     x = '0   2'
-  #  y = '0  0.1'
-    y = '3 3'
+    y = '0  0.1'
+  [../]
+  [./ls_func]
+    type = ParsedFunction
+    value = 'sqrt(x*x + y*y + z*z) - 0.5'
+  [../]
+[]
+
+[AuxVariables]
+  [./ls]
+    order = FIRST
+    family = LAGRANGE
+  [../]
+[]
+
+[AuxKernels]
+  [./ls_function]
+    type = FunctionAux
+    variable = ls
+    function = ls_func
   [../]
 []
 
@@ -54,17 +74,17 @@
 [BCs]
 # Define boundary conditions
   [./left_u]
-    type = FunctionPresetBC
+    type = DirichletBC
     variable = u
-    boundary = 3
-    function = u_left
+    boundary = left
+    value = 2
   [../]
 
   [./right_u]
     type = DirichletBC
     variable = u
-    boundary = 1
-    value = 0
+    boundary = right
+    value = 1
   [../]
 []
 
@@ -81,12 +101,13 @@
   nl_abs_tol = 1e-10
 
   start_time = 0.0
-  dt = 1.0
-  end_time = 2.0
+  dt = 1
+  end_time = 1.0
+  max_xfem_update = 1
+
 []
 
 [Outputs]
-  file_base = diffusion_out
   interval = 1
   execute_on = timestep_end
   exodus = true

@@ -50,22 +50,23 @@ XFEMSingleVariableConstraint::computeQpResidual(Moose::DGResidualType type)
   switch (type)
   {
     case Moose::Element:
-      r -= (0.5 * _grad_u[_qp] * _interface_normal +
-            0.5 * _grad_u_neighbor[_qp] * _interface_normal) *
-           _test[_i][_qp];
-      r -= (_u[_qp] - _u_neighbor[_qp]) * 0.5 * _grad_test[_i][_qp] * _interface_normal;
-      r +=
-          0.5 * _grad_test[_i][_qp] * _interface_normal * _jump + 0.5 * _test[_i][_qp] * _jump_flux;
+      // r -= (0.5 * _grad_u[_qp] * _interface_normal +
+      //       0.5 * _grad_u_neighbor[_qp] * _interface_normal) *
+      //      _test[_i][_qp];
+      // r -= (_u[_qp] - _u_neighbor[_qp]) * 0.5 * _grad_test[_i][_qp] * _interface_normal;
+      // r +=
+      //     0.5 * _grad_test[_i][_qp] * _interface_normal * _jump + 0.5 * _test[_i][_qp] *
+      //     _jump_flux;
       r += _alpha * (_u[_qp] - _u_neighbor[_qp] - _jump) * _test[_i][_qp];
       break;
 
     case Moose::Neighbor:
-      r += (0.5 * _grad_u[_qp] * _interface_normal +
-            0.5 * _grad_u_neighbor[_qp] * _interface_normal) *
-           _test_neighbor[_i][_qp];
-      r -= (_u[_qp] - _u_neighbor[_qp]) * 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal;
-      r += 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal * _jump +
-           0.5 * _test_neighbor[_i][_qp] * _jump_flux;
+      // r += (0.5 * _grad_u[_qp] * _interface_normal +
+      //       0.5 * _grad_u_neighbor[_qp] * _interface_normal) *
+      //      _test_neighbor[_i][_qp];
+      // r -= (_u[_qp] - _u_neighbor[_qp]) * 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal;
+      // r += 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal * _jump +
+      //      0.5 * _test_neighbor[_i][_qp] * _jump_flux;
       r -= _alpha * (_u[_qp] - _u_neighbor[_qp] - _jump) * _test_neighbor[_i][_qp];
       break;
   }
@@ -80,26 +81,26 @@ XFEMSingleVariableConstraint::computeQpJacobian(Moose::DGJacobianType type)
   switch (type)
   {
     case Moose::ElementElement:
-      r += -0.5 * _grad_phi[_j][_qp] * _interface_normal * _test[_i][_qp] -
-           _phi[_j][_qp] * 0.5 * _grad_test[_i][_qp] * _interface_normal;
+      // r += -0.5 * _grad_phi[_j][_qp] * _interface_normal * _test[_i][_qp] -
+      //      _phi[_j][_qp] * 0.5 * _grad_test[_i][_qp] * _interface_normal;
       r += _alpha * _phi[_j][_qp] * _test[_i][_qp];
       break;
 
     case Moose::ElementNeighbor:
-      r += -0.5 * _grad_phi_neighbor[_j][_qp] * _interface_normal * _test[_i][_qp] +
-           _phi_neighbor[_j][_qp] * 0.5 * _grad_test[_i][_qp] * _interface_normal;
+      // r += -0.5 * _grad_phi_neighbor[_j][_qp] * _interface_normal * _test[_i][_qp] +
+      //      _phi_neighbor[_j][_qp] * 0.5 * _grad_test[_i][_qp] * _interface_normal;
       r -= _alpha * _phi_neighbor[_j][_qp] * _test[_i][_qp];
       break;
 
     case Moose::NeighborElement:
-      r += 0.5 * _grad_phi[_j][_qp] * _interface_normal * _test_neighbor[_i][_qp] -
-           _phi[_j][_qp] * 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal;
+      // r += 0.5 * _grad_phi[_j][_qp] * _interface_normal * _test_neighbor[_i][_qp] -
+      //      _phi[_j][_qp] * 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal;
       r -= _alpha * _phi[_j][_qp] * _test_neighbor[_i][_qp];
       break;
 
     case Moose::NeighborNeighbor:
-      r += 0.5 * _grad_phi_neighbor[_j][_qp] * _interface_normal * _test_neighbor[_i][_qp] +
-           _phi_neighbor[_j][_qp] * 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal;
+      // r += 0.5 * _grad_phi_neighbor[_j][_qp] * _interface_normal * _test_neighbor[_i][_qp] +
+      //      _phi_neighbor[_j][_qp] * 0.5 * _grad_test_neighbor[_i][_qp] * _interface_normal;
       r += _alpha * _phi_neighbor[_j][_qp] * _test_neighbor[_i][_qp];
       break;
   }
