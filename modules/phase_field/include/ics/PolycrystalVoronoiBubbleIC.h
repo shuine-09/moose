@@ -7,27 +7,27 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef POLYCRYSTALVORONOIVOIDIC_H
-#define POLYCRYSTALVORONOIVOIDIC_H
+#ifndef POLYCRYSTALVORONOIBUBBLEIC_H
+#define POLYCRYSTALVORONOIBUBBLEIC_H
 
 #include "MultiSmoothCircleIC.h"
 #include "MooseRandom.h"
 #include "PolycrystalICTools.h"
 
 // Forward Declarationsc
-class PolycrystalVoronoiVoidIC;
+class PolycrystalVoronoiBubbleIC;
 
 template <>
-InputParameters validParams<PolycrystalVoronoiVoidIC>();
+InputParameters validParams<PolycrystalVoronoiBubbleIC>();
 
 /**
- * PolycrystalVoronoiVoidIC initializes either grain or void values for a
+ * PolycrystalVoronoiBubbleIC initializes either grain or void values for a
  * voronoi tesselation with voids distributed along the grain boundaries.
  */
-class PolycrystalVoronoiVoidIC : public MultiSmoothCircleIC
+class PolycrystalVoronoiBubbleIC : public MultiSmoothCircleIC
 {
 public:
-  PolycrystalVoronoiVoidIC(const InputParameters & parameters);
+  PolycrystalVoronoiBubbleIC(const InputParameters & parameters);
 
   virtual void initialSetup() override;
 
@@ -55,6 +55,11 @@ protected:
   std::vector<Point> _centerpoints;
   std::vector<unsigned int> _assigned_op;
 
+  std::vector<Point> _gb_normal;
+
+  Real _R0;
+  Real _r0;
+
   std::string _grain_center_file_name;
 
   /// Type for distance and point
@@ -71,4 +76,4 @@ protected:
   } _customLess;
 };
 
-#endif // POLYCRYSTALVORONOIVOIDIC_H
+#endif // POLYCRYSTALVORONOIBUBBLEIC_H

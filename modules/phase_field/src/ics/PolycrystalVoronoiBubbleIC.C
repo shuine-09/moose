@@ -7,14 +7,17 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "PolycrystalVoronoiVoidIC.h"
+#include "PolycrystalVoronoiBubbleIC.h"
 
 // MOOSE includes
 #include "MooseMesh.h"
 #include "MooseVariable.h"
+#include "MathUtils.h"
+
+#include <fstream>
 
 InputParameters
-PolycrystalVoronoiVoidIC::actionParameters()
+PolycrystalVoronoiBubbleIC::actionParameters()
 {
   InputParameters params = validParams<MultiSmoothCircleIC>();
 
@@ -27,16 +30,18 @@ PolycrystalVoronoiVoidIC::actionParameters()
   params.addParam<bool>(
       "columnar_3D", false, "3D microstructure will be columnar in the z-direction?");
 
+  params.addParam<Real>("R0", 50, "R0");
+  params.addParam<Real>("r0", 35, "r0");
   return params;
 }
 
-registerMooseObject("PhaseFieldApp", PolycrystalVoronoiVoidIC);
+registerMooseObject("PhaseFieldApp", PolycrystalVoronoiBubbleIC);
 
 template <>
 InputParameters
-validParams<PolycrystalVoronoiVoidIC>()
+validParams<PolycrystalVoronoiBubbleIC>()
 {
-  InputParameters params = PolycrystalVoronoiVoidIC::actionParameters();
+  InputParameters params = PolycrystalVoronoiBubbleIC::actionParameters();
   MooseEnum structure_options("grains voids");
   params.addRequiredParam<MooseEnum>("structure_type",
                                      structure_options,
@@ -46,11 +51,12 @@ validParams<PolycrystalVoronoiVoidIC>()
                                 "The index for the current "
                                 "order parameter, not needed if "
                                 "structure_type = voids");
+
   params.addParam<FileName>("grain_center_file_name", "", "Name of the grain center file name");
   return params;
 }
 
-PolycrystalVoronoiVoidIC::PolycrystalVoronoiVoidIC(const InputParameters & parameters)
+PolycrystalVoronoiBubbleIC::PolycrystalVoronoiBubbleIC(const InputParameters & parameters)
   : MultiSmoothCircleIC(parameters),
     _structure_type(getParam<MooseEnum>("structure_type")),
     _op_num(getParam<unsigned int>("op_num")),
@@ -58,13 +64,15 @@ PolycrystalVoronoiVoidIC::PolycrystalVoronoiVoidIC(const InputParameters & param
     _op_index(getParam<unsigned int>("op_index")),
     _rand_seed(getParam<unsigned int>("rand_seed")),
     _columnar_3D(getParam<bool>("columnar_3D")),
+    _R0(getParam<Real>("R0")),
+    _r0(getParam<Real>("r0")),
     _grain_center_file_name(getParam<FileName>("grain_center_file_name"))
 {
   if (_invalue < _outvalue)
-    mooseError("PolycrystalVoronoiVoidIC requires that the voids be "
+    mooseError("PolycrystalVoronoiBubbleIC requires that the voids be "
                "represented with invalue > outvalue");
   if (_numbub == 0)
-    mooseError("PolycrystalVoronoiVoidIC requires numbub > 0. If you want no voids to "
+    mooseError("PolycrystalVoronoiBubbleIC requires numbub > 0. If you want no voids to "
                "be "
                "represented, use invalue = outvalue. In general, you should use "
                "PolycrystalReducedIC to represent Voronoi grain structures without "
@@ -72,7 +80,7 @@ PolycrystalVoronoiVoidIC::PolycrystalVoronoiVoidIC(const InputParameters & param
 }
 
 void
-PolycrystalVoronoiVoidIC::initialSetup()
+PolycrystalVoronoiBubbleIC::initialSetup()
 {
   if (_op_num <= _op_index)
     mooseError("op_index is too large in CircleGrainVoidIC");
@@ -95,9 +103,10 @@ PolycrystalVoronoiVoidIC::initialSetup()
 }
 
 void
-PolycrystalVoronoiVoidIC::computeCircleCenters()
+PolycrystalVoronoiBubbleIC::computeCircleCenters()
 {
   _centers.resize(_numbub);
+  _gb_normal.resize(_numbub);
 
   // This Code will place void center points on grain boundaries
   for (unsigned int vp = 0; vp < _numbub; ++vp)
@@ -112,7 +121,7 @@ PolycrystalVoronoiVoidIC::computeCircleCenters()
 
       if (num_tries > _max_num_tries)
         mooseError("Too many tries of assigning void centers in "
-                   "PolycrystalVoronoiVoidIC");
+                   "PolycrystalVoronoiBubbleIC");
 
       Point rand_point;
 
@@ -121,7 +130,7 @@ PolycrystalVoronoiVoidIC::computeCircleCenters()
 
       // Allow the vectors to be sorted based on their distance from the
       // rand_point
-      std::vector<PolycrystalVoronoiVoidIC::DistancePoint> diff(_grain_num);
+      std::vector<PolycrystalVoronoiBubbleIC::DistancePoint> diff(_grain_num);
 
       for (unsigned int gr = 0; gr < _grain_num; ++gr)
       {
@@ -156,9 +165,13 @@ PolycrystalVoronoiVoidIC::computeCircleCenters()
       // Assigning points to vector
       _centers[vp] = slope * lambda + midpoint;
 
+      _gb_normal[vp] = diff_centerpoints / diff_centerpoints.norm();
+
       // Checking to see if points are in the domain ONLY WORKS FOR PERIODIC
       for (unsigned int i = 0; i < LIBMESH_DIM; i++)
-        if ((_centers[vp](i) > _top_right(i)) || (_centers[vp](i) < _bottom_left(i)))
+        // if ((_centers[vp](i) > _top_right(i)) || (_centers[vp](i) < _bottom_left(i)))
+        if ((_centers[vp](i) > (_top_right(i) - _range(i) * 0.05)) ||
+            (_centers[vp](i) < (_bottom_left(i) + _range(i) * 0.05))) // WJ
           try_again = true;
 
       for (unsigned int i = 0; i < vp; ++i)
@@ -206,14 +219,68 @@ PolycrystalVoronoiVoidIC::computeCircleCenters()
 }
 
 Real
-PolycrystalVoronoiVoidIC::value(const Point & p)
+PolycrystalVoronoiBubbleIC::value(const Point & p)
 {
+  // Real value = 0.0;
+  //
+  // // Determine value for voids
+  // Real void_value = MultiSmoothCircleIC::value(p);
+  //
+  // // Determine value for grains
+  // Real grain_value = grainValueCalc(p);
+  //
+  // switch (_structure_type)
+  // {
+  //   case 0:                 // assigning values for grains (order parameters)
+  //     if (grain_value == 0) // Not in this grain
+  //       value = grain_value;
+  //     else                             // in this grain, but might be in a void
+  //         if (void_value == _outvalue) // Not in a void
+  //       value = grain_value;
+  //     else if (void_value > _outvalue && void_value < _invalue) // On void interface
+  //       value = 1.0 - (void_value - _outvalue) / (_invalue - _outvalue);
+  //     else if (void_value == _invalue) // In a void, so op = 0
+  //       value = 0.0;
+  //     break;
+  //
+  //   case 1: // assigning values for voids (concentration)
+  //     value = void_value;
+  //     break;
+  // }
+  //
+  // return value;
+
   Real value = 0.0;
 
-  // Determine value for voids
-  Real void_value = MultiSmoothCircleIC::value(p);
+  Real bub_value = _outvalue;
+  Real val2 = 0.0;
 
-  // Determine value for grains
+  for (unsigned int bub = 0; bub < _centers.size() && bub_value != _invalue; ++bub)
+  {
+    Point center = _centers[bub];
+    Point normal = _gb_normal[bub];
+
+    Point O1 = center + normal * _r0;
+    Point O2 = center - normal * _r0;
+
+    Real r1 = _mesh.minPeriodicDistance(_var.number(), p, O1);
+    Real r2 = _mesh.minPeriodicDistance(_var.number(), p, O2);
+
+    // Real r1 = (p - O1).norm();
+    // Real r2 = (p - O2).norm();
+
+    // std::cout << "p = " << p << ", center = " << center << ", normal = " << normal
+    //           << ", O1 = " << O1 << ", O2 = " << O2 << ", r1 = " << r1 << ", r2 = " << r2
+    //           << std::endl;
+
+    val2 = 0.5 * (1 - std::tanh((r1 - _R0) / _int_width)) * 0.5 *
+           (1 - std::tanh((r2 - _R0) / _int_width));
+
+    if ((val2 > bub_value && _invalue > _outvalue) || (val2 < bub_value && _outvalue > _invalue))
+      bub_value = val2;
+  }
+
+  // // Determine value for grains
   Real grain_value = grainValueCalc(p);
 
   switch (_structure_type)
@@ -221,17 +288,17 @@ PolycrystalVoronoiVoidIC::value(const Point & p)
     case 0:                 // assigning values for grains (order parameters)
       if (grain_value == 0) // Not in this grain
         value = grain_value;
-      else                             // in this grain, but might be in a void
-          if (void_value == _outvalue) // Not in a void
+      else                            // in this grain, but might be in a void
+          if (bub_value == _outvalue) // Not in a void
         value = grain_value;
-      else if (void_value > _outvalue && void_value < _invalue) // On void interface
-        value = 1.0 - (void_value - _outvalue) / (_invalue - _outvalue);
-      else if (void_value == _invalue) // In a void, so op = 0
+      else if (bub_value > _outvalue && bub_value < _invalue) // On void interface
+        value = 1.0 - (bub_value - _outvalue) / (_invalue - _outvalue);
+      else if (bub_value == _invalue) // In a void, so op = 0
         value = 0.0;
       break;
 
     case 1: // assigning values for voids (concentration)
-      value = void_value;
+      value = bub_value;
       break;
   }
 
@@ -239,7 +306,7 @@ PolycrystalVoronoiVoidIC::value(const Point & p)
 }
 
 RealGradient
-PolycrystalVoronoiVoidIC::gradient(const Point & p)
+PolycrystalVoronoiBubbleIC::gradient(const Point & p)
 {
   RealGradient gradient;
   RealGradient void_gradient = MultiSmoothCircleIC::gradient(p);
@@ -256,7 +323,7 @@ PolycrystalVoronoiVoidIC::gradient(const Point & p)
 }
 
 Real
-PolycrystalVoronoiVoidIC::grainValueCalc(const Point & p)
+PolycrystalVoronoiBubbleIC::grainValueCalc(const Point & p)
 {
   Real val = 0.0;
 
@@ -279,10 +346,10 @@ PolycrystalVoronoiVoidIC::grainValueCalc(const Point & p)
 }
 
 void
-PolycrystalVoronoiVoidIC::computeGrainCenters()
+PolycrystalVoronoiBubbleIC::computeGrainCenters()
 {
   if (_op_num > _grain_num)
-    mooseError("ERROR in PolycrystalVoronoiVoidIC: Number of order parameters "
+    mooseError("ERROR in PolycrystalVoronoiBubbleIC: Number of order parameters "
                "(op_num) can't be "
                "larger than the number of grains (grain_num)");
 
@@ -290,39 +357,95 @@ PolycrystalVoronoiVoidIC::computeGrainCenters()
   _centerpoints.resize(_grain_num);
   _assigned_op.resize(_grain_num);
 
-  // Randomly generate the centers of the individual grains represented by the Voronoi
-  //     tessellation
-  // for (unsigned int grain = 0; grain < _grain_num; grain++)
-  // {
-  //   for (unsigned int i = 0; i < LIBMESH_DIM; i++)
-  //     _centerpoints[grain](i) = _bottom_left(i) + _range(i) * MooseRandom::rand();
+  // Randomly generate the centers of the individual grains represented by the
+  // Voronoi tessellation
+
+  for (unsigned int grain = 0; grain < _grain_num; grain++)
+  {
+    for (unsigned int i = 0; i < LIBMESH_DIM; i++)
+      _centerpoints[grain](i) = _bottom_left(i) + _range(i) * MooseRandom::rand();
+
+    if (_columnar_3D)
+      _centerpoints[grain](2) = _bottom_left(2) + _range(2) * 0.5;
+  }
+
+  /*
+  Real _x_offset = 0.5;
+  Real _perturbation_percent = 0.4;
+  unsigned int _dim = _mesh.dimension();
+  const unsigned int root = MathUtils::round(std::pow(_grain_num, 1.0 / _dim));
+
+  std::vector<Real> distances(_grain_num);
+  std::vector<Point> holder(_grain_num);
+
+  const Real ndist = 1.0 / root;
+
+  // Assign the relative center points positions, defining the grains according to a hexagonal
+  // pattern
+  unsigned int count = 0;
+  for (unsigned int k = 0; k < (_dim == 3 ? root : 1); ++k)
+    for (unsigned int j = 0; j < (_dim >= 2 ? root : 1); ++j)
+      for (unsigned int i = 0; i < root; ++i)
+      {
+        // set x-coordinate
+        holder[count](0) = i * ndist + (0.5 * ndist * (j % 2)) + _x_offset * ndist;
+
+        // set y-coordinate
+        holder[count](1) = j * ndist + (0.5 * ndist * (k % 2));
+
+        // set z-coordinate
+        holder[count](2) = k * ndist + _x_offset * ndist;
+
+        // increment counter
+        count++;
+      }
+
+  // Assign center point values
+  for (unsigned int grain = 0; grain < _grain_num; ++grain)
+    for (unsigned int i = 0; i < LIBMESH_DIM; ++i)
+    {
+      if (_range(i) == 0)
+        continue;
+
+      Real perturbation_dist = (_range(i) / root * (_random.rand(_tid) * 2 - 1.0)) *
+                               _perturbation_percent; // Perturb -100 to 100%
+      _centerpoints[grain](i) = _bottom_left(i) + _range(i) * holder[grain](i) + perturbation_dist;
+
+      if (_centerpoints[grain](i) > _top_right(i))
+        _centerpoints[grain](i) = _top_right(i);
+      if (_centerpoints[grain](i) < _bottom_left(i))
+        _centerpoints[grain](i) = _bottom_left(i);
+    }
+
+    */
+
+  // _grain_center_file_name = "grain_center.txt";
+  // MooseUtils::checkFileReadable(_grain_center_file_name);
   //
-  //   if (_columnar_3D)
-  //     _centerpoints[grain](2) = _bottom_left(2) + _range(2) * 0.5;
+  // std::ifstream file_prop;
+  // file_prop.open(_grain_center_file_name.c_str());
+  //
+  // for (unsigned int i = 0; i < _grain_num; i++)
+  // {
+  //   for (unsigned int j = 0; j < 3; j++)
+  //   {
+  //     if (j != 2)
+  //     {
+  //       if (!(file_prop >> _centerpoints[i](j)))
+  //         mooseError("Error: Premature end of file");
+  //     }
+  //     else
+  //     {
+  //       _centerpoints[i](2) = 0.;
+  //     }
+  //   }
   // }
-
-  _grain_center_file_name = "grain_center.txt";
-  MooseUtils::checkFileReadable(_grain_center_file_name);
-
-  std::ifstream file_prop;
-  file_prop.open(_grain_center_file_name.c_str());
+  // file_prop.close();
 
   for (unsigned int i = 0; i < _grain_num; i++)
   {
-    for (unsigned int j = 0; j < 3; j++)
-    {
-      if (j != 2)
-      {
-        if (!(file_prop >> _centerpoints[i](j)))
-          mooseError("Error: Premature end of file");
-      }
-      else
-      {
-        _centerpoints[i](2) = 0.;
-      }
-    }
+    std::cout << "grain id = " << i << ", center = " << _centerpoints[i] << std::endl;
   }
-  file_prop.close();
 
   // Assign grains to specific order parameters in a way that maximizes the
   // distance

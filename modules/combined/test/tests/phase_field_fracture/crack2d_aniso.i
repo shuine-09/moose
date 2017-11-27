@@ -95,9 +95,8 @@
   [./cracked_stress]
     type = ComputeLinearElasticPFFractureStress
     c = c
-    kdamage = 1e-6
+    kdamage = 0
     F_name = E_el
-    use_current_history_variable = true
   [../]
 []
 
@@ -132,7 +131,8 @@
   l_max_its = 100
   nl_max_its = 10
 
-  dt = 5e-5
+  dt = 1e-4
+  dtmin = 1e-4
   num_steps = 2
 []
 

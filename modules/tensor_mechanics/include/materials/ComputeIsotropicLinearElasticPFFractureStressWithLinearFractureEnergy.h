@@ -7,25 +7,28 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef COMPUTEISOTROPICLINEARELASTICPFFRACTURESTRESS_H
-#define COMPUTEISOTROPICLINEARELASTICPFFRACTURESTRESS_H
+#ifndef COMPUTEISOTROPICLINEARELASTICPFFRACTURESTRESSWITHLINEARFRACTUREENERGY_H
+#define COMPUTEISOTROPICLINEARELASTICPFFRACTURESTRESSWITHLINEARFRACTUREENERGY_H
 
 #include "ComputeStressBase.h"
 
-class ComputeIsotropicLinearElasticPFFractureStress;
+class ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy;
 
 template <>
-InputParameters validParams<ComputeIsotropicLinearElasticPFFractureStress>();
+InputParameters
+validParams<ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy>();
 
 /**
  * Phase-field fracture
  * This class computes the stress and energy contribution for the
  * small strain Isotropic Elastic formulation of phase field fracture
  */
-class ComputeIsotropicLinearElasticPFFractureStress : public ComputeStressBase
+class ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy
+  : public ComputeStressBase
 {
 public:
-  ComputeIsotropicLinearElasticPFFractureStress(const InputParameters & parameters);
+  ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy(
+      const InputParameters & parameters);
 
 protected:
   /// Function required to initialize statefull material properties
@@ -62,9 +65,7 @@ protected:
   /// Old value of history variable
   const MaterialProperty<Real> & _hist_old;
 
-  bool _use_spectral;
-
   bool _use_vi_solver;
 };
 
-#endif // COMPUTEISOTROPICLINEARELASTICPFFRACTURESTRESS_H
+#endif // COMPUTEISOTROPICLINEARELASTICPFFRACTURESTRESSWITHLINEARFRACTUREENERGY_H

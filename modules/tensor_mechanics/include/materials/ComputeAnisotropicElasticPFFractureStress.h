@@ -7,15 +7,15 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef COMPUTELINEARELASTICPFFRACTURESTRESS_H
-#define COMPUTELINEARELASTICPFFRACTURESTRESS_H
+#ifndef COMPUTEANISOTROPICELASTICPFFRACTURESTRESS_H
+#define COMPUTEANISOTROPICELASTICPFFRACTURESTRESS_H
 
 #include "ComputeIsotropicLinearElasticPFFractureStress.h"
 
-class ComputeLinearElasticPFFractureStress;
+class ComputeAnisotropicElasticPFFractureStress;
 
 template <>
-InputParameters validParams<ComputeLinearElasticPFFractureStress>();
+InputParameters validParams<ComputeAnisotropicElasticPFFractureStress>();
 
 /**
  * Phase-field fracture
@@ -23,13 +23,14 @@ InputParameters validParams<ComputeLinearElasticPFFractureStress>();
  * Small strain Anisotropic Elastic formulation
  * Stiffness matrix scaled for heterogeneous elasticity property
  */
-class ComputeLinearElasticPFFractureStress : public ComputeIsotropicLinearElasticPFFractureStress
+class ComputeAnisotropicElasticPFFractureStress
+  : public ComputeIsotropicLinearElasticPFFractureStress
 {
 public:
-  ComputeLinearElasticPFFractureStress(const InputParameters & parameters);
+  ComputeAnisotropicElasticPFFractureStress(const InputParameters & parameters);
 
 protected:
   virtual void computeQpStress();
 };
 
-#endif // COMPUTELINEARELASTICPFFRACTURESTRESS_H
+#endif // COMPUTEANISOTROPICELASTICPFFRACTURESTRESS_H
