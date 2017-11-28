@@ -28,6 +28,7 @@ protected:
   virtual void computeQpProperties() override;
   virtual void initQpStatefulProperties() override;
 
+  const std::string _base_name;
   MaterialProperty<Real> & _prop;
   const MaterialProperty<Real> & _prop_old;
 

@@ -117,15 +117,25 @@ XFEMElemPairMaterialManager::initialize()
       const Elem * elem1 = pr.first;
       const Elem * elem2 = pr.second;
 
+      // if (_extra_qp_map.find(std::min(elem1->id(), elem2->id())) != _extra_qp_map.end())
+      //   continue;
+
+      // std::cout << "elem1 id = " << elem1->id() << ", elem2 id = " << elem2->id() << std::endl;
+
       if (elem1->processor_id() != processor_id())
         continue;
 
       const ElementPairInfo & info = elem_pair_loc.getElemPairInfo(pr);
 
-      for (unsigned int i = 0; i < (info._elem1_constraint_q_point).size(); ++i)
-        _extra_qp_map[elem1->id() + elem2->id()].push_back((info._elem1_constraint_q_point)[i]);
+      std::cout << "====> elem1 = " << elem1->id() << ", elem2 = " << elem2->id() << std::endl;
 
-      _elem_pair_id[elem1->id() + elem2->id()] = std::make_pair(elem1->id(), elem2->id());
+      for (unsigned int i = 0; i < (info._elem1_constraint_q_point).size(); ++i)
+      {
+        _extra_qp_map[std::min(elem1, elem2)].push_back((info._elem1_constraint_q_point)[i]);
+        std::cout << "q point [" << i << "] = " << (info._elem1_constraint_q_point)[i] << std::endl;
+      }
+
+      _elem_pair_id[std::min(elem1, elem2)] = std::max(elem1, elem2);
     }
   }
 }
@@ -154,9 +164,23 @@ XFEMElemPairMaterialManager::execute()
     auto & item_older = (*_map_older)[extra_qps.first];
 
     // number of extra QPs in the previous timestep (might have added QPs)
-    const auto n_old_extra_qps = item.size();
-    mooseAssert(n_old_extra_qps == item_old.size(), "Inconsistent history item sizes");
-    mooseAssert(n_old_extra_qps == item_older.size(), "Inconsistent history item sizes");
+    // const auto n_old_extra_qps = item.size();
+    // mooseAssert(n_old_extra_qps == item_old.size(), "Inconsistent history item sizes");
+    // mooseAssert(n_old_extra_qps == item_older.size(), "Inconsistent history item sizes");
+
+    // std::cout << "elem1 = " << extra_qps.first << ", elem2 = " << _elem_pair_id[extra_qps.first]
+    //           << std::endl;
+
+    auto n_old_extra_qps = 0;
+    if (item.size() > 0)
+    {
+      n_old_extra_qps = item[0]->size();
+      mooseAssert(n_old_extra_qps == item_old[0]->size(), "Inconsistent history item sizes");
+      mooseAssert(n_old_extra_qps == item_older[0]->size(), "Inconsistent history item sizes");
+    }
+
+    std::cout << "n_old_extra_qps = " << n_old_extra_qps << ", n_extra_qps " << n_extra_qps
+              << std::endl;
 
     // make sure the items have room for the correct number of properties
     while (item.size() < _props.size())
@@ -192,11 +216,9 @@ XFEMElemPairMaterialManager::execute()
       _props_older[i]->swap(item_older[i]);
 
     // reinit the element
-    _fe_problem.reinitElemPhys(
-        _mesh.elem_ptr(_elem_pair_id[extra_qps.first].first), extra_qps.second, 0 /* tid */);
+    _fe_problem.reinitElemPhys(extra_qps.first, extra_qps.second, 0 /* tid */);
     // reinit the neighbor element
-    _fe_problem.reinitNeighborPhys(
-        _mesh.elem_ptr(_elem_pair_id[extra_qps.first].second), extra_qps.second, 0 /* tid */);
+    _fe_problem.reinitNeighborPhys(_elem_pair_id[extra_qps.first], extra_qps.second, 0 /* tid */);
 
     // loop over QPs
     for (unsigned int qp = 0; qp < extra_qps.second.size(); ++qp)
@@ -220,7 +242,7 @@ XFEMElemPairMaterialManager::finalize()
 }
 
 void
-XFEMElemPairMaterialManager::swapInProperties(dof_id_type pair_id)
+XFEMElemPairMaterialManager::swapInProperties(const Elem * pair_id)
 {
   auto & item = (*_map)[pair_id];
   auto & item_old = (*_map_old)[pair_id];
@@ -236,7 +258,7 @@ XFEMElemPairMaterialManager::swapInProperties(dof_id_type pair_id)
 }
 
 void
-XFEMElemPairMaterialManager::swapOutProperties(dof_id_type pair_id)
+XFEMElemPairMaterialManager::swapOutProperties(const Elem * pair_id)
 {
   auto & item = (*_map)[pair_id];
   auto & item_old = (*_map_old)[pair_id];
@@ -252,13 +274,13 @@ XFEMElemPairMaterialManager::swapOutProperties(dof_id_type pair_id)
 }
 
 void
-XFEMElemPairMaterialManager::swapInProperties(dof_id_type pair_id) const
+XFEMElemPairMaterialManager::swapInProperties(const Elem * pair_id) const
 {
   const_cast<XFEMElemPairMaterialManager *>(this)->swapInProperties(pair_id);
 }
 
 void
-XFEMElemPairMaterialManager::swapOutProperties(dof_id_type pair_id) const
+XFEMElemPairMaterialManager::swapOutProperties(const Elem * pair_id) const
 {
   const_cast<XFEMElemPairMaterialManager *>(this)->swapOutProperties(pair_id);
 }

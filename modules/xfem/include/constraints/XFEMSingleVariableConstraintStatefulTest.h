@@ -55,6 +55,7 @@ protected:
   /// Vector normal to the internal interface
   Real _jump_flux;
 
+  const std::string _base_name;
   const MaterialProperty<Real> * _prop_jump;
   const MaterialProperty<Real> * _prop_jump_old;
 };
