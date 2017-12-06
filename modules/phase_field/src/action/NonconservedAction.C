@@ -87,7 +87,7 @@ NonconservedAction::act()
     params1.set<NonlinearVariableName>("variable") = _var_name;
     params1.applyParameters(parameters());
 
-    _problem->addKernel(kernel_type, kernel_name, params1);
+    //_problem->addKernel(kernel_type, kernel_name, params1);
 
     // Add AllenCahn kernel
     kernel_type = "AllenCahn";

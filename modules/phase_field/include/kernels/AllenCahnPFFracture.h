@@ -37,8 +37,8 @@ protected:
   const MaterialProperty<Real> & _gc_prop;
 
   ///@{ Coupled variable that is the laplacian of c
-  const VariableValue & _beta;
-  const unsigned int _beta_var;
+  // const VariableValue & _beta;
+  // const unsigned int _beta_var;
   ///@}
 
   ///@{ Displacement variables used for off-diagonal Jacobian
@@ -56,6 +56,10 @@ protected:
   const MaterialProperty<Real> & _dFdc;
   const MaterialProperty<Real> & _d2Fdc2;
   const MaterialProperty<RankTwoTensor> & _d2Fdcdstrain;
+
+  /// Contribution of umdamaged strain energy to damage evolution
+  const MaterialProperty<Real> & _H0_pos;
+  const MaterialProperty<Real> & _H0_pos_old;
   //@}
 };
 #endif // ALLENCAHNPFFRACTURE_H

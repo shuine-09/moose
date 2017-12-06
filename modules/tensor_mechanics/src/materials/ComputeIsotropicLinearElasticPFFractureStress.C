@@ -120,14 +120,15 @@ ComputeIsotropicLinearElasticPFFractureStress::computeQpStress()
       stress0pos * cfactor * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - stress0neg;
 
   // Elastic free energy density
-  _F[_qp] = _hist[_qp] * cfactor * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - G0_neg +
-            _gc[_qp] / (2 * _l[_qp]) * c * c;
+  _F[_qp] = _hist_old[_qp] * cfactor * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) -
+            G0_neg + _gc[_qp] / (2 * _l[_qp]) * c * c;
 
   // derivative of elastic free energy density wrt c
-  _dFdc[_qp] = -_hist[_qp] * 2.0 * cfactor * (1.0 - c) * (1 - _kdamage) + _gc[_qp] / _l[_qp] * c;
+  _dFdc[_qp] =
+      -_hist_old[_qp] * 2.0 * cfactor * (1.0 - c) * (1 - _kdamage) + _gc[_qp] / _l[_qp] * c;
 
   // 2nd derivative of elastic free energy density wrt c
-  _d2Fdc2[_qp] = _hist[_qp] * 2.0 * cfactor * (1 - _kdamage) + _gc[_qp] / _l[_qp];
+  _d2Fdc2[_qp] = _hist_old[_qp] * 2.0 * cfactor * (1 - _kdamage) + _gc[_qp] / _l[_qp];
 
   // 2nd derivative wrt c and strain. Note that I am ignoring the history variable here, but this
   // approach gets the fastest convergence

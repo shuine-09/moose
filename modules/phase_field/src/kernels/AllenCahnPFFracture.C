@@ -18,7 +18,7 @@ validParams<AllenCahnPFFracture>()
   params.addParam<MaterialPropertyName>("l_name", "l", "Interface width");
   params.addParam<MaterialPropertyName>("visco_name", "visco", "Viscosity parameter");
   params.addParam<MaterialPropertyName>("gc", "gc_prop", "Critical fracture energy density");
-  params.addRequiredCoupledVar("beta", "Variable storing the laplacian of c");
+  // params.addRequiredCoupledVar("beta", "Variable storing the laplacian of c");
   params.addCoupledVar("displacements",
                        "The string of displacements suitable for the problem statement");
   params.addParam<MaterialPropertyName>(
@@ -30,15 +30,17 @@ validParams<AllenCahnPFFracture>()
 AllenCahnPFFracture::AllenCahnPFFracture(const InputParameters & parameters)
   : DerivativeMaterialInterface<JvarMapKernelInterface<Kernel>>(parameters),
     _gc_prop(getMaterialProperty<Real>("gc")),
-    _beta(coupledValue("beta")),
-    _beta_var(coupled("beta")),
+    // _beta(coupledValue("beta")),
+    // _beta_var(coupled("beta")),
     _ndisp(coupledComponents("displacements")),
     _disp_var(_ndisp),
     _l(getMaterialProperty<Real>("l_name")),
     _visco(getMaterialProperty<Real>("visco_name")),
     _dFdc(getMaterialPropertyDerivative<Real>("F_name", _var.name())),
     _d2Fdc2(getMaterialPropertyDerivative<Real>("F_name", _var.name(), _var.name())),
-    _d2Fdcdstrain(getMaterialProperty<RankTwoTensor>("d2Fdcdstrain"))
+    _d2Fdcdstrain(getMaterialProperty<RankTwoTensor>("d2Fdcdstrain")),
+    _H0_pos(getMaterialProperty<Real>("H0_pos")),
+    _H0_pos_old(getMaterialPropertyOld<Real>("H0_pos"))
 {
   for (unsigned int i = 0; i < _ndisp; ++i)
     _disp_var[i] = coupled("displacements", i);
@@ -47,39 +49,37 @@ AllenCahnPFFracture::AllenCahnPFFracture(const InputParameters & parameters)
 Real
 AllenCahnPFFracture::computeQpResidual()
 {
-  const Real x =
-      (_l[_qp] * _beta[_qp] - _dFdc[_qp] / _gc_prop[_qp] - _u[_qp] / _l[_qp]) * _test[_i][_qp];
-  return -(std::abs(x) + x) / 2.0 / _visco[_qp];
+  return (-_gc_prop[_qp] * _l[_qp] * _grad_u[_qp] * _grad_test[_i][_qp] +
+          2.0 * (1.0 - _u[_qp]) * _test[_i][_qp] * _H0_pos[_qp] -
+          _gc_prop[_qp] / _l[_qp] * _u[_qp] * _test[_i][_qp]) /
+         _gc_prop[_qp];
 }
 
 Real
 AllenCahnPFFracture::computeQpJacobian()
 {
-  const Real x =
-      (_l[_qp] * _beta[_qp] - _dFdc[_qp] / _gc_prop[_qp] - _u[_qp] / _l[_qp]) * _test[_i][_qp];
-  const Real dx = (_d2Fdc2[_qp] - 1.0 / _l[_qp]) * _phi[_j][_qp] * _test[_i][_qp];
-  return -(MathUtils::sign(x) + 1.0) / 2.0 * dx / _visco[_qp];
+  return (-_gc_prop[_qp] * _l[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp] -
+          2.0 * _phi[_j][_qp] * _test[_i][_qp] * _H0_pos[_qp] -
+          _gc_prop[_qp] / _l[_qp] * _phi[_j][_qp] * _test[_i][_qp]) /
+         _gc_prop[_qp];
 }
 
 Real
 AllenCahnPFFracture::computeQpOffDiagJacobian(unsigned int jvar)
 {
-  const Real x =
-      (_l[_qp] * _beta[_qp] - _dFdc[_qp] / _gc_prop[_qp] - _u[_qp] / _l[_qp]) * _test[_i][_qp];
+  Real u = _u[_qp];
 
-  if (jvar == _beta_var)
-    return -(MathUtils::sign(x) + 1.0) / 2.0 / _visco[_qp] * _l[_qp] * _phi[_j][_qp] *
-           _test[_i][_qp];
-  else
-    for (unsigned int c_comp = 0; c_comp < _ndisp; ++c_comp)
-      if (jvar == _disp_var[c_comp])
-      {
-        const Real dxddFdc = -1.0 / _gc_prop[_qp] * _test[_i][_qp];
-        const Real d2Fdcdstrain_comp =
-            (_d2Fdcdstrain[_qp].column(c_comp) + _d2Fdcdstrain[_qp].row(c_comp)) / 2.0 *
-            _grad_phi[_j][_qp];
-        return -(MathUtils::sign(x) + 1.0) / 2.0 / _visco[_qp] * dxddFdc * d2Fdcdstrain_comp;
-      }
+  for (unsigned int c_comp = 0; c_comp < _ndisp; ++c_comp)
+    if (jvar == _disp_var[c_comp])
+    {
+      if (u > 1.0)
+        u = 1.0;
+      const Real dxddFdc = 2.0 * (1.0 - u) * _test[_i][_qp];
+      const Real d2Fdcdstrain_comp =
+          (_d2Fdcdstrain[_qp].column(c_comp) + _d2Fdcdstrain[_qp].row(c_comp)) / 2.0 *
+          _grad_phi[_j][_qp];
+      return dxddFdc * d2Fdcdstrain_comp / _gc_prop[_qp];
+    }
 
   return 0.0;
 }

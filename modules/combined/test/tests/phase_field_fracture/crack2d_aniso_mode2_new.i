@@ -1,42 +1,15 @@
 [Mesh]
-  type = GeneratedMesh
-  dim = 2
-  nx = 100
-  ny = 50
-  xmax = 1.0
-  xmin = 0.0
-  ymax = 0.5
-  ymin = 0.0
-[]
-
-[MeshModifiers]
-  [./noncrack]
-    type = BoundingBoxNodeSet
-    new_boundary = noncrack
-    bottom_left = '0.5 0 0'
-    top_right = '1 0 0'
-  [../]
-  [./right_bottom]
-    type = AddExtraNodeset
-    new_boundary = 'right_bottom'
-    coord = '1.0 0.0'
-[../]
+  type = FileMesh
+  file = sent1.e
+  uniform_refine = 0
 []
 
 [GlobalParams]
   displacements = 'disp_x disp_y'
+  block = 1
 []
 
 [Modules]
-  [./PhaseField]
-    [./Nonconserved]
-      [./c]
-        free_energy = E_el
-        kappa = kappa_op
-        mobility = L
-      [../]
-    [../]
-  [../]
   [./TensorMechanics]
     [./Master]
       [./mech]
@@ -49,7 +22,23 @@
   [../]
 []
 
+[Variables]
+  [./c]
+    order = FIRST
+    family = LAGRANGE
+  [../]
+[]
+
 [Kernels]
+  [./ac_pf]
+    type = AllenCahnPFFracture
+    l_name = l
+    visco_name = visco
+    gc = gc_prop
+    displacements = 'disp_x disp_y'
+    F_name = E_el
+    variable = c
+  [../]
   [./solid_x]
     type = PhaseFieldFractureMechanicsOffDiag
     variable = disp_x
@@ -68,7 +57,7 @@
   [./pfbulkmat]
     type = GenericConstantMaterial
     prop_names = 'gc_prop l visco'
-    prop_values = '1e-3 0.03 1e-4'
+    prop_values = '1e-3 0.02 1e-3'
   [../]
   [./define_mobility]
     type = ParsedMaterial
@@ -86,6 +75,7 @@
     type = ComputeLinearElasticPFFractureStress
     c = c
     F_name = E_el
+    kdamage = 1e-04
   [../]
   [./elasticity_tensor]
     type = ComputeElasticityTensor
@@ -95,26 +85,25 @@
 []
 
 [BCs]
-  [./ydisp]
+  [./xdisp]
     type = FunctionPresetBC
-    variable = disp_y
-    boundary = top
+    variable = disp_x
+    boundary = 2
     function = 't'
-  [../]
-  [./yfix]
-    type = PresetBC
-    variable = disp_y
-    boundary = noncrack
-    value = 0
   [../]
   [./xfix]
     type = PresetBC
     variable = disp_x
-    boundary = right_bottom
+    boundary = 1
+    value = 0
+  [../]
+  [./yfix]
+    type = PresetBC
+    variable = disp_y
+    boundary = '1 2'
     value = 0
   [../]
 []
-
 
 [Preconditioning]
   active = 'smp'
@@ -136,16 +125,18 @@
 
   line_search = default
 
-  nl_rel_tol = 1e-9
+  nl_rel_tol = 1e-5
+  nl_abs_tol = 1e-6
   l_tol = 1e-4
-  l_max_its = 15
-  nl_max_its = 15
+  l_max_its = 50
+  nl_max_its = 50
 
   dt = 1.0e-4
   num_steps = 1000
 []
 
 [Outputs]
+#  file_base = fd_test
   exodus = true
   print_perf_log = true
 []

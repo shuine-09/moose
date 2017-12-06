@@ -1,66 +1,44 @@
 [Mesh]
-  type = GeneratedMesh
-  dim = 2
-  nx = 100
-  ny = 50
-  xmax = 1.0
-  xmin = 0.0
-  ymax = 0.5
-  ymin = 0.0
+  type = FileMesh
+  file = sent6.e
+  uniform_refine = 0
 []
-
-[MeshModifiers]
-  [./noncrack]
-    type = BoundingBoxNodeSet
-    new_boundary = noncrack
-    bottom_left = '0.5 0 0'
-    top_right = '1 0 0'
-  [../]
-  [./right_bottom]
-    type = AddExtraNodeset
-    new_boundary = 'right_bottom'
-    coord = '1.0 0.0'
-[../]
-[]
+#[Mesh]
+#  type = GeneratedMesh
+#  nx = 200
+#  ny = 80
+#  xmax = 1.0
+#  xmin = 0.0
+#  ymax = 0.4
+#  ymin = 0.0
+#  dim = 2
+#[]
 
 [GlobalParams]
   displacements = 'disp_x disp_y'
+  block = 1
+[]
+
+[AuxVariables]
+  [./disp_x]
+    order = FIRST
+    family = LAGRANGE
+  [../]
+  [./disp_y]
+    order = FIRST
+    family = LAGRANGE
+  [../]
 []
 
 [Modules]
   [./PhaseField]
     [./Nonconserved]
-      [./c]
+      [./sub_c]
         free_energy = E_el
         kappa = kappa_op
         mobility = L
       [../]
     [../]
-  [../]
-  [./TensorMechanics]
-    [./Master]
-      [./mech]
-        add_variables = true
-        strain = SMALL
-        additional_generate_output = stress_yy
-        decomposition_method = EigenSolution
-      [../]
-    [../]
-  [../]
-[]
-
-[Kernels]
-  [./solid_x]
-    type = PhaseFieldFractureMechanicsOffDiag
-    variable = disp_x
-    component = 0
-    c = c
-  [../]
-  [./solid_y]
-    type = PhaseFieldFractureMechanicsOffDiag
-    variable = disp_y
-    component = 1
-    c = c
   [../]
 []
 
@@ -68,7 +46,7 @@
   [./pfbulkmat]
     type = GenericConstantMaterial
     prop_names = 'gc_prop l visco'
-    prop_values = '1e-3 0.03 1e-4'
+    prop_values = '1e-3 0.0075 1e-3'
   [../]
   [./define_mobility]
     type = ParsedMaterial
@@ -84,40 +62,21 @@
   [../]
   [./elastic]
     type = ComputeLinearElasticPFFractureStress
-    c = c
+    c = sub_c
     F_name = E_el
+    kdamage = 1.0e-4
   [../]
   [./elasticity_tensor]
     type = ComputeElasticityTensor
     C_ijkl = '120.0 80.0'
     fill_method = symmetric_isotropic
   [../]
-[]
-
-[BCs]
-  [./ydisp]
-    type = FunctionPresetBC
-    variable = disp_y
-    boundary = top
-    function = 't'
-  [../]
-  [./yfix]
-    type = PresetBC
-    variable = disp_y
-    boundary = noncrack
-    value = 0
-  [../]
-  [./xfix]
-    type = PresetBC
-    variable = disp_x
-    boundary = right_bottom
-    value = 0
+  [./strain]
+    type = ComputeSmallStrain
   [../]
 []
-
 
 [Preconditioning]
-  active = 'smp'
   [./smp]
     type = SMP
     full = true
@@ -136,16 +95,27 @@
 
   line_search = default
 
-  nl_rel_tol = 1e-9
+  nl_rel_tol = 1e-8
+  nl_abs_tol = 1e-10
   l_tol = 1e-4
-  l_max_its = 15
-  nl_max_its = 15
+  l_max_its = 50
+  nl_max_its = 30
 
   dt = 1.0e-4
-  num_steps = 1000
+  num_steps = 10000
 []
 
+#[Dampers]
+#  [./bounding_value_damp]
+#    type = BoundingValueElementDamper
+#    min_value = 0
+#    max_value = 1.04
+#    variable = sub_c
+#  [../]
+#[]
+
 [Outputs]
+  print_linear_residuals = true
+  csv = true
   exodus = true
-  print_perf_log = true
 []
