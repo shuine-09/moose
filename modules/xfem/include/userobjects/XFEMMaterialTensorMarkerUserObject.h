@@ -23,13 +23,16 @@ public:
   virtual ~XFEMMaterialTensorMarkerUserObject() {}
 
 protected:
+  bool _use_weibull;
   MaterialTensorCalculator _material_tensor_calculator;
   const MaterialProperty<SymmTensor> & _tensor;
   Real _threshold;
   bool _average;
   Real _random_range;
 
-  virtual bool doesElementCrack(RealVectorValue & direction);
+  const MaterialProperty<Real> & _weibull;
+  
+  virtual bool doesElementCrack(RealVectorValue &direction);
 };
 
 #endif // XFEMMATERIALTENSORMARKERUSEROBJECT_H
