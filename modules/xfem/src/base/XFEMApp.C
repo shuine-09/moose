@@ -31,6 +31,11 @@
 #include "CircleCutUserObject.h"
 #include "EllipseCutUserObject.h"
 #include "RectangleCutUserObject.h"
+#include "XFEMMeanStress.h"
+#include "XFEMWeibullMaterial.h"
+#include "XFEMMaxHoopStress.h"
+#include "XFEMEnergyReleaseRate.h"
+#include "HeatTestAux.h"
 
 template <>
 InputParameters
@@ -86,6 +91,7 @@ XFEMApp::registerObjects(Factory & factory)
   registerAux(XFEMVolFracAux);
   registerAux(XFEMCutPlaneAux);
   registerAux(XFEMMarkerAux);
+  registerAux(HeatTestAux);
 
   // Constraints
   registerConstraint(XFEMSingleVariableConstraint);
@@ -101,6 +107,9 @@ XFEMApp::registerObjects(Factory & factory)
   registerUserObject(CircleCutUserObject);
   registerUserObject(EllipseCutUserObject);
   registerUserObject(RectangleCutUserObject);
+  registerUserObject(XFEMMeanStress);
+  registerUserObject(XFEMMaxHoopStress);
+  registerUserObject(XFEMEnergyReleaseRate);
 
   // DiracKernels
   registerDiracKernel(XFEMPressure);
@@ -110,6 +119,7 @@ XFEMApp::registerObjects(Factory & factory)
 
   // Materials
   registerMaterial(ComputeCrackTipEnrichmentSmallStrain);
+  registerMaterial(XFEMWeibullMaterial);
 
   // BC's
   registerBoundaryCondition(CrackTipEnrichmentCutOffBC);
