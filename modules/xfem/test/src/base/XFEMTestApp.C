@@ -13,6 +13,10 @@
 #include "AppFactory.h"
 #include "MooseSyntax.h"
 
+#include "ExtraQPTest.h"
+#include "ManagedSourceTest.h"
+#include "StatefulTestMaterial.h"
+
 template <>
 InputParameters
 validParams<XFEMTestApp>()

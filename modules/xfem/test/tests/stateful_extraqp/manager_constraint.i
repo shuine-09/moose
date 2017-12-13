@@ -1,21 +1,12 @@
-[GlobalParams]
-  order = FIRST
-  family = LAGRANGE
-[]
-
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 1
-  ny = 2
-  xmin = 0.0
-  xmax = 1.0
-  ymin = 0.0
-  ymax = 1.0
-  elem_type = QUAD4
+  nx = 39
+  ny = 40
 []
 
 [XFEM]
+  geometric_cut_userobjects = 'line_seg_cut_uo'
   qrule = volfrac
   output_cut_plane = true
 []
@@ -25,7 +16,14 @@
     type = LineSegmentCutUserObject
     cut_data = '0.5 1.0 0.5 0.0'
     time_start_cut = 0.0
-    time_end_cut = 2.0
+    time_end_cut = 1
+  [../]
+[]
+
+[UserObjects]
+  [./manager]
+    type = XFEMElemPairMaterialManager
+    material_names = 'material1'
   [../]
 []
 
@@ -38,7 +36,7 @@
   [./u_left]
     type = PiecewiseLinear
     x = '0   2'
-    y = '0  0.1'
+    y = '1   1'
   [../]
 []
 
@@ -46,6 +44,16 @@
   [./diff]
     type = Diffusion
     variable = u
+  [../]
+[]
+
+[Constraints]
+  [./xfem_constraint]
+    type = XFEMSingleVariableConstraintStatefulTest
+    variable = u
+    #jump = 0
+    #jump_flux = 0
+    manager = manager
   [../]
 []
 
@@ -66,29 +74,28 @@
   [../]
 []
 
+[Materials]
+  [./material1]
+    type = StatefulMaterialJump
+    compute = false
+    u = u
+  [../]
+[]
+
+[Kernels]
+  [./dt]
+    type = TimeDerivative
+    variable = u
+  [../]
+[]
+
 [Executioner]
   type = Transient
-  solve_type = 'PJFNK'
-  petsc_options_iname = '-pc_type -pc_hypre_type'
-  petsc_options_value = 'hypre boomeramg'
-  line_search = 'none'
-
-  l_tol = 1e-3
-  nl_max_its = 15
-  nl_rel_tol = 1e-10
-  nl_abs_tol = 1e-10
-
-  start_time = 0.0
-  dt = 1.0
-  end_time = 2.0
+  dt = 0.1
+  num_steps = 10
 []
 
 [Outputs]
-  interval = 1
   execute_on = timestep_end
   exodus = true
-  [./console]
-    type = Console
-    output_linear = true
-  [../]
 []
