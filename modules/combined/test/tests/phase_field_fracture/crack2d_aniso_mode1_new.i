@@ -1,6 +1,6 @@
 [Mesh]
   type = FileMesh
-  file = sent6.e
+  file = sent7.e
   uniform_refine = 0
 []
 
@@ -97,28 +97,28 @@
     type = ComputeElasticityTensor
     C_ijkl = '1.684e2 1.214e2 1.214e2 1.684e2 1.214e2 1.684e2 0.754e2 0.754e2 0.754e2'
     fill_method = symmetric9
-    euler_angle_1 = 1
-    euler_angle_2 = 1
-    euler_angle_3 = 1
+    euler_angle_1 = 0
+    euler_angle_2 = 0
+    euler_angle_3 = 0
   [../]
 []
 
 [BCs]
   [./xdisp]
     type = FunctionPresetBC
-    variable = disp_x
+    variable = disp_y
     boundary = 2
     function = 't'
   [../]
   [./xfix]
     type = PresetBC
-    variable = disp_x
+    variable = disp_y
     boundary = 1
     value = 0
   [../]
   [./yfix]
     type = PresetBC
-    variable = disp_y
+    variable = disp_x
     boundary = '1 2'
     value = 0
   [../]
@@ -136,19 +136,20 @@
   [./bounding_value_damp]
     type = BoundingValueElementDamper
     min_value = -0.01
-    max_value = 1.01
+    max_value = 1.02
     variable = c
   [../]
 []
+
 [Postprocessors]
   [./disp_x_top]
     type = SideAverageValue
-    variable = disp_x
+    variable = disp_y
     boundary = 2
   [../]
   [./reaction_force_x]
     type = NodalSum
-    variable = resid_x
+    variable = resid_y
     boundary = 2
   [../]
 []
@@ -177,7 +178,7 @@
 
 [Outputs]
 #  file_base = fd_test
-  file_base = test_r1
+  file_base = test_r0_mode1
   exodus = true
   csv = true
   print_perf_log = true

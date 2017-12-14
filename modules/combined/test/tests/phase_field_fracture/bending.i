@@ -1,6 +1,6 @@
 [Mesh]
   type = FileMesh
-  file = sent6.e
+  file = bending_hole_a.e
   uniform_refine = 0
 []
 
@@ -21,6 +21,21 @@
     [../]
   [../]
 []
+
+#[XFEM]
+#  geometric_cut_userobjects = 'line_seg_cut_uo'
+#  qrule = volfrac
+#  output_cut_plane = true
+#[]
+#
+#[UserObjects]
+#  [./line_seg_cut_uo]
+#    type = LineSegmentCutUserObject
+#    cut_data = '-4.99 -4.0 -4.99 -2.5'
+#    time_start_cut = 0.0
+#    time_end_cut = 0.0
+#  [../]
+#[]
 
 [Variables]
   [./c]
@@ -64,11 +79,23 @@
   [../]
 []
 
+[Functions]
+  [./gc]
+    type = ParsedFunction
+    value = 'if(x>-7 & x < -2, 1e-3, 1e-1)'
+  [../]
+[]
+
 [Materials]
   [./pfbulkmat]
     type = GenericConstantMaterial
-    prop_names = 'gc_prop l visco'
-    prop_values = '1e-3 0.01 1e-3'
+    prop_names = 'l visco'
+    prop_values = '0.015 1e-3'
+  [../]
+  [./pfbulkmat2]
+    type = GenericFunctionMaterial
+    prop_names = 'gc_prop'
+    prop_values = 'gc'
   [../]
   [./define_mobility]
     type = ParsedMaterial
@@ -88,40 +115,52 @@
     F_name = E_el
     kdamage = 1e-03
   [../]
-  #[./elasticity_tensor]
-  #  type = ComputeElasticityTensor
-  #  C_ijkl = '120.0 80.0'
-  #  fill_method = symmetric_isotropic
-  #[../]
   [./elasticity_tensor]
     type = ComputeElasticityTensor
-    C_ijkl = '1.684e2 1.214e2 1.214e2 1.684e2 1.214e2 1.684e2 0.754e2 0.754e2 0.754e2'
-    fill_method = symmetric9
-    euler_angle_1 = 1
-    euler_angle_2 = 1
-    euler_angle_3 = 1
+    C_ijkl = '1e6.0 5e5'
+    fill_method = symmetric_isotropic
   [../]
+  #[./elasticity_tensor]
+  #  type = ComputeElasticityTensor
+  #  C_ijkl = '1.684e2 1.214e2 1.214e2 1.684e2 1.214e2 1.684e2 0.754e2 0.754e2 0.754e2'
+  #  fill_method = symmetric9
+  #  euler_angle_1 = 0
+  #  euler_angle_2 = 0
+  #  euler_angle_3 = 0
+  #[../]
 []
 
 [BCs]
-  [./xdisp]
-    type = FunctionPresetBC
-    variable = disp_x
-    boundary = 2
-    function = 't'
-  [../]
-  [./xfix]
-    type = PresetBC
-    variable = disp_x
-    boundary = 1
-    value = 0
-  [../]
-  [./yfix]
-    type = PresetBC
-    variable = disp_y
-    boundary = '1 2'
-    value = 0
-  [../]
+    [./bottomx]
+      type = PresetBC
+      boundary = 1
+      variable = disp_x
+      value = 0.0
+    [../]
+    [./bottomy]
+      type = PresetBC
+      boundary = 1
+      variable = disp_y
+      value = 0.0
+    [../]
+    [./bottomy2]
+      type = PresetBC
+      boundary = 2
+      variable = disp_y
+      value = 0.0
+    [../]
+    [./topx]
+      type = PresetBC
+      boundary = 3
+      variable = disp_x
+      value = 0.0
+    [../]
+    [./topy]
+      type = FunctionPresetBC
+      boundary = 3
+      variable = disp_y
+      function = '-t'
+    [../]
 []
 
 [Preconditioning]
@@ -132,26 +171,15 @@
   [../]
 []
 
-[Dampers]
-  [./bounding_value_damp]
-    type = BoundingValueElementDamper
-    min_value = -0.01
-    max_value = 1.01
-    variable = c
-  [../]
-[]
-[Postprocessors]
-  [./disp_x_top]
-    type = SideAverageValue
-    variable = disp_x
-    boundary = 2
-  [../]
-  [./reaction_force_x]
-    type = NodalSum
-    variable = resid_x
-    boundary = 2
-  [../]
-[]
+#[Dampers]
+#  [./bounding_value_damp]
+#    type = BoundingValueElementDamper
+#    min_value = -0.01
+#    max_value = 1.02
+#    variable = c
+#  [../]
+#[]
+
 
 [Executioner]
   type = Transient
@@ -171,13 +199,12 @@
   l_max_its = 50
   nl_max_its = 50
 
-  dt = 2.5e-5
-  num_steps = 1000
+  dt = 1e-6
+  num_steps = 5000
 []
 
 [Outputs]
-#  file_base = fd_test
-  file_base = test_r1
+  file_base = bending_a
   exodus = true
   csv = true
   print_perf_log = true

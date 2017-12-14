@@ -46,7 +46,7 @@
   [./pfbulkmat]
     type = GenericConstantMaterial
     prop_names = 'gc_prop l visco'
-    prop_values = '1e-3 0.0075 1e-3'
+    prop_values = '1e-3 0.01 1e-3'
   [../]
   [./define_mobility]
     type = ParsedMaterial

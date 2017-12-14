@@ -50,7 +50,7 @@ Real
 AllenCahnPFFracture::computeQpResidual()
 {
   return (-_gc_prop[_qp] * _l[_qp] * _grad_u[_qp] * _grad_test[_i][_qp] +
-          2.0 * (1.0 - _u[_qp]) * _test[_i][_qp] * _H0_pos[_qp] -
+          2.0 * (1.0 - _u[_qp]) * _test[_i][_qp] * _H0_pos_old[_qp] -
           _gc_prop[_qp] / _l[_qp] * _u[_qp] * _test[_i][_qp]) /
          _gc_prop[_qp];
 }
@@ -59,7 +59,7 @@ Real
 AllenCahnPFFracture::computeQpJacobian()
 {
   return (-_gc_prop[_qp] * _l[_qp] * _grad_phi[_j][_qp] * _grad_test[_i][_qp] -
-          2.0 * _phi[_j][_qp] * _test[_i][_qp] * _H0_pos[_qp] -
+          2.0 * _phi[_j][_qp] * _test[_i][_qp] * _H0_pos_old[_qp] -
           _gc_prop[_qp] / _l[_qp] * _phi[_j][_qp] * _test[_i][_qp]) /
          _gc_prop[_qp];
 }

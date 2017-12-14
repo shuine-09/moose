@@ -70,20 +70,20 @@
 [BCs]
   [./xdisp]
     type = FunctionPresetBC
-    variable = disp_x
+    variable = disp_y
     boundary = 2
     function = 't'
     #function = pull_up_and_down
   [../]
   [./xfix]
     type = PresetBC
-    variable = disp_x
+    variable = disp_y
     boundary = 1
     value = 0
   [../]
   [./yfix]
     type = PresetBC
-    variable = disp_y
+    variable = disp_x
     boundary = '1 2'
     value = 0
   [../]
@@ -93,7 +93,7 @@
   [./pfbulkmat]
     type = GenericConstantMaterial
     prop_names = 'gc_prop l visco'
-    prop_values = '1e-3 0.0075 1e-3'
+    prop_values = '1e-3 0.01 1e-3'
   [../]
   [./define_mobility]
     type = ParsedMaterial
@@ -191,7 +191,7 @@
   l_max_its = 50
   nl_max_its = 30
 
-  dt = 1.0e-5
+  dt = 1.0e-4
   num_steps = 10000
 []
 
