@@ -39,6 +39,7 @@ EFAFragment2D::EFAFragment2D(EFAElement2D * host,
         EFAError("In EFAfragment2D constructor fragment_copy_index out of bounds");
       for (unsigned int i = 0; i < from_host->getFragment(frag_id)->numEdges(); ++i)
         _boundary_edges.push_back(new EFAEdge(*from_host->getFragmentEdge(frag_id, i)));
+      _cut_edge = from_host->getFragment(frag_id)->getCutEdge();
     }
   }
 }
@@ -48,6 +49,7 @@ EFAFragment2D::EFAFragment2D(EFAElement2D * host, const EFAFace * from_face)
 {
   for (unsigned int i = 0; i < from_face->numEdges(); ++i)
     _boundary_edges.push_back(new EFAEdge(*from_face->getEdge(i)));
+  _cut_edge = 0;
 }
 
 EFAFragment2D::~EFAFragment2D()

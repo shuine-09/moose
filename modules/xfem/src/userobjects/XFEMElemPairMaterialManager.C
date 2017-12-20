@@ -32,7 +32,7 @@ XFEMElemPairMaterialManager::XFEMElemPairMaterialManager(const InputParameters &
 void
 XFEMElemPairMaterialManager::initialSetup()
 {
-  std::cout << "XFEMElemPairMaterialManager::initialSetup()\n";
+  // std::cout << "XFEMElemPairMaterialManager::initialSetup()\n";
 
   // get MaterialData entries for all listed material properties
   for (auto name : getParam<std::vector<std::string>>("material_names"))
@@ -127,12 +127,13 @@ XFEMElemPairMaterialManager::initialize()
 
       const ElementPairInfo & info = elem_pair_loc.getElemPairInfo(pr);
 
-      std::cout << "====> elem1 = " << elem1->id() << ", elem2 = " << elem2->id() << std::endl;
+      // std::cout << "====> elem1 = " << elem1->id() << ", elem2 = " << elem2->id() << std::endl;
 
       for (unsigned int i = 0; i < (info._elem1_constraint_q_point).size(); ++i)
       {
         _extra_qp_map[std::min(elem1, elem2)].push_back((info._elem1_constraint_q_point)[i]);
-        std::cout << "q point [" << i << "] = " << (info._elem1_constraint_q_point)[i] << std::endl;
+        // std::cout << "q point [" << i << "] = " << (info._elem1_constraint_q_point)[i] <<
+        // std::endl;
       }
 
       _elem_pair_id[std::min(elem1, elem2)] = std::max(elem1, elem2);
@@ -179,8 +180,8 @@ XFEMElemPairMaterialManager::execute()
       mooseAssert(n_old_extra_qps == item_older[0]->size(), "Inconsistent history item sizes");
     }
 
-    std::cout << "n_old_extra_qps = " << n_old_extra_qps << ", n_extra_qps " << n_extra_qps
-              << std::endl;
+    // std::cout << "n_old_extra_qps = " << n_old_extra_qps << ", n_extra_qps " << n_extra_qps
+    //          << std::endl;
 
     // make sure the items have room for the correct number of properties
     while (item.size() < _props.size())
@@ -214,6 +215,14 @@ XFEMElemPairMaterialManager::execute()
       _props_old[i]->swap(item_old[i]);
     for (auto i = beginIndex(_props_older); i < _props_older.size(); ++i)
       _props_older[i]->swap(item_older[i]);
+
+    // std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
+    // std::cout << "extra_qps.first = " << *(extra_qps.first) << ", extra_qps.second "
+    //           << (extra_qps.second)[0] << ", extra_qps.second " << (extra_qps.second)[1]
+    //           << std::endl;
+    // std::cout << "_elem_pair_id[extra_qps.first] = " << *(_elem_pair_id[extra_qps.first])
+    //           << std::endl;
+    // std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
 
     // reinit the element
     _fe_problem.reinitElemPhys(extra_qps.first, extra_qps.second, 0 /* tid */);

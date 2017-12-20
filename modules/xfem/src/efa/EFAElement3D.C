@@ -295,6 +295,9 @@ EFAElement3D::isPartial() const
       }
     } // i
   }
+  // Cut along the edge
+  if (this->getFragment(0)->getCutFace() > 0)
+    partial = true;
   return partial;
 }
 
@@ -1082,6 +1085,19 @@ EFAElement3D::createChild(const std::set<EFAElement *> & CrackTipElements,
 
       // get child element's fragments
       EFAFragment3D * new_frag = new EFAFragment3D(childElem, true, this, ichild);
+      for (unsigned int k = 0; k < new_frag->numFaces(); ++k)
+      {
+        bool is_cut = true;
+        for (unsigned int l = 0; l < new_frag->getFace(k)->numNodes(); ++l)
+        {
+          if (new_frag->getFace(k)->getNode(l)->category() !=
+              EFANode::N_CATEGORY_EMBEDDED_PERMANENT)
+            is_cut = false;
+        }
+        if (is_cut)
+          new_frag->setCutFace(k + 1);
+      }
+
       childElem->_fragments.push_back(new_frag);
 
       // get child element's faces and set up adjacent faces

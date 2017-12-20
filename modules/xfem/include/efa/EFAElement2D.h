@@ -33,6 +33,7 @@ private:
   std::vector<std::vector<EFAElement2D *>> _edge_neighbors;
   std::vector<EFAFragment2D *> _fragments;
   std::vector<EFAPoint> _local_node_coor;
+  // unsigned int _cut_edge;
 
 public:
   // override virtual methods in base class
@@ -126,6 +127,7 @@ public:
   std::vector<EFAFragment2D *> branchingSplit(std::map<unsigned int, EFANode *> & EmbeddedNodes);
 
   std::vector<EFANode *> getCommonNodes(const EFAElement2D * other_elem) const;
+  // unsigned int getCutEdge() const { return _cut_edge; };
 
 private:
   // given the 1D parent coord of a point in an 2D element edge, translate it to 2D parametric

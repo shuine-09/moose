@@ -171,6 +171,20 @@ XFEMCutElem3D::getCutPlaneOrigin(unsigned int plane_id, MeshBase * displaced_mes
       cut_plane_nodes.push_back(node_line);
     }
   }
+
+  unsigned int cut_face = _efa_elem3d.getFragment(0)->getCutFace();
+  if (cut_plane_nodes.size() == 0 && cut_face > 0)
+  {
+    EFAFace * face = _efa_elem3d.getFragment(0)->getFace(cut_face - 1);
+    for (unsigned int j = 0; j < face->numNodes(); ++j)
+    {
+      std::vector<EFANode *> node_line;
+      for (unsigned int j = 0; j < face->numNodes(); ++j)
+        node_line.push_back(face->getNode(j));
+      cut_plane_nodes.push_back(node_line);
+    }
+  }
+
   if (cut_plane_nodes.size() == 0)
     mooseError("no cut plane found in this element");
   if (plane_id < cut_plane_nodes.size()) // valid plane_id
@@ -202,6 +216,20 @@ XFEMCutElem3D::getCutPlaneNormal(unsigned int plane_id, MeshBase * displaced_mes
       cut_plane_nodes.push_back(node_line);
     }
   }
+
+  unsigned int cut_face = _efa_elem3d.getFragment(0)->getCutFace();
+  if (cut_plane_nodes.size() == 0 && cut_face > 0)
+  {
+    EFAFace * face = _efa_elem3d.getFragment(0)->getFace(cut_face - 1);
+    for (unsigned int j = 0; j < face->numNodes(); ++j)
+    {
+      std::vector<EFANode *> node_line;
+      for (unsigned int j = 0; j < face->numNodes(); ++j)
+        node_line.push_back(face->getNode(j));
+      cut_plane_nodes.push_back(node_line);
+    }
+  }
+
   if (cut_plane_nodes.size() == 0)
     mooseError("no cut plane found in this element");
   if (plane_id < cut_plane_nodes.size()) // valid plane_id
@@ -280,6 +308,20 @@ XFEMCutElem3D::getIntersectionInfo(unsigned int plane_id,
       cut_plane_nodes.push_back(node_line);
     }
   }
+
+  unsigned int cut_face = _efa_elem3d.getFragment(0)->getCutFace();
+  if (cut_plane_nodes.size() == 0 && cut_face > 0)
+  {
+    EFAFace * face = _efa_elem3d.getFragment(0)->getFace(cut_face - 1);
+    for (unsigned int j = 0; j < face->numNodes(); ++j)
+    {
+      std::vector<EFANode *> node_line;
+      for (unsigned int j = 0; j < face->numNodes(); ++j)
+        node_line.push_back(face->getNode(j));
+      cut_plane_nodes.push_back(node_line);
+    }
+  }
+
   if (cut_plane_nodes.size() == 0)
     mooseError("No cut plane found in this element");
 

@@ -30,6 +30,7 @@ private:
   EFAElement3D * _host_elem;
   std::vector<EFAFace *> _faces;
   std::vector<std::vector<EFAFace *>> _faces_adjacent_to_faces;
+  unsigned int _cut_face;
 
 public:
   // override pure virtual methods
@@ -51,6 +52,8 @@ public:
   EFAFace * getFace(unsigned int face_id) const;
   unsigned int getFaceID(EFAFace * face) const;
   void addFace(EFAFace * new_face);
+  void setCutFace(unsigned int cut_face) { _cut_face = cut_face; };
+  unsigned int getCutFace() { return _cut_face; };
   std::set<EFANode *> getFaceNodes(unsigned int face_id) const;
   EFAElement3D * getHostElement() const;
   std::vector<EFAFragment3D *> split();

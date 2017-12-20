@@ -38,6 +38,7 @@ EFAFragment3D::EFAFragment3D(EFAElement3D * host,
         EFAError("In EFAfragment3D constructor fragment_copy_index out of bounds");
       for (unsigned int i = 0; i < from_host->getFragment(frag_id)->numFaces(); ++i)
         _faces.push_back(new EFAFace(*from_host->getFragmentFace(frag_id, i)));
+      _cut_face = from_host->getFragment(frag_id)->getCutFace();
     }
     findFacesAdjacentToFaces(); // IMPORTANT
   }
