@@ -205,6 +205,9 @@
 #include "InteractionIntegral.h"
 #include "ThermalFractureIntegral.h"
 
+#include "InterfaceCohesiveZone.h"
+#include "MaximumNormalSeparation.h"
+
 template <>
 InputParameters
 validParams<TensorMechanicsApp>()
@@ -262,6 +265,9 @@ TensorMechanicsApp::registerObjects(Factory & factory)
   registerKernel(WeakPlaneStress);
   registerKernel(PlasticHeatEnergy);
   registerKernel(PhaseFieldFractureMechanicsOffDiag);
+
+  registerInterfaceKernel(InterfaceCohesiveZone);
+  registerMaterial(MaximumNormalSeparation);
 
   registerMaterial(LinearElasticTruss);
   registerMaterial(FiniteStrainPlasticMaterial);

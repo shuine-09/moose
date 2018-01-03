@@ -116,7 +116,8 @@ ComputeMaterialsObjectThread::onElement(const Elem * elem)
 void
 ComputeMaterialsObjectThread::onBoundary(const Elem * elem, unsigned int side, BoundaryID bnd_id)
 {
-  if (_fe_problem.needMaterialOnSide(bnd_id, _tid))
+  // if (_fe_problem.needMaterialOnSide(bnd_id, _tid))
+  if (bnd_id == 100)
   {
     _assembly[_tid]->reinit(elem, side);
     unsigned int face_n_points = _assembly[_tid]->qRuleFace()->n_points();
@@ -161,6 +162,7 @@ ComputeMaterialsObjectThread::onBoundary(const Elem * elem, unsigned int side, B
 void
 ComputeMaterialsObjectThread::onInternalSide(const Elem * elem, unsigned int side)
 {
+  /*
   if (_need_internal_side_material)
   {
     _assembly[_tid]->reinit(elem, side);
@@ -233,6 +235,7 @@ ComputeMaterialsObjectThread::onInternalSide(const Elem * elem, unsigned int sid
             neighbor_side);
     }
   }
+  */
 }
 
 void
