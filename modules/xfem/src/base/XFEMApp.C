@@ -25,6 +25,8 @@
 #include "XFEMPressure.h"
 #include "StatefulMaterialJump.h"
 #include "XFEMSingleVariableConstraintStatefulTest.h"
+#include "XFEMCohesiveConstraint.h"
+#include "MaximumNormalSeparation.h"
 
 #include "GeometricCutUserObject.h"
 #include "LineSegmentCutUserObject.h"
@@ -91,6 +93,7 @@ XFEMApp::registerObjects(Factory & factory)
   // Constraints
   registerConstraint(XFEMSingleVariableConstraint);
   registerConstraint(XFEMSingleVariableConstraintStatefulTest);
+  registerConstraint(XFEMCohesiveConstraint);
 
   // UserObjects
   registerUserObject(XFEMMarkerUserObject);
@@ -111,6 +114,7 @@ XFEMApp::registerObjects(Factory & factory)
 
   // Material
   registerMaterial(StatefulMaterialJump);
+  registerMaterial(MaximumNormalSeparation);
 }
 
 void
