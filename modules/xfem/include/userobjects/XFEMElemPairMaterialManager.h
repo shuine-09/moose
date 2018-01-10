@@ -80,7 +80,7 @@ protected:
   /// map from property names to indes into _props etc.
   std::map<std::string, unsigned int> _managed_properties;
 
-  std::map<const Elem *, const Elem *> _elem_pair_id;
+  std::map<const Elem *, const Elem *> _elem_pair_ptr;
 };
 
 template <>
