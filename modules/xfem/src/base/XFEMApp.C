@@ -27,6 +27,7 @@
 #include "XFEMSingleVariableConstraintStatefulTest.h"
 #include "XFEMCohesiveConstraint.h"
 #include "MaximumNormalSeparation.h"
+#include "XFEMElementPairQPProvider.h"
 
 #include "GeometricCutUserObject.h"
 #include "LineSegmentCutUserObject.h"
@@ -101,6 +102,7 @@ XFEMApp::registerObjects(Factory & factory)
   registerUserObject(XFEMElemPairMaterialManager);
   registerUserObject(XFEMMaterialTensorMarkerUserObject);
   registerUserObject(XFEMRankTwoTensorMarkerUserObject);
+  registerUserObject(XFEMElementPairQPProvider);
 
   // Geometric Cut User Objects
   registerUserObject(LineSegmentCutUserObject);
