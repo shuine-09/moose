@@ -23,7 +23,7 @@ validParams<XFEMElemPairMaterialManager>()
                                                     "List of recompute material objects manage");
   params.addRequiredParam<UserObjectName>("element_pair_qps",
                                           "Object that provides the extra QPs for element pair.");
-  params.set<MultiMooseEnum>("execute_on") = "initial linear";
+  params.set<ExecFlagEnum>("execute_on") = "initial linear";
   return params;
 }
 
