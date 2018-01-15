@@ -91,7 +91,7 @@ XFEMCohesiveConstraint::computeQpResidual(Moose::DGResidualType type)
   //                  (_disp_y_neighbor[_qp] - _disp_y[_qp]) * interface_tangent(1);
 
   Real stiffness_deg = _stiffness; // Initializing stiffness
-  Real alpha = 1.0e12;
+  Real alpha = 1.0e14;
 
   // Calculating Normal and tengential tractions on crack surface:
   Real t_n = 0.0;
@@ -103,7 +103,7 @@ XFEMCohesiveConstraint::computeQpResidual(Moose::DGResidualType type)
   // std::cout << "delta_0 = " << delta_0 << ", delta_f = " << delta_f
   //           << ", max_normal_separation = " << max_normal_separation << std::endl;
 
-  std::cout << "separation = " << delta_m_n << std::endl;
+  // std::cout << "separation = " << delta_m_n << std::endl;
 
   if (delta_m_n < 0.0)
     t_n = alpha * delta_m_n;
@@ -176,7 +176,7 @@ XFEMCohesiveConstraint::computeQpJacobian(Moose::DGJacobianType type)
   //                  (_disp_y_neighbor[_qp] - _disp_y[_qp]) * interface_tangent(1);
 
   Real factor = _stiffness; // jacobian factor
-  Real alpha = 1.0e12;
+  Real alpha = 1.0e14;
 
   if (delta_m_n < 0.0)
     factor = alpha;

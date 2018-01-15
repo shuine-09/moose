@@ -12,7 +12,7 @@
 [UserObjects]
   [./line_seg_cut_uo]
     type = LineSegmentCutUserObject
-    cut_data = '0.5 0 0.5 1'
+    cut_data = '0.0 0.5 1.0 0.5'
     time_start_cut = 0.0
     time_end_cut = 5.0
   [../]
@@ -126,28 +126,26 @@
 
 [Constraints]
   [./dispx_constraint]
-    type = XFEMCohesiveConstraint
+    type = XFEMResidualOpening
     use_displaced_mesh = false
     component = 0
     variable = disp_x
     disp_x = disp_x
     disp_y = disp_y
-    stiffness = 10
-    max_traction = 0.1
-    Gc = 0.0005
     manager = manager
+    residual_opening = 0.0005
+    alpha = 1.0e6
   [../]
   [./dispy_constraint]
-    type = XFEMCohesiveConstraint
+    type = XFEMResidualOpening
     use_displaced_mesh = false
     component = 1
     variable = disp_y
     disp_x = disp_x
     disp_y = disp_y
-    stiffness = 10
-    max_traction = 0.1
-    Gc = 0.0005
     manager = manager
+    residual_opening = 0.0005
+    alpha = 1.0e6
   [../]
 []
 

@@ -29,6 +29,7 @@
 #include "StatefulMaterialJump.h"
 #include "XFEMSingleVariableConstraintStatefulTest.h"
 #include "XFEMCohesiveConstraint.h"
+#include "XFEMResidualOpening.h"
 #include "MaximumNormalSeparation.h"
 #include "XFEMElementPairQPProvider.h"
 
@@ -104,6 +105,7 @@ XFEMApp::registerObjects(Factory & factory)
   registerConstraint(XFEMSingleVariableConstraint);
   registerConstraint(XFEMSingleVariableConstraintStatefulTest);
   registerConstraint(XFEMCohesiveConstraint);
+  registerConstraint(XFEMResidualOpening);
 
   // UserObjects
   registerUserObject(XFEMMarkerUserObject);

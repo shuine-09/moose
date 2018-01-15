@@ -27,6 +27,7 @@ validParams<MaximumNormalSeparation>()
 MaximumNormalSeparation::MaximumNormalSeparation(const InputParameters & parameters)
   : Material(parameters),
     _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
+    _normal_separation(declareProperty<Real>(_base_name + "normal_separation")),
     _max_normal_separation(declareProperty<Real>(_base_name + "max_normal_separation")),
     _max_normal_separation_old(getMaterialPropertyOld<Real>(_base_name + "max_normal_separation")),
     _disp_x(coupledValue("disp_x")),
@@ -40,6 +41,7 @@ void
 MaximumNormalSeparation::resetQpProperties()
 {
   _max_normal_separation[_qp] = 0.0;
+  _normal_separation[_qp] = 0.0;
 }
 
 void
@@ -95,8 +97,8 @@ MaximumNormalSeparation::computeQpProperties()
       mooseError("element pair is not found.");
     }
   }
-  // std::cout << "current elem id = " << _current_elem->id()
-  //           << ", neighbor id = " << (_assembly.neighbor())->id() << std::endl;
+
+  _normal_separation[_qp] = normal_distance;
 
   if (normal_distance > _max_normal_separation_old[_qp])
     _max_normal_separation[_qp] = normal_distance;

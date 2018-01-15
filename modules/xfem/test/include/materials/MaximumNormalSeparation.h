@@ -29,6 +29,7 @@ protected:
   virtual void initQpStatefulProperties() override;
 
   const std::string _base_name;
+  MaterialProperty<Real> & _normal_separation;
   MaterialProperty<Real> & _max_normal_separation;
   const MaterialProperty<Real> & _max_normal_separation_old;
 

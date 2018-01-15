@@ -984,8 +984,8 @@ XFEM::markCutEdgesByState(Real time)
 
     if (edge_cut)
     {
-      // if (!_use_crack_growth_increment)
-      if (1)
+      if (!_use_crack_growth_increment)
+      // if (1)
       {
         _efa_mesh.addElemEdgeIntersection(elem->id(), edge_id_keep, distance_keep);
         marked_edges = true;
@@ -1011,8 +1011,8 @@ XFEM::markCutEdgesByState(Real time)
         Real x0 = crack_tip_origin(0);
         Real y0 = crack_tip_origin(1);
 
-        Real crack_growth_increment = 0.0002;
-        // _crack_growth_increment // 0.0002; //0.00025; // !!!!! 0.0001 TEST ONLY
+        Real crack_growth_increment =
+            _crack_growth_increment; // 0.0002; //0.00025; // !!!!! 0.0001 TEST ONLY
 
         Real x1 = x0 + crack_growth_increment * growth_direction(0);
         Real y1 = y0 + crack_growth_increment * growth_direction(1);
@@ -1254,9 +1254,6 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
   // Add new elements
   std::map<unsigned int, std::vector<const Elem *>> temporary_parent_children_map;
 
-  std::map<unique_id_type, const Elem *> temp_elem_pair_unique_id_map;
-  _elem_pair_unique_id_map.clear();
-
   for (unsigned int i = 0; i < new_elements.size(); ++i)
   {
     unsigned int parent_id = new_elements[i]->getParent()->id();
@@ -1270,15 +1267,9 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
          ++it)
     {
       if (parent_elem == it->first)
-      {
-        temp_elem_pair_unique_id_map[it->first->unique_id()] = libmesh_elem;
         it->first = libmesh_elem;
-      }
       else if (parent_elem == it->second)
-      {
-        temp_elem_pair_unique_id_map[it->second->unique_id()] = libmesh_elem;
         it->second = libmesh_elem;
-      }
     }
 
     // parent has at least two children
@@ -1424,27 +1415,17 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
     {
       EFAElement2D * new_efa_elem2d = dynamic_cast<EFAElement2D *>(new_elements[i]);
       if (!new_efa_elem2d)
-<<<<<<< HEAD
         mooseError("EFAelem is not of EFAelement2D type");
       xfce = new XFEMCutElem2D(
           libmesh_elem, new_efa_elem2d, (*_material_data)[0]->nQPoints(), libmesh_elem->n_sides());
-=======
-        mooseError("EFAelem is not of EFAElement2D type");
-      xfce = new XFEMCutElem2D(libmesh_elem, new_efa_elem2d, (*_material_data)[0]->nQPoints());
->>>>>>> rebase XFEM fracture
     }
     else if (_mesh->mesh_dimension() == 3)
     {
       EFAElement3D * new_efa_elem3d = dynamic_cast<EFAElement3D *>(new_elements[i]);
       if (!new_efa_elem3d)
-<<<<<<< HEAD
         mooseError("EFAelem is not of EFAelement3D type");
       xfce = new XFEMCutElem3D(
           libmesh_elem, new_efa_elem3d, (*_material_data)[0]->nQPoints(), libmesh_elem->n_sides());
-=======
-        mooseError("EFAelem is not of EFAElement3D type");
-      xfce = new XFEMCutElem3D(libmesh_elem, new_efa_elem3d, (*_material_data)[0]->nQPoints());
->>>>>>> rebase XFEM fracture
     }
     _cut_elem_map.insert(std::pair<unique_id_type, XFEMCutElem *>(libmesh_elem->unique_id(), xfce));
     efa_id_to_new_elem.insert(std::make_pair(efa_child_id, libmesh_elem));
@@ -1550,19 +1531,8 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
     }
   }
 
-  for (std::map<unique_id_type, const Elem *>::iterator it = temp_elem_pair_unique_id_map.begin();
-       it != temp_elem_pair_unique_id_map.end();
-       ++it)
-  {
-    // std::cout << "old unique id = " << it->first << ", new unique id = " <<
-    // it->second->unique_id()
-    //           << std::endl;
-    _elem_pair_unique_id_map[it->first] = it->second->unique_id();
-  }
-
   // clear the temporary map
   temporary_parent_children_map.clear();
-  temp_elem_pair_unique_id_map.clear();
 
   // Store information about crack tip elements
   if (mesh_changed)
