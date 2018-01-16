@@ -26,7 +26,7 @@
 #include "CrackTipEnrichmentStressDivergenceTensors.h"
 #include "CrackTipEnrichmentCutOffBC.h"
 #include "ComputeCrackTipEnrichmentSmallStrain.h"
-#include "StatefulMaterialJump.h"
+//#include "StatefulMaterialJump.h"
 #include "XFEMSingleVariableConstraintStatefulTest.h"
 #include "XFEMCohesiveConstraint.h"
 #include "XFEMResidualOpening.h"
@@ -138,7 +138,7 @@ XFEMApp::registerObjects(Factory & factory)
   // BC's
   registerBoundaryCondition(CrackTipEnrichmentCutOffBC);
   // Material
-  registerMaterial(StatefulMaterialJump);
+  //registerMaterial(StatefulMaterialJump);
   registerMaterial(MaximumNormalSeparation);
 }
 
