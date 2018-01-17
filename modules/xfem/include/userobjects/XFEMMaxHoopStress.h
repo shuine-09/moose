@@ -113,6 +113,11 @@ private:
   RealVectorValue _crack_plane_normal;
   BoundaryName _intersecting_boundary_name;
   const PostprocessorValue * const _postprocessor;
+
+  Real _critical_k;
+  bool _use_weibull;
+  std::vector<Real> _weibull_at_tip;
+  const MaterialProperty<Real> & _weibull;
 };
 
 template <>

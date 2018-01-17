@@ -30,6 +30,8 @@ validParams<XFEMMaxHoopStress>()
   params.addCoupledVar("temp", "Coupled Temperature");
   params.addParam<BoundaryName>("intersecting_boundary", "Boundary intersected by ends of crack.");
   params.addParam<PostprocessorName>("average_h", "Postprocessor that gives average element size");
+  params.addParam<Real>("critical_k", 0.0, "Critical hoop stress.");
+  params.addParam<bool>("use_weibull", false, "Use weibull distribution to initiate crack?");
   return params;
 }
 
@@ -52,7 +54,10 @@ XFEMMaxHoopStress::XFEMMaxHoopStress(const InputParameters & parameters)
     _mesh(_subproblem.mesh()),
     _poissons_ratio(getParam<Real>("poissons_ratio")),
     _youngs_modulus(getParam<Real>("youngs_modulus")),
-    _postprocessor(isParamValid("average_h") ? &getPostprocessorValue("average_h") : NULL)
+    _postprocessor(isParamValid("average_h") ? &getPostprocessorValue("average_h") : NULL),
+    _critical_k(getParam<Real>("critical_k")),
+    _use_weibull(getParam<bool>("use_weibull")),
+    _weibull(getMaterialProperty<Real>("weibull"))
 {
   _fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
   if (_fe_problem == NULL)
@@ -252,12 +257,19 @@ XFEMMaxHoopStress::initialize()
   _elem_id_crack_tip.clear();
   _integral_values.clear();
 
+  _weibull_at_tip.clear();
+
   _num_crack_front_points = _xfem->numberCrackTips();
 
   _integral_values.resize(_num_crack_front_points * 2);
 
+  _weibull_at_tip.resize(_num_crack_front_points);
+
   for (unsigned int i = 0; i < _num_crack_front_points * 2; i++)
     _integral_values[i] = 0.0;
+
+  for (unsigned int i = 0; i < _num_crack_front_points; i++)
+    _weibull_at_tip[i] = 0.0;
 
   _xfem->getCrackTipOriginDirection(
       _elem_id_crack_tip, _crack_front_points, _crack_front_directions);
@@ -614,6 +626,15 @@ XFEMMaxHoopStress::execute()
   std::vector<Real> comp_integ = computeIntegrals();
   for (unsigned int i = 0; i < _num_crack_front_points * 2; i++)
     _integral_values[i] += comp_integ[i];
+
+  for (unsigned int i = 0; i < _num_crack_front_points; i++)
+  {
+    if (_current_elem == _elem_id_crack_tip[i])
+    {
+      _weibull_at_tip[i] = _weibull[0];
+      break;
+    }
+  }
 }
 
 void
@@ -627,11 +648,33 @@ XFEMMaxHoopStress::threadJoin(const UserObject & y)
 void
 XFEMMaxHoopStress::finalize()
 {
-  _xfem->clearCrackGrowthDirection();
+  _xfem->clearDoesCrackGrowth();
+  gatherSum(_weibull_at_tip);
   gatherSum(_integral_values);
 
   for (unsigned int i = 0; i < _num_crack_front_points * 2; i++)
     _integral_values[i] *= _K_factor;
+
+  for (unsigned int i = 0; i < _num_crack_front_points; i++)
+  {
+    Real KI = _integral_values[i * 2];
+    Real KII = _integral_values[i * 2 + 1];
+
+    Real effective_K = std::sqrt(KI * KI + KII * KII);
+
+    bool does_elem_crack = false;
+    if (_use_weibull)
+      does_elem_crack = effective_K > _weibull_at_tip[i] * _critical_k;
+    else
+      does_elem_crack = effective_K > _critical_k;
+
+    std::cout << "effective_K = " << effective_K << ", critical_k = " << _critical_k
+              << ", weibull_tip = " << _weibull_at_tip[i]
+              << " does elem crack = " << does_elem_crack << std::endl;
+    _xfem->updateDoesCrackGrowth(_elem_id_crack_tip[i], does_elem_crack);
+  }
+
+  _xfem->clearCrackGrowthDirection();
 
   for (unsigned int i = 0; i < _num_crack_front_points; i++)
   {

@@ -87,7 +87,6 @@ XFEMResidualOpening::computeQpResidual(Moose::DGResidualType type)
   // Calculating Normal and tengential tractions on crack surface:
   Real t_n = 0.0;
 
-<<<<<<< HEAD
   // if (max_normal_separation < _residual_opening)
   // {
   //   if (normal_separation < 0.0)
@@ -103,12 +102,6 @@ XFEMResidualOpening::computeQpResidual(Moose::DGResidualType type)
   {
     if (normal_separation < max_normal_separation)
       t_n = _alpha * (normal_separation - max_normal_separation);
-=======
-  if (max_normal_separation < _residual_opening)
-  {
-    if (normal_separation < 0.0)
-      t_n = _alpha * normal_separation;
->>>>>>> added residual opening
   }
   else
   {
@@ -162,7 +155,6 @@ XFEMResidualOpening::computeQpJacobian(Moose::DGJacobianType type)
 
   Real factor = 0.0;
 
-<<<<<<< HEAD
   // if (max_normal_separation < _residual_opening)
   // {
   //   if (normal_separation < 0.0)
@@ -177,11 +169,6 @@ XFEMResidualOpening::computeQpJacobian(Moose::DGJacobianType type)
   if (max_normal_separation < _residual_opening)
   {
     if (normal_separation < max_normal_separation)
-=======
-  if (max_normal_separation < _residual_opening)
-  {
-    if (normal_separation < 0.0)
->>>>>>> added residual opening
       factor = _alpha;
   }
   else
