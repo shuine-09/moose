@@ -59,7 +59,7 @@ protected:
 
   Real _alpha;
 
-  Real _residual_opening;
+  Real _roughness_fuel;
 };
 
 #endif /* XFEMRESIDUALOPENING_H */

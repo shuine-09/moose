@@ -21,7 +21,7 @@ validParams<XFEMResidualOpening>()
 {
   InputParameters params = validParams<XFEMMaterialManagerConstraint>();
   params.addParam<Real>("alpha", 1.0e5, "Penalty parameter.");
-  params.addParam<Real>("residual_opening", 0.0, "Residual opening.");
+  params.addParam<Real>("roughness_fuel", 0.0, "Fuel roughness.");
   params.addParam<std::string>("base_name",
                                "Optional parameter that allows the user to define "
                                "multiple mechanics material systems on the same block");
@@ -43,7 +43,7 @@ XFEMResidualOpening::XFEMResidualOpening(const InputParameters & parameters)
     _component(getParam<unsigned int>("component")),
     _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
     _alpha(getParam<Real>("alpha")),
-    _residual_opening(getParam<Real>("residual_opening"))
+    _roughness_fuel(getParam<Real>("roughness_fuel"))
 {
 }
 
@@ -80,33 +80,33 @@ XFEMResidualOpening::computeQpResidual(Moose::DGResidualType type)
   R[0][1] = -std::sin(theta);
   R[1][1] = std::cos(theta);
 
-  // std::cout << "resdiual_opening = " << _residual_opening << std::endl;
+  // std::cout << "resdiual_opening = " << _roughness_fuel << std::endl;
   // std::cout << "max_normal_separation = " << max_normal_separation << std::endl;
   // std::cout << "normal_separation = " << normal_separation << std::endl;
 
   // Calculating Normal and tengential tractions on crack surface:
   Real t_n = 0.0;
 
-  // if (max_normal_separation < _residual_opening)
+  // if (max_normal_separation < _roughness_fuel)
   // {
   //   if (normal_separation < 0.0)
   //     t_n = _alpha * normal_separation;
   // }
   // else
   // {
-  //   if (normal_separation < _residual_opening)
-  //     t_n = _alpha * (normal_separation - _residual_opening);
+  //   if (normal_separation < _roughness_fuel)
+  //     t_n = _alpha * (normal_separation - _roughness_fuel);
   // }
 
-  if (max_normal_separation < _residual_opening)
+  if (max_normal_separation < _roughness_fuel)
   {
-    if (normal_separation < max_normal_separation)
-      t_n = _alpha * (normal_separation - max_normal_separation);
+    if (normal_separation < 0.5 * max_normal_separation)
+      t_n = _alpha * (normal_separation - 0.5 * max_normal_separation);
   }
   else
   {
-    if (normal_separation < _residual_opening)
-      t_n = _alpha * (normal_separation - _residual_opening);
+    if (normal_separation < 0.5 * _roughness_fuel)
+      t_n = _alpha * (normal_separation - 0.5 * _roughness_fuel);
   }
 
   // Rotating traction vector {t_n} to {t_x, t_y}:
@@ -155,25 +155,25 @@ XFEMResidualOpening::computeQpJacobian(Moose::DGJacobianType type)
 
   Real factor = 0.0;
 
-  // if (max_normal_separation < _residual_opening)
+  // if (max_normal_separation < _roughness_fuel)
   // {
   //   if (normal_separation < 0.0)
   //     factor = _alpha;
   // }
   // else
   // {
-  //   if (normal_separation < _residual_opening)
+  //   if (normal_separation < _roughness_fuel)
   //     factor = _alpha;
   // }
 
-  if (max_normal_separation < _residual_opening)
+  if (max_normal_separation < _roughness_fuel)
   {
-    if (normal_separation < max_normal_separation)
+    if (normal_separation < 0.5 * max_normal_separation)
       factor = _alpha;
   }
   else
   {
-    if (normal_separation < _residual_opening)
+    if (normal_separation < 0.5 * _roughness_fuel)
       factor = _alpha;
   }
 
