@@ -24,6 +24,7 @@
 #include "CrackTipEnrichmentStressDivergenceTensors.h"
 #include "CrackTipEnrichmentCutOffBC.h"
 #include "ComputeCrackTipEnrichmentSmallStrain.h"
+#include "LevelSetMultiStressMaterial.h"
 
 #include "GeometricCutUserObject.h"
 #include "LineSegmentCutUserObject.h"
@@ -31,6 +32,7 @@
 #include "CircleCutUserObject.h"
 #include "EllipseCutUserObject.h"
 #include "RectangleCutUserObject.h"
+#include "LevelSetCutUserObject.h"
 
 template <>
 InputParameters
@@ -100,6 +102,7 @@ XFEMApp::registerObjects(Factory & factory)
   registerUserObject(CircleCutUserObject);
   registerUserObject(EllipseCutUserObject);
   registerUserObject(RectangleCutUserObject);
+  registerUserObject(LevelSetCutUserObject);
 
   // DiracKernels
   registerDiracKernel(XFEMPressure);
@@ -109,6 +112,7 @@ XFEMApp::registerObjects(Factory & factory)
 
   // Materials
   registerMaterial(ComputeCrackTipEnrichmentSmallStrain);
+  registerMaterial(LevelSetMultiStressMaterial);
 
   // BC's
   registerBoundaryCondition(CrackTipEnrichmentCutOffBC);
