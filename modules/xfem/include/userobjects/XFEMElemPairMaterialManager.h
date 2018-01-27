@@ -10,6 +10,7 @@
 
 #include "GeneralUserObject.h"
 #include "ElementPairQPProvider.h"
+#include "TwoMaterialPropertyInterface.h"
 
 /**
  * Manage the history of stateful extra QP material properties. This is sooper-dee-dooper
@@ -97,6 +98,8 @@ protected:
 
   /// map from property names to indes into _props etc.
   std::map<std::string, unique_id_type> _managed_properties;
+
+  bool _use_neighbor;
 };
 
 template <>

@@ -23,6 +23,7 @@ validParams<XFEMElemPairMaterialManager>()
                                                     "List of recompute material objects manage");
   params.addRequiredParam<UserObjectName>("element_pair_qps",
                                           "Object that provides the extra QPs for element pair.");
+  params.addParam<bool>("use_neighbor", false, "Use for neighbor material data.");
   params.set<MultiMooseEnum>("execute_on") = "initial linear";
   return params;
 }
@@ -31,7 +32,8 @@ XFEMElemPairMaterialManager::XFEMElemPairMaterialManager(const InputParameters &
   : GeneralUserObject(parameters),
     _mesh(_fe_problem.mesh().getMesh()),
     _extra_qp_map(getUserObject<ElementPairQPProvider>("element_pair_qps").getExtraQPMap()),
-    _elem_pair_map(getUserObject<ElementPairQPProvider>("element_pair_qps").getElementPairMap())
+    _elem_pair_map(getUserObject<ElementPairQPProvider>("element_pair_qps").getElementPairMap()),
+    _use_neighbor(getParam<bool>("use_neighbor"))
 {
   _xfem = MooseSharedNamespace::dynamic_pointer_cast<XFEM>(_fe_problem.getXFEM());
   _elem_pair_unique_id_map = &(_xfem->getElemPairUniqueIDMap());
@@ -104,24 +106,13 @@ XFEMElemPairMaterialManager::rewind()
 void
 XFEMElemPairMaterialManager::initialize()
 {
-  std::cout << "============> BEFORE id = ";
-  for (auto key_id : *_map)
-  {
-    std::cout << key_id.first << ", ";
-  }
-  std::cout << std::endl;
-
   for (std::map<unique_id_type, unique_id_type>::iterator it = (*_elem_pair_unique_id_map).begin();
        it != (*_elem_pair_unique_id_map).end();
        ++it)
   {
-    std::cout << "XFEMElemPairMaterialManager --> old unique id = " << it->first
-              << ", new unique id = " << it->second << std::endl;
-
     auto it_delete_map = (*_map).find(it->first);
     if (it_delete_map != (*_map).end())
     {
-      std::cout << "MAP find item : " << it->first << std::endl;
       std::swap((*_map)[it->second], it_delete_map->second);
       (*_map).erase(it_delete_map);
     }
@@ -140,12 +131,6 @@ XFEMElemPairMaterialManager::initialize()
       (*_map_older).erase(it_delete_map_older);
     }
   }
-  std::cout << "============> AFTER id = ";
-  for (auto key_id : *_map)
-  {
-    std::cout << key_id.first << ", ";
-  }
-  std::cout << std::endl;
 }
 
 void
@@ -160,16 +145,6 @@ XFEMElemPairMaterialManager::execute()
   }
 
   _fe_problem.setActiveElementalMooseVariables(var_dependencies, 0);
-
-  std::cout << "XFEMElemPairMaterialManager map size = " << _map->size() << std::endl;
-  std::cout << "_extra_qp_map size = " << _extra_qp_map.size() << std::endl;
-
-  std::cout << "id = ";
-  for (auto key_id : *_map)
-  {
-    std::cout << key_id.first << ", ";
-  }
-  std::cout << std::endl;
 
   // loop over all elements that have extra QPs
   for (auto extra_qps : _extra_qp_map)
@@ -223,35 +198,66 @@ XFEMElemPairMaterialManager::execute()
     for (auto i = beginIndex(_props_older); i < _props_older.size(); ++i)
       _props_older[i]->swap(item_older[i]);
 
-    const Elem * elem1 = _elem_pair_map.at(extra_qps.first).first;
-    const Elem * elem2 = _elem_pair_map.at(extra_qps.first).second;
+    if (!_use_neighbor)
+    {
+      const Elem * elem1 = _elem_pair_map.at(extra_qps.first).first;
+      const Elem * elem2 = _elem_pair_map.at(extra_qps.first).second;
 
-    std::cout << "elem1 unique id = " << elem1->unique_id()
-              << ", elem 2 unique id = " << elem2->unique_id() << std::endl;
+      // reinit the element
+      _fe_problem.setCurrentSubdomainID(elem1, 0 /* tid */);
+      _fe_problem.reinitElemPhys(elem1, extra_qps.second, 0 /* tid */);
+      // reinit the neighbor element
+      _fe_problem.setNeighborSubdomainID(elem2, 0 /* tid */);
+      _fe_problem.reinitNeighborPhys(elem2, extra_qps.second, 0 /* tid */);
 
-    // std::cout << "elem 1 =========================================== " << *elem1 << std::endl;
-    // std::cout << "elem 2 =========================================== " << *elem2 << std::endl;
+      // // loop over QPs
+      // for (unsigned int qp = 0; qp < extra_qps.second.size(); ++qp)
+      //   // loop over materials (may have to handle exceptions to swap properties back!)
+      //   for (auto & material : _materials)
+      //     material->computePropertiesAtQp(qp);
 
-    // reinit the element
-    _fe_problem.setCurrentSubdomainID(elem1, 0 /* tid */);
-    _fe_problem.reinitElemPhys(elem1, extra_qps.second, 0 /* tid */);
-    // reinit the neighbor element
-    _fe_problem.setNeighborSubdomainID(elem2, 0 /* tid */);
-    _fe_problem.reinitNeighborPhys(elem2, extra_qps.second, 0 /* tid */);
-
-    // loop over QPs
-    for (unsigned int qp = 0; qp < extra_qps.second.size(); ++qp)
       // loop over materials (may have to handle exceptions to swap properties back!)
       for (auto & material : _materials)
-        material->computePropertiesAtQp(qp);
+        material->computeProperties();
 
-    // swap the history in for all properties
-    for (auto i = beginIndex(_props); i < _props.size(); ++i)
-      _props[i]->swap(item[i]);
-    for (auto i = beginIndex(_props_old); i < _props_old.size(); ++i)
-      _props_old[i]->swap(item_old[i]);
-    for (auto i = beginIndex(_props_older); i < _props_older.size(); ++i)
-      _props_older[i]->swap(item_older[i]);
+      // swap the history in for all properties
+      for (auto i = beginIndex(_props); i < _props.size(); ++i)
+        _props[i]->swap(item[i]);
+      for (auto i = beginIndex(_props_old); i < _props_old.size(); ++i)
+        _props_old[i]->swap(item_old[i]);
+      for (auto i = beginIndex(_props_older); i < _props_older.size(); ++i)
+        _props_older[i]->swap(item_older[i]);
+    }
+    else
+    {
+      const Elem * elem2 = _elem_pair_map.at(extra_qps.first).first;
+      const Elem * elem1 = _elem_pair_map.at(extra_qps.first).second;
+
+      // reinit the element
+      _fe_problem.setCurrentSubdomainID(elem1, 0 /* tid */);
+      _fe_problem.reinitElemPhys(elem1, extra_qps.second, 0 /* tid */);
+      // reinit the neighbor element
+      _fe_problem.setNeighborSubdomainID(elem2, 0 /* tid */);
+      _fe_problem.reinitNeighborPhys(elem2, extra_qps.second, 0 /* tid */);
+
+      // loop over QPs
+      // for (unsigned int qp = 0; qp < extra_qps.second.size(); ++qp)
+      //   // loop over materials (may have to handle exceptions to swap properties back!)
+      //   for (auto & material : _materials)
+      //     material->computePropertiesAtQp(qp);
+
+      // loop over materials (may have to handle exceptions to swap properties back!)
+      for (auto & material : _materials)
+        material->computeProperties();
+
+      // swap the history in for all properties
+      for (auto i = beginIndex(_props); i < _props.size(); ++i)
+        _props[i]->swap(item[i]);
+      for (auto i = beginIndex(_props_old); i < _props_old.size(); ++i)
+        _props_old[i]->swap(item_old[i]);
+      for (auto i = beginIndex(_props_older); i < _props_older.size(); ++i)
+        _props_older[i]->swap(item_older[i]);
+    }
   }
 }
 
