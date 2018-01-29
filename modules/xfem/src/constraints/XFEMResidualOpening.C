@@ -109,6 +109,10 @@ XFEMResidualOpening::computeQpResidual(Moose::DGResidualType type)
       t_n = _alpha * (normal_separation - 0.5 * _roughness_fuel);
   }
 
+
+ // if (normal_separation < max_normal_separation)
+ //   t_n = _alpha * (normal_separation - max_normal_separation);
+
   // Rotating traction vector {t_n} to {t_x, t_y}:
   Real t_y = R[0][0] * t_n;
   Real t_x = R[1][0] * t_n;
@@ -176,6 +180,9 @@ XFEMResidualOpening::computeQpJacobian(Moose::DGJacobianType type)
     if (normal_separation < 0.5 * _roughness_fuel)
       factor = _alpha;
   }
+
+//  if (normal_separation < max_normal_separation)
+//     factor = _alpha;
 
   Real dseparation_du = 0.0;
   if (_component == 0)

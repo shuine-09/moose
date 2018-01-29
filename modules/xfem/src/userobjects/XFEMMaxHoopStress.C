@@ -664,7 +664,7 @@ XFEMMaxHoopStress::finalize()
 
     bool does_elem_crack = false;
     if (_use_weibull)
-      does_elem_crack = effective_K > _weibull_at_tip[i] * _critical_k;
+      does_elem_crack = (effective_K > _weibull_at_tip[i] * _critical_k) && (KI > 0.0);
     else
       does_elem_crack = effective_K > _critical_k;
 
