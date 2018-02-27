@@ -55,6 +55,10 @@ validParams<XFEMAction>()
                                              "Boundary that contains all nodes for which "
                                              "enrichment DOFs should be fixed away from crack tip "
                                              "(only needed if 'use_crack_tip_enrichment=true')");
+  params.addParam<std::vector<SubdomainName>>("enrichment_block",
+                                              "Blocks that contain all nodes for which "
+                                              "enrichment DOFs should be added. "
+                                              "(only needed if 'use_crack_tip_enrichment=true')");
   params.addParam<Real>("cut_off_radius",
                         "The cut off radius of crack tip enrichment functions (only needed if "
                         "'use_crack_tip_enrichment=true')");
@@ -68,7 +72,8 @@ XFEMAction::XFEMAction(InputParameters params)
     _xfem_cut_plane(false),
     _xfem_use_crack_growth_increment(getParam<bool>("use_crack_growth_increment")),
     _xfem_crack_growth_increment(getParam<Real>("crack_growth_increment")),
-    _use_crack_tip_enrichment(getParam<bool>("use_crack_tip_enrichment"))
+    _use_crack_tip_enrichment(getParam<bool>("use_crack_tip_enrichment")),
+    _use_enrichment_block(false)
 {
   _order = "CONSTANT";
   _family = "MONOMIAL";
@@ -102,6 +107,14 @@ XFEMAction::XFEMAction(InputParameters params)
       _cut_off_bc = getParam<std::vector<BoundaryName>>("cut_off_boundary");
     else
       mooseError("To add crack tip enrichment, cut_off_boundary must be provided.");
+
+    if (isParamValid("enrichment_block"))
+    {
+      _enrichment_block = getParam<std::vector<SubdomainName>>("enrichment_block");
+      _use_enrichment_block = true;
+    }
+    else
+      _enrichment_block.clear();
 
     if (isParamValid("cut_off_radius"))
       _cut_off_radius = getParam<Real>("cut_off_radius");
@@ -153,11 +166,25 @@ XFEMAction::act()
   }
   else if (_current_task == "add_variable" && _use_crack_tip_enrichment)
   {
+    std::set<SubdomainID> block_ids;
+    for (const auto & subdomain_name : _enrichment_block)
+    {
+      SubdomainID id = _problem->mesh().getSubdomainID(subdomain_name);
+      block_ids.insert(id);
+    }
+
     for (const auto & enrich_disp : _enrich_displacements)
-      _problem->addVariable(enrich_disp,
-                            FEType(Utility::string_to_enum<Order>("FIRST"),
-                                   Utility::string_to_enum<FEFamily>("LAGRANGE")),
-                            1.0);
+      if (_use_enrichment_block)
+        _problem->addVariable(enrich_disp,
+                              FEType(Utility::string_to_enum<Order>("FIRST"),
+                                     Utility::string_to_enum<FEFamily>("LAGRANGE")),
+                              1.0,
+                              &block_ids);
+      else
+        _problem->addVariable(enrich_disp,
+                              FEType(Utility::string_to_enum<Order>("FIRST"),
+                                     Utility::string_to_enum<FEFamily>("LAGRANGE")),
+                              1.0);
   }
   else if (_current_task == "add_kernel" && _use_crack_tip_enrichment)
   {
@@ -170,6 +197,8 @@ XFEMAction::act()
       params.set<UserObjectName>("crack_front_definition") = _crack_front_definition;
       params.set<std::vector<VariableName>>("enrichment_displacements") = _enrich_displacements;
       params.set<std::vector<VariableName>>("displacements") = _displacements;
+      if (_use_enrichment_block)
+        params.set<std::vector<SubdomainName>>("block") = _enrichment_block;
       _problem->addKernel(
           "CrackTipEnrichmentStressDivergenceTensors", _enrich_displacements[i], params);
     }

@@ -34,6 +34,8 @@
 #include "EllipseCutUserObject.h"
 #include "RectangleCutUserObject.h"
 
+#include "SubdomainCrackTipEnrichment.h"
+
 template <>
 InputParameters
 validParams<XFEMApp>()
@@ -87,6 +89,9 @@ XFEMApp__registerObjects(Factory & factory)
 void
 XFEMApp::registerObjects(Factory & factory)
 {
+  // MeshModifier
+  registerMeshModifier(SubdomainCrackTipEnrichment);
+
   // AuxKernels
   registerAux(XFEMVolFracAux);
   registerAux(XFEMCutPlaneAux);
