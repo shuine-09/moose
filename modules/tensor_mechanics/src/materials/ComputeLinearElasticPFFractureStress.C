@@ -15,133 +15,92 @@ template <>
 InputParameters
 validParams<ComputeLinearElasticPFFractureStress>()
 {
-  InputParameters params = validParams<ComputeStressBase>();
-  params.addClassDescription("Phase-field fracture model energy contribution to fracture for "
-                             "elasticity and undamaged stress under compressive strain");
-  params.addRequiredCoupledVar("c", "Order parameter for damage");
-  params.addParam<Real>("kdamage", 1e-6, "Stiffness of damaged matrix");
-  params.addParam<MaterialPropertyName>(
-      "F_name", "E_el", "Name of material property storing the elastic energy");
+  InputParameters params = validParams<ComputeIsotropicLinearElasticPFFractureStress>();
+  params.addClassDescription("Computes the stress and free energy derivatives for the phase field "
+                             "fracture model, with linear anistropic elasticity");
   return params;
 }
 
 ComputeLinearElasticPFFractureStress::ComputeLinearElasticPFFractureStress(
     const InputParameters & parameters)
-  : ComputeStressBase(parameters),
-    _c(coupledValue("c")),
-    _gc_prop(getMaterialProperty<Real>("gc_prop")),
-
-    _l(getMaterialProperty<Real>("l")),
-
-    _kdamage(getParam<Real>("kdamage")),
-    _F(declareProperty<Real>(getParam<MaterialPropertyName>("F_name"))),
-    _dFdc(declarePropertyDerivative<Real>(getParam<MaterialPropertyName>("F_name"),
-                                          getVar("c", 0)->name())),
-    _d2Fdc2(declarePropertyDerivative<Real>(
-        getParam<MaterialPropertyName>("F_name"), getVar("c", 0)->name(), getVar("c", 0)->name())),
-    _d2Fdcdstrain(declareProperty<RankTwoTensor>("d2Fdcdstrain")),
-    _dstress_dc(
-        declarePropertyDerivative<RankTwoTensor>(_base_name + "stress", getVar("c", 0)->name())),
-
-    _dH0_pos_dstrain(declareProperty<RankTwoTensor>("dH0_pos_dstrain")),
-
-    _H0_pos(declareProperty<Real>("H0_pos")),
-    _H0_pos_old(getMaterialPropertyOld<Real>("H0_pos"))
+  : ComputeIsotropicLinearElasticPFFractureStress(parameters)
 {
-}
-
-void
-ComputeLinearElasticPFFractureStress::initQpStatefulProperties()
-{
-  ComputeStressBase::initQpStatefulProperties();
-  _H0_pos[_qp] = 0.0;
 }
 
 void
 ComputeLinearElasticPFFractureStress::computeQpStress()
 {
-  const Real c = _c[_qp];
+  Real c = _c[_qp];
 
-  // Compute usual Jacobian mult
-  _Jacobian_mult[_qp] = _elasticity_tensor[_qp];
-
-  // Zero out values when c > 1
-  Real cfactor = 1.0;
-  if (c > 1.0)
-    cfactor = 0.0;
-
-  // Compute eigenvectors and eigenvalues of ustress
+  // Compute eigenvectors and eigenvalues of stress
   RankTwoTensor eigvec;
   std::vector<Real> eigval(LIBMESH_DIM);
-  std::vector<Real> eigabs(LIBMESH_DIM);
-  RankTwoTensor stresscal = _elasticity_tensor[_qp] * _mechanical_strain[_qp];
-  stresscal.symmetricEigenvaluesEigenvectors(eigval, eigvec);
-  RankTwoTensor Ipos, Ineg, eigval_tensor;
-  RankTwoTensor I(RankTwoTensor::initIdentity);
-  eigval_tensor.fillFromInputVector(eigval);
+  RankTwoTensor stress = _elasticity_tensor[_qp] * _mechanical_strain[_qp];
+  stress.symmetricEigenvaluesEigenvectors(eigval, eigvec);
+
+  // Calculate tensors of outerproduct of eigen vectors
+  std::vector<RankTwoTensor> etens(LIBMESH_DIM);
+
   for (unsigned int i = 0; i < LIBMESH_DIM; ++i)
-    {
-      if (eigval[i] < 0.0)
-      {
-        Ineg(i, i) = 1.0;
-      }
-    }
+    for (unsigned int j = 0; j < LIBMESH_DIM; ++j)
+      for (unsigned int k = 0; k < LIBMESH_DIM; ++k)
+        etens[i](j, k) = eigvec(j, i) * eigvec(k, i);
 
-  Ipos = I - Ineg;
-
-  RankFourTensor QoQ = eigvec.mixedProductIkJl(eigvec);
-  RankFourTensor QToQT = eigvec.transpose().mixedProductIkJl(eigvec.transpose());
-  RankFourTensor IpoIp = I.mixedProductIkJl(Ipos);
-  RankFourTensor InoIn = I.mixedProductIkJl(Ineg);
-  RankFourTensor Jpos = QoQ * IpoIp * QToQT * _elasticity_tensor[_qp];
-  RankFourTensor Jneg = QoQ * InoIn * QToQT * _elasticity_tensor[_qp];
-
-
-  RankTwoTensor eigpos = eigval_tensor * Ipos;
-  RankTwoTensor eigneg = eigval_tensor * Ineg;
-  RankTwoTensor stress0pos = eigvec * eigpos * (eigvec.transpose());
-  RankTwoTensor stress0neg = eigvec * eigneg * (eigvec.transpose());
-
-
-
-  Real G0_pos = (stress0pos).doubleContraction(_mechanical_strain[_qp])/2.0;
-  Real G0_neg = (stress0neg).doubleContraction(_mechanical_strain[_qp])/2.0;
-
-  _Jacobian_mult[_qp] = (cfactor * (1.0 - c) * (1.0 - c) * (1.0 - _kdamage) + _kdamage) * Jpos + Jneg;  //cfactor
-
-
-  if (G0_pos> _H0_pos_old[_qp])
+  // Separate out positive and negative eigen values
+  std::vector<Real> epos(LIBMESH_DIM), eneg(LIBMESH_DIM);
+  for (unsigned int i = 0; i < LIBMESH_DIM; ++i)
   {
-    _H0_pos[_qp] = G0_pos;
+    epos[i] = (std::abs(eigval[i]) + eigval[i]) / 2.0;
+    eneg[i] = (std::abs(eigval[i]) - eigval[i]) / 2.0;
   }
+
+  // Calculate the tensile (postive) and compressive (negative) parts of stress
+  RankTwoTensor stress0pos, stress0neg;
+  for (unsigned int i = 0; i < LIBMESH_DIM; ++i)
+  {
+    stress0pos += etens[i] * epos[i];
+    stress0neg += etens[i] * eneg[i];
+  }
+
+  // Energy with positive principal stress
+  const Real G0_pos = (stress0pos).doubleContraction(_mechanical_strain[_qp]) / 2.0;
+  const Real G0_neg = (stress0neg).doubleContraction(_mechanical_strain[_qp]) / 2.0;
+
+  // Assign history variable and derivative
+  if (G0_pos > _hist_old[_qp])
+    _hist[_qp] = G0_pos;
   else
-  {
-    _H0_pos[_qp] = _H0_pos_old[_qp];
-  }
-  _dH0_pos_dstrain[_qp] = stress0pos;
+    _hist[_qp] = _hist_old[_qp];
 
-  // Damage associated with positive component of stress
-  _stress[_qp] = stress0pos * (cfactor * (1.0 - c) * (1.0 - c) * (1.0 - _kdamage) + _kdamage) + stress0neg;
+  Real hist_variable = _hist_old[_qp];
+  if (_use_current_hist)
+    hist_variable = _hist[_qp];
 
-  // Used in StressDivergencePFFracTensors Jacobian
-  _dstress_dc[_qp] = - cfactor * stress0pos * 2.0 * (1.0 - c) * (1.0 - _kdamage);
+  _stress[_qp] = stress0pos * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - stress0neg;
 
   // Elastic free energy density
-  _F[_qp] = G0_pos * (cfactor * (1.0 - c) * (1.0 - c) * (1.0 - _kdamage) + _kdamage) + G0_neg + _gc_prop[_qp] * c * c / 2.0 / _l[_qp];
+  _F[_qp] = hist_variable * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - G0_neg +
+            _gc[_qp] / (2 * _l[_qp]) * c * c;
 
   // derivative of elastic free energy density wrt c
-  _dFdc[_qp] = -_H0_pos[_qp] * 2.0 * cfactor * (1.0 - c) * (1.0 - _kdamage) + _gc_prop[_qp] * c / _l[_qp];
+  _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + _gc[_qp] / _l[_qp] * c;
 
   // 2nd derivative of elastic free energy density wrt c
-  _d2Fdc2[_qp] = _H0_pos[_qp] * 2.0 * cfactor * (1.0 - _kdamage) + _gc_prop[_qp] / _l[_qp];
+  _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage) + _gc[_qp] / _l[_qp];
 
-  // 2nd derivative wrt c and strain
-<<<<<<< HEAD
-  _d2Fdcdstrain[_qp] = -cfactor * stress0pos * 2.0 * (1.0 - c);
-=======
-  _d2Fdcdstrain[_qp] = -2.0 * _dH0_pos_dstrain[_qp] * cfactor * (1.0 - c) * (1.0 - _kdamage);
->>>>>>> phase field anisotropic fracture update
+  // 2nd derivative wrt c and strain = 0.0 if we used the previous step's history varible
+  if (_use_current_hist)
+    _d2Fdcdstrain[_qp] = -stress0pos * (1.0 - c) * (1 - _kdamage);
 
   // Used in StressDivergencePFFracTensors off-diagonal Jacobian
-  _dstress_dc[_qp] = -stress0pos * 2.0 * cfactor * (1.0 - c) * (1.0 - _kdamage);
+  _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
+
+  // projection tensor
+  RankFourTensor proj_pos = stress.positveProjectionEigenDecomposition();
+  RankFourTensor I4sym(RankFourTensor::initIdentitySymmetricFour);
+  RankFourTensor proj_neg = I4sym - proj_pos;
+
+  _Jacobian_mult[_qp] =
+      ((1.0 - c) * (1.0 - c) * (1.0 - _kdamage) + _kdamage) * (proj_pos * _elasticity_tensor[_qp]) +
+      proj_neg * _elasticity_tensor[_qp];
 }

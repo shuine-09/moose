@@ -104,6 +104,8 @@
   [./elastic]
     type = ComputeLinearElasticPFFractureStress
     c = c
+    kdamage = 0
+    F_name = E_el
   [../]
   [./elasticity_tensor]
     type = ComputeElasticityTensor
@@ -132,8 +134,9 @@
   l_max_its = 100
   nl_max_its = 30
 
-  dt = 5e-5
-  num_steps = 1
+  dt = 1e-4
+  dtmin = 1e-4
+  num_steps = 2
 []
 
 [Outputs]
