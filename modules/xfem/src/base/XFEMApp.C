@@ -44,6 +44,7 @@
 #include "XFEMMaxHoopStress.h"
 #include "XFEMEnergyReleaseRate.h"
 #include "HeatTestAux.h"
+#include "NumberElementBelowThreshold.h"
 
 template <>
 InputParameters
@@ -140,6 +141,8 @@ XFEMApp::registerObjects(Factory & factory)
   // Material
   //registerMaterial(StatefulMaterialJump);
   registerMaterial(MaximumNormalSeparation);
+
+  registerPostprocessor(NumberElementBelowThreshold);
 }
 
 void
