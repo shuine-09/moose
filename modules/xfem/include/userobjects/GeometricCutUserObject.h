@@ -166,9 +166,22 @@ public:
                                      std::vector<Xfem::CutFace> & cut_faces,
                                      Real time) const = 0;
 
+  /**
+   * Get the interface id
+   */
+  unsigned int getInterfaceId() const { return _interface_id; };
+
+  bool healMesh() const { return _heal_mesh; };
+
 protected:
   /// Pointer to the XFEM controller object
   std::shared_ptr<XFEM> _xfem;
+
+  /// Associated interface id
+  unsigned int _interface_id;
+
+  /// Heal the mesh
+  bool _heal_mesh;
 
   ///@{Containers with information about all 2D and 3D elements marked for cutting by this object
   std::map<unsigned int, std::vector<Xfem::GeomMarkedElemInfo2D>> _marked_elems_2d;

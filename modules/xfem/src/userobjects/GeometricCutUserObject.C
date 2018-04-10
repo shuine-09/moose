@@ -24,6 +24,8 @@ validParams<GeometricCutUserObject>()
 {
   InputParameters params = validParams<CrackFrontPointsProvider>();
   params.addClassDescription("Base UserObject class for XFEM Geometric Cuts");
+  params.addParam<unsigned int>("interface_id", 0, "The interface id.");
+  params.addParam<bool>("heal_mesh", false, "Heal previous cuts at every time step");
   ExecFlagEnum & exec = params.set<ExecFlagEnum>("execute_on");
   exec.addAvailableFlags(EXEC_XFEM_MARK);
   params.setDocString("execute_on", exec.getDocString());
@@ -34,7 +36,9 @@ validParams<GeometricCutUserObject>()
 }
 
 GeometricCutUserObject::GeometricCutUserObject(const InputParameters & parameters)
-  : CrackFrontPointsProvider(parameters)
+  : CrackFrontPointsProvider(parameters),
+    _interface_id(getParam<unsigned int>("interface_id")),
+    _heal_mesh(getParam<bool>("heal_mesh"))
 {
   FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
   if (fe_problem == NULL)
@@ -262,11 +266,11 @@ GeometricCutUserObject::finalize()
 
   for (const auto & it : _marked_elems_2d)
     for (const auto & gmei : it.second)
-      _xfem->addGeomMarkedElem2D(it.first, gmei);
+      _xfem->addGeomMarkedElem2D(it.first, gmei, _interface_id);
 
   for (const auto & it : _marked_elems_3d)
     for (const auto & gmei : it.second)
-      _xfem->addGeomMarkedElem3D(it.first, gmei);
+      _xfem->addGeomMarkedElem3D(it.first, gmei, _interface_id);
 
   _marked_elems_2d.clear();
   _marked_elems_3d.clear();

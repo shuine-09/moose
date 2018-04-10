@@ -79,14 +79,18 @@ public:
    * @param elem_id   The id of the element to be cut
    * @param geom_info The object containing information about the cut to be performed
    */
-  void addGeomMarkedElem2D(const unsigned int elem_id, const Xfem::GeomMarkedElemInfo2D geom_info);
+  void addGeomMarkedElem2D(const unsigned int elem_id,
+                           const Xfem::GeomMarkedElemInfo2D geom_info,
+                           unsigned int interface);
 
   /**
    * Add information about a new cut to be performed on a specific 3d element
    * @param elem_id   The id of the element to be cut
    * @param geom_info The object containing information about the cut to be performed
    */
-  void addGeomMarkedElem3D(const unsigned int elem_id, const Xfem::GeomMarkedElemInfo3D geom_info);
+  void addGeomMarkedElem3D(const unsigned int elem_id,
+                           const Xfem::GeomMarkedElemInfo3D geom_info,
+                           unsigned int interface);
 
   /**
    * Clear out the list of elements to be marked for cutting. Called after cutting is done.
@@ -176,13 +180,16 @@ public:
                                   QBase * qrule,
                                   const MooseArray<Point> & q_points,
                                   unsigned int side);
-  virtual const ElementPairLocator::ElementPairList * getXFEMCutElemPairs() const
+
+  virtual const ElementPairLocator::ElementPairList * getXFEMCutElemPairs(unsigned int interface_id)
   {
-    return &_sibling_elems;
+    return &_sibling_elems[interface_id];
   }
-  virtual const ElementPairLocator::ElementPairList * getXFEMDisplacedCutElemPairs() const
+
+  virtual const ElementPairLocator::ElementPairList *
+  getXFEMDisplacedCutElemPairs(unsigned int interface_id)
   {
-    return &_sibling_displaced_elems;
+    return &_sibling_displaced_elems[interface_id];
   }
   virtual void getXFEMIntersectionInfo(const Elem * elem,
                                        unsigned int plane_id,
@@ -228,8 +235,8 @@ private:
 
   std::map<unique_id_type, XFEMCutElem *> _cut_elem_map;
   std::set<const Elem *> _crack_tip_elems;
-  ElementPairLocator::ElementPairList _sibling_elems;
-  ElementPairLocator::ElementPairList _sibling_displaced_elems;
+  std::map<unsigned int, ElementPairLocator::ElementPairList> _sibling_elems;
+  std::map<unsigned int, ElementPairLocator::ElementPairList> _sibling_displaced_elems;
 
   std::map<const Elem *, std::vector<Point>> _elem_crack_origin_direction_map;
 

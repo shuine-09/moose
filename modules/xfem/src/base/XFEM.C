@@ -153,14 +153,18 @@ XFEM::clearStateMarkedElems()
 }
 
 void
-XFEM::addGeomMarkedElem2D(const unsigned int elem_id, const Xfem::GeomMarkedElemInfo2D geom_info)
+XFEM::addGeomMarkedElem2D(const unsigned int elem_id,
+                          const Xfem::GeomMarkedElemInfo2D geom_info,
+                          unsigned int interface_id)
 {
   Elem * elem = _mesh->elem(elem_id);
   _geom_marked_elems_2d[elem].push_back(geom_info);
 }
 
 void
-XFEM::addGeomMarkedElem3D(const unsigned int elem_id, const Xfem::GeomMarkedElemInfo3D geom_info)
+XFEM::addGeomMarkedElem3D(const unsigned int elem_id,
+                          const Xfem::GeomMarkedElemInfo3D geom_info,
+                          unsigned int interface_id)
 {
   Elem * elem = _mesh->elem(elem_id);
   _geom_marked_elems_3d[elem].push_back(geom_info);
@@ -959,8 +963,8 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
     Elem * parent_elem = _mesh->elem(parent_id);
     Elem * libmesh_elem = Elem::build(parent_elem->type()).release();
 
-    for (ElementPairLocator::ElementPairList::iterator it = _sibling_elems.begin();
-         it != _sibling_elems.end();
+    for (ElementPairLocator::ElementPairList::iterator it = _sibling_elems[0].begin();
+         it != _sibling_elems[0].end();
          ++it)
     {
       if (parent_elem == it->first)
@@ -980,8 +984,8 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
       parent_elem2 = _displaced_mesh->elem(parent_id);
       libmesh_elem2 = Elem::build(parent_elem2->type()).release();
 
-      for (ElementPairLocator::ElementPairList::iterator it = _sibling_displaced_elems.begin();
-           it != _sibling_displaced_elems.end();
+      for (ElementPairLocator::ElementPairList::iterator it = _sibling_displaced_elems[0].begin();
+           it != _sibling_displaced_elems[0].end();
            ++it)
       {
         if (parent_elem2 == it->first)
@@ -1216,19 +1220,19 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
     // TODO: for cut-node case, how to find the sibling elements?
     // if (sibling_elem_vec.size() != 2)
     // mooseError("Must have exactly 2 sibling elements");
-    _sibling_elems.push_back(std::make_pair(sibling_elem_vec[0], sibling_elem_vec[1]));
+    _sibling_elems[0].push_back(std::make_pair(sibling_elem_vec[0], sibling_elem_vec[1]));
   }
 
   // add sibling elems on displaced mesh
   if (_displaced_mesh)
   {
-    for (ElementPairLocator::ElementPairList::iterator it = _sibling_elems.begin();
-         it != _sibling_elems.end();
+    for (ElementPairLocator::ElementPairList::iterator it = _sibling_elems[0].begin();
+         it != _sibling_elems[0].end();
          ++it)
     {
       Elem * elem = _displaced_mesh->elem(it->first->id());
       Elem * elem_pair = _displaced_mesh->elem(it->second->id());
-      _sibling_displaced_elems.push_back(std::make_pair(elem, elem_pair));
+      _sibling_displaced_elems[0].push_back(std::make_pair(elem, elem_pair));
     }
   }
 
