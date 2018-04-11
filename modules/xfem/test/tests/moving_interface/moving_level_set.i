@@ -18,19 +18,20 @@
 [XFEM]
   qrule = volfrac
   output_cut_plane = true
-  geometric_cut_userobjects = 'line_seg_cut_uo'
+  heal_every_time = true
+  geometric_cut_userobjects = 'level_set_cut_uo line_seg_cut_uo'
 []
 
 [UserObjects]
-  # [./level_set_cut_uo]
-  #   type = LevelSetCutUserObject
-  #   level_set_var = ls
-  #   interface_id = 1
-  #   heal_mesh = true
-  # [../]
+  [./level_set_cut_uo]
+    type = LevelSetCutUserObject
+    level_set_var = ls
+    interface_id = 2
+    heal_mesh = true
+  [../]
   [./line_seg_cut_uo]
     type = LineSegmentCutSetUserObject
-    cut_data = '0.3 1.0 0.3 0.6 0 0'
+    cut_data = '0.3 1.0 0.3 0.2 0 3'
     interface_id = 0
     heal_mesh = true
   [../]
@@ -77,16 +78,16 @@
   [../]
 []
 
-# [Constraints]
-#   [./u_constraint]
-#     type = XFEMSingleVariableConstraint
-#     interface_id = 1
-#     use_displaced_mesh = false
-#     variable = u
-#     use_penalty = true
-#     alpha = 1e5
-#   [../]
-# []
+[Constraints]
+  [./u_constraint]
+    type = XFEMSingleVariableConstraint
+    interface_id = 2
+    use_displaced_mesh = false
+    variable = u
+    use_penalty = true
+    alpha = 1e5
+  [../]
+[]
 
 [Kernels]
   [./diff]
@@ -129,7 +130,7 @@
 
   start_time = 0.0
   dt = 1
-  end_time = 2.0
+  end_time = 3.0
   max_xfem_update = 1
 []
 

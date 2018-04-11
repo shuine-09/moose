@@ -160,6 +160,7 @@ XFEM::addGeomMarkedElem2D(const unsigned int elem_id,
 {
   Elem * elem = _mesh->elem(elem_id);
   _geom_marked_elems_2d[elem].push_back(geom_info);
+  _geom_id_marked_elems_2d[elem->id()] = interface_id;
 }
 
 void
@@ -169,6 +170,7 @@ XFEM::addGeomMarkedElem3D(const unsigned int elem_id,
 {
   Elem * elem = _mesh->elem(elem_id);
   _geom_marked_elems_3d[elem].push_back(geom_info);
+  _geom_id_marked_elems_3d[elem->id()] = interface_id;
 }
 
 void
@@ -176,6 +178,8 @@ XFEM::clearGeomMarkedElems()
 {
   _geom_marked_elems_2d.clear();
   _geom_marked_elems_3d.clear();
+  _geom_id_marked_elems_2d.clear();
+  _geom_id_marked_elems_3d.clear();
 }
 
 void
@@ -222,8 +226,7 @@ XFEM::updateHeal(Real time)
 {
   bool mesh_changed = false;
 
-  if (shouldHealMesh(time))
-    mesh_changed = healMesh();
+  mesh_changed = healMesh();
 
   if (mesh_changed)
   {
@@ -941,87 +944,86 @@ XFEM::healMesh()
 
   std::set<Node *> nodes_to_delete;
   std::set<Node *> nodes_to_delete_displaced;
+  std::set<unsigned int> cutelems_to_delete;
 
-  for (ElementPairLocator::ElementPairList::iterator it = _sibling_elems.begin();
-       it != _sibling_elems.end();
-       ++it)
+  for (unsigned int i = 0; i < _geometric_cuts.size(); ++i)
   {
-    Elem * elem1 = const_cast<Elem *>(it->first);
-    Elem * elem2 = const_cast<Elem *>(it->second);
-
-    std::map<unique_id_type, XFEMCutElem *>::iterator cemit =
-        _cut_elem_map.find(elem1->unique_id());
-    if (cemit != _cut_elem_map.end())
+    if (_geometric_cuts[i]->healMesh())
     {
-      const XFEMCutElem * xfce = cemit->second;
-
-      for (unsigned int in = 0; in < elem1->n_nodes(); ++in)
+      for (ElementPairLocator::ElementPairList::iterator it =
+               _sibling_elems[_geometric_cuts[i]->getInterfaceId()].begin();
+           it != _sibling_elems[_geometric_cuts[i]->getInterfaceId()].end();
+           ++it)
       {
-        Node * e1node = elem1->get_node(in);
-        Node * e2node = elem2->get_node(in);
-        if (!xfce->isPointPhysical(*e1node) &&
-            e1node != e2node) // This would happen at the crack tip
+        Elem * elem1 = const_cast<Elem *>(it->first);
+        Elem * elem2 = const_cast<Elem *>(it->second);
+
+        std::map<unique_id_type, XFEMCutElem *>::iterator cemit =
+            _cut_elem_map.find(elem1->unique_id());
+        if (cemit != _cut_elem_map.end())
         {
-          elem1->set_node(in) = e2node;
-          nodes_to_delete.insert(e1node);
-          // HACKS:
-          // elem2->get_node(in)->set_old_dof_object();
-          // elem1->set_refinement_flag(Elem::JUST_REFINED);
-          // elem2->set_refinement_flag(Elem::JUST_REFINED);
-          // elem1->set_n_systems(1);
-          // elem2->set_n_systems(1);
-        }
-        else if (e1node != e2node)
-          nodes_to_delete.insert(e2node);
-      }
-    }
-    else
-      mooseError("Could not find XFEMCutElem for element to be kept in healing");
+          const XFEMCutElem * xfce = cemit->second;
 
-    elem2->nullify_neighbors();
-    _mesh->boundary_info->remove(elem2);
-    unsigned int deleted_elem_id = elem2->id();
-    _mesh->delete_elem(elem2);
-    _console << "XFEM healing deleted element: " << deleted_elem_id << "\n";
-    mesh_changed = true;
+          cutelems_to_delete.insert(elem1->unique_id());
 
-    if (_displaced_mesh)
-    {
-      Elem * elem1 = _displaced_mesh->elem(it->first->id());
-      Elem * elem2 = _displaced_mesh->elem(it->second->id());
-
-      std::map<unique_id_type, XFEMCutElem *>::iterator cemit =
-          _cut_elem_map.find(elem1->unique_id());
-      if (cemit != _cut_elem_map.end())
-      {
-        const XFEMCutElem * xfce = cemit->second;
-
-        for (unsigned int in = 0; in < elem1->n_nodes(); ++in)
-        {
-          Node * e1node = elem1->get_node(in);
-          Node * e2node = elem2->get_node(in);
-          if (!xfce->isPointPhysical(*e1node) &&
-              e1node != e2node) // This would happen at the crack tip
+          for (unsigned int in = 0; in < elem1->n_nodes(); ++in)
           {
-            elem1->set_node(in) = e2node;
-            nodes_to_delete_displaced.insert(e1node);
-            // HACKS:
-            // elem2->get_node(in)->set_old_dof_object();
-            // elem1->set_refinement_flag(Elem::JUST_REFINED);
-            // elem2->set_refinement_flag(Elem::JUST_REFINED);
-            // elem1->set_n_systems(1);
-            // elem2->set_n_systems(1);
+            Node * e1node = elem1->get_node(in);
+            Node * e2node = elem2->get_node(in);
+            if (!xfce->isPointPhysical(*e1node) &&
+                e1node != e2node) // This would happen at the crack tip
+            {
+              elem1->set_node(in) = e2node;
+              nodes_to_delete.insert(e1node);
+            }
+            else if (e1node != e2node)
+              nodes_to_delete.insert(e2node);
           }
-          else if (e1node != e2node)
-            nodes_to_delete_displaced.insert(e2node);
+        }
+        else
+          mooseError("Could not find XFEMCutElem for element to be kept in healing");
+
+        cutelems_to_delete.insert(elem2->unique_id());
+        elem2->nullify_neighbors();
+        _mesh->boundary_info->remove(elem2);
+        unsigned int deleted_elem_id = elem2->id();
+        _mesh->delete_elem(elem2);
+        _console << "XFEM healing deleted element: " << deleted_elem_id << "\n";
+        mesh_changed = true;
+
+        if (_displaced_mesh)
+        {
+          Elem * elem1 = _displaced_mesh->elem(it->first->id());
+          Elem * elem2 = _displaced_mesh->elem(it->second->id());
+
+          std::map<unique_id_type, XFEMCutElem *>::iterator cemit =
+              _cut_elem_map.find(elem1->unique_id());
+          if (cemit != _cut_elem_map.end())
+          {
+            const XFEMCutElem * xfce = cemit->second;
+
+            for (unsigned int in = 0; in < elem1->n_nodes(); ++in)
+            {
+              Node * e1node = elem1->get_node(in);
+              Node * e2node = elem2->get_node(in);
+              if (!xfce->isPointPhysical(*e1node) &&
+                  e1node != e2node) // This would happen at the crack tip
+              {
+                elem1->set_node(in) = e2node;
+                nodes_to_delete_displaced.insert(e1node);
+              }
+              else if (e1node != e2node)
+                nodes_to_delete_displaced.insert(e2node);
+            }
+          }
+          else
+            mooseError("Could not find XFEMCutElem for element to be kept in healing");
+
+          elem2->nullify_neighbors();
+          _displaced_mesh->boundary_info->remove(elem2);
+          _displaced_mesh->delete_elem(elem2);
         }
       }
-      else
-        mooseError("Could not find XFEMCutElem for element to be kept in healing");
-
-      elem2->nullify_neighbors();
-      _displaced_mesh->boundary_info->remove(elem2);
-      _displaced_mesh->delete_elem(elem2);
     }
   }
 
@@ -1048,17 +1050,35 @@ XFEM::healMesh()
   }
   _console << std::flush;
 
-  for (std::map<unique_id_type, XFEMCutElem *>::iterator cemit = _cut_elem_map.begin();
-       cemit != _cut_elem_map.end();
-       ++cemit)
-    delete cemit->second;
+  // for (std::map<unique_id_type, XFEMCutElem *>::iterator cemit = _cut_elem_map.begin();
+  //      cemit != _cut_elem_map.end();
+  //      ++cemit)
+  //   delete cemit->second;
 
-  _cut_elem_map.clear();
-  _crack_tip_elems.clear();
-  _sibling_elems.clear();
+  for (auto & ced : cutelems_to_delete)
+    if (_cut_elem_map.find(ced) != _cut_elem_map.end())
+    {
+      delete _cut_elem_map.find(ced)->second;
+      _cut_elem_map.erase(ced);
+    }
+
+  for (unsigned int i = 0; i < _geometric_cuts.size(); ++i)
+    if (_geometric_cuts[i]->healMesh())
+      _sibling_elems[_geometric_cuts[i]->getInterfaceId()].clear();
+
   if (_displaced_mesh)
-    _sibling_displaced_elems.clear();
-  _elem_crack_origin_direction_map.clear();
+  {
+    for (unsigned int i = 0; i < _geometric_cuts.size(); ++i)
+      if (_geometric_cuts[i]->healMesh())
+        _sibling_displaced_elems[_geometric_cuts[i]->getInterfaceId()].clear();
+  }
+
+  for (auto & ceh : _crack_tip_elems_need_heal)
+  {
+    _crack_tip_elems.erase(ceh);
+    _elem_crack_origin_direction_map.erase(ceh);
+    _cut_elem_map.erase(ceh->unique_id());
+  }
 
   return mesh_changed;
 }
@@ -1140,19 +1160,23 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
     Elem * parent_elem = _mesh->elem(parent_id);
     Elem * libmesh_elem = Elem::build(parent_elem->type()).release();
 
-    for (ElementPairLocator::ElementPairList::iterator it = _sibling_elems[0].begin();
-         it != _sibling_elems[0].end();
-         ++it)
+    for (unsigned int m = 0; m < _geometric_cuts.size(); ++m)
     {
-      if (parent_elem == it->first)
-        it->first = libmesh_elem;
-      else if (parent_elem == it->second)
-        it->second = libmesh_elem;
+      for (ElementPairLocator::ElementPairList::iterator it =
+               _sibling_elems[_geometric_cuts[m]->getInterfaceId()].begin();
+           it != _sibling_elems[_geometric_cuts[m]->getInterfaceId()].end();
+           ++it)
+      {
+        if (parent_elem == it->first)
+          it->first = libmesh_elem;
+        else if (parent_elem == it->second)
+          it->second = libmesh_elem;
+      }
     }
 
     // parent has at least two children
     if (new_elements[i]->getParent()->numChildren() > 1)
-      temporary_parent_children_map[parent_id].push_back(libmesh_elem);
+      temporary_parent_children_map[parent_elem->id()].push_back(libmesh_elem);
 
     Elem * parent_elem2 = NULL;
     Elem * libmesh_elem2 = NULL;
@@ -1397,7 +1421,11 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
     // TODO: for cut-node case, how to find the sibling elements?
     // if (sibling_elem_vec.size() != 2)
     // mooseError("Must have exactly 2 sibling elements");
-    _sibling_elems[0].push_back(std::make_pair(sibling_elem_vec[0], sibling_elem_vec[1]));
+
+    for (auto const & ide : _geom_id_marked_elems_2d)
+      if (it->first == ide.first)
+        _sibling_elems[ide.second].push_back(
+            std::make_pair(sibling_elem_vec[0], sibling_elem_vec[1]));
   }
 
   // add sibling elems on displaced mesh
@@ -1420,6 +1448,7 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
   if (mesh_changed)
   {
     _crack_tip_elems.clear();
+    _crack_tip_elems_need_heal.clear();
     const std::set<EFAElement *> CrackTipElements = _efa_mesh.getCrackTipElements();
     std::set<EFAElement *>::const_iterator sit;
     for (sit = CrackTipElements.begin(); sit != CrackTipElements.end(); ++sit)
@@ -1432,6 +1461,22 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
       else
         crack_tip_elem = _mesh->elem(eid);
       _crack_tip_elems.insert(crack_tip_elem);
+
+      for (unsigned int i = 0; i < _geometric_cuts.size(); ++i)
+      {
+        if (_geometric_cuts[i]->healMesh())
+        {
+          for (auto const & ide : _geom_id_marked_elems_2d)
+            if (_geometric_cuts[i]->getInterfaceId() == ide.second)
+            {
+              if ((*sit)->getParent() != nullptr)
+              {
+                if ((*sit)->getParent()->id() == ide.first)
+                  _crack_tip_elems_need_heal.insert(crack_tip_elem);
+              }
+            }
+        }
+      }
     }
   }
   _console << std::flush;

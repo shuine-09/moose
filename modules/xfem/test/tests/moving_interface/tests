@@ -1,0 +1,9 @@
+[Tests]
+  [./moving_interface]
+    type = Exodiff
+    input = moving_level_set.i
+    exodiff = 'moving_level_set_out.e moving_level_set_out.e-s002 moving_level_set_out.e-s003'
+    map = false
+    unique_id = true
+  [../]
+[]
