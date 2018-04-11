@@ -68,9 +68,6 @@ public:
 
   void addGeometricCut(const GeometricCutUserObject * geometric_cut);
 
-  void addHealTime(Real heal_time) { _heal_times.push_back(heal_time); }
-  void setHealEveryTime(bool heal_every_time) { _heal_every_time = heal_every_time; }
-
   void addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal);
   void addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal, unsigned int marked_side);
   void addStateMarkedFrag(unsigned int elem_id, RealVectorValue & normal);
@@ -362,9 +359,6 @@ private:
    * @param sys  System for which the dof indices are found
    */
   std::vector<dof_id_type> getNodeSolutionDofs(const Node * node, SystemBase & sys) const;
-
-  bool _heal_every_time;
-  std::vector<Real> _heal_times;
 };
 
 #endif // XFEM_H

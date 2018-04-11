@@ -18,7 +18,6 @@
 [XFEM]
   qrule = volfrac
   output_cut_plane = true
-  heal_every_time = true
   geometric_cut_userobjects = 'level_set_cut_uo line_seg_cut_uo'
 []
 

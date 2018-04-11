@@ -31,8 +31,7 @@
 
 #include "libmesh/mesh_communication.h"
 
-XFEM::XFEM(const InputParameters & params)
-  : XFEMInterface(params), _efa_mesh(Moose::out), _heal_every_time(false)
+XFEM::XFEM(const InputParameters & params) : XFEMInterface(params), _efa_mesh(Moose::out)
 {
 #ifndef LIBMESH_ENABLE_UNIQUE_ID
   mooseError("MOOSE requires unique ids to be enabled in libmesh (configure with "
@@ -378,17 +377,6 @@ XFEM::buildEFAMesh()
   // Correction: no need to use neighbor info now
   _efa_mesh.updateEdgeNeighbors();
   _efa_mesh.initCrackTipTopology();
-}
-
-bool
-XFEM::shouldHealMesh(Real time)
-{
-  if (_heal_every_time)
-    return true;
-  for (unsigned int i = 0; i < _heal_times.size(); ++i)
-    if (MooseUtils::absoluteFuzzyEqual(time, _heal_times[i]))
-      return true;
-  return false;
 }
 
 bool
@@ -1050,11 +1038,6 @@ XFEM::healMesh()
   }
   _console << std::flush;
 
-  // for (std::map<unique_id_type, XFEMCutElem *>::iterator cemit = _cut_elem_map.begin();
-  //      cemit != _cut_elem_map.end();
-  //      ++cemit)
-  //   delete cemit->second;
-
   for (auto & ced : cutelems_to_delete)
     if (_cut_elem_map.find(ced) != _cut_elem_map.end())
     {
@@ -1185,14 +1168,18 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
       parent_elem2 = _displaced_mesh->elem(parent_id);
       libmesh_elem2 = Elem::build(parent_elem2->type()).release();
 
-      for (ElementPairLocator::ElementPairList::iterator it = _sibling_displaced_elems[0].begin();
-           it != _sibling_displaced_elems[0].end();
-           ++it)
+      for (unsigned int m = 0; m < _geometric_cuts.size(); ++m)
       {
-        if (parent_elem2 == it->first)
-          it->first = libmesh_elem2;
-        else if (parent_elem2 == it->second)
-          it->second = libmesh_elem2;
+        for (ElementPairLocator::ElementPairList::iterator it =
+                 _sibling_displaced_elems[_geometric_cuts[m]->getInterfaceId()].begin();
+             it != _sibling_displaced_elems[_geometric_cuts[m]->getInterfaceId()].end();
+             ++it)
+        {
+          if (parent_elem == it->first)
+            it->first = libmesh_elem;
+          else if (parent_elem == it->second)
+            it->second = libmesh_elem;
+        }
       }
     }
 
