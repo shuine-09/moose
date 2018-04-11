@@ -82,18 +82,19 @@ public:
    * @param elem_id   The id of the element to be cut
    * @param geom_info The object containing information about the cut to be performed
    */
-  void addGeomMarkedElem2D(const unsigned int elem_id,
-                           const Xfem::GeomMarkedElemInfo2D geom_info,
-                           unsigned int interface_id);
+  void addGeomMarkedElem2D(const unsigned int elem_id, const Xfem::GeomMarkedElemInfo2D geom_info);
 
   /**
    * Add information about a new cut to be performed on a specific 3d element
    * @param elem_id   The id of the element to be cut
    * @param geom_info The object containing information about the cut to be performed
    */
-  void addGeomMarkedElem3D(const unsigned int elem_id,
-                           const Xfem::GeomMarkedElemInfo3D geom_info,
-                           unsigned int interface_id);
+  void addGeomMarkedElem3D(const unsigned int elem_id, const Xfem::GeomMarkedElemInfo3D geom_info);
+
+  /**
+   * TODO
+   */
+  void addGeomMarkerIDElem(const unsigned int interface_id, const unsigned int elem_id);
 
   /**
    * Clear out the list of elements to be marked for cutting. Called after cutting is done.
@@ -255,11 +256,12 @@ private:
 
   /// Data structure for storing information about all 2D elements to be cut by geometry
   std::map<const Elem *, std::vector<Xfem::GeomMarkedElemInfo2D>> _geom_marked_elems_2d;
-  std::map<unsigned int, unsigned int> _geom_id_marked_elems_2d;
 
   /// Data structure for storing information about all 3D elements to be cut by geometry
   std::map<const Elem *, std::vector<Xfem::GeomMarkedElemInfo3D>> _geom_marked_elems_3d;
-  std::map<unsigned int, unsigned int> _geom_id_marked_elems_3d;
+
+  /// TODO
+  std::map<unsigned int, std::set<unsigned int>> _geom_marker_id_elems;
 
   ElementFragmentAlgorithm _efa_mesh;
 

@@ -154,23 +154,23 @@ XFEM::clearStateMarkedElems()
 }
 
 void
-XFEM::addGeomMarkedElem2D(const unsigned int elem_id,
-                          const Xfem::GeomMarkedElemInfo2D geom_info,
-                          unsigned int interface_id)
+XFEM::addGeomMarkedElem2D(const unsigned int elem_id, const Xfem::GeomMarkedElemInfo2D geom_info)
 {
   Elem * elem = _mesh->elem(elem_id);
   _geom_marked_elems_2d[elem].push_back(geom_info);
-  _geom_id_marked_elems_2d[elem->id()] = interface_id;
 }
 
 void
-XFEM::addGeomMarkedElem3D(const unsigned int elem_id,
-                          const Xfem::GeomMarkedElemInfo3D geom_info,
-                          unsigned int interface_id)
+XFEM::addGeomMarkedElem3D(const unsigned int elem_id, const Xfem::GeomMarkedElemInfo3D geom_info)
 {
   Elem * elem = _mesh->elem(elem_id);
   _geom_marked_elems_3d[elem].push_back(geom_info);
-  _geom_id_marked_elems_3d[elem->id()] = interface_id;
+}
+
+void
+XFEM::addGeomMarkerIDElem(const unsigned int interface_id, const unsigned int elem_id)
+{
+  _geom_marker_id_elems[interface_id].insert(elem_id);
 }
 
 void
@@ -178,8 +178,6 @@ XFEM::clearGeomMarkedElems()
 {
   _geom_marked_elems_2d.clear();
   _geom_marked_elems_3d.clear();
-  _geom_id_marked_elems_2d.clear();
-  _geom_id_marked_elems_3d.clear();
 }
 
 void
@@ -252,6 +250,8 @@ XFEM::updateHeal(Real time)
       //      _displaced_mesh->prepare_for_use(true,true);
     }
   }
+
+  _geom_marker_id_elems.clear();
 
   return mesh_changed;
 }
@@ -1422,22 +1422,25 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
     // if (sibling_elem_vec.size() != 2)
     // mooseError("Must have exactly 2 sibling elements");
 
-    for (auto const & ide : _geom_id_marked_elems_2d)
-      if (it->first == ide.first)
-        _sibling_elems[ide.second].push_back(
-            std::make_pair(sibling_elem_vec[0], sibling_elem_vec[1]));
+    for (unsigned int i = 0; i < _geometric_cuts.size(); ++i)
+      for (auto const & elem_id : _geom_marker_id_elems[_geometric_cuts[i]->getInterfaceId()])
+        if (it->first == elem_id)
+          _sibling_elems[_geometric_cuts[i]->getInterfaceId()].push_back(
+              std::make_pair(sibling_elem_vec[0], sibling_elem_vec[1]));
   }
 
   // add sibling elems on displaced mesh
   if (_displaced_mesh)
   {
-    for (ElementPairLocator::ElementPairList::iterator it = _sibling_elems[0].begin();
-         it != _sibling_elems[0].end();
-         ++it)
+    for (unsigned int i = 0; i < _geometric_cuts.size(); ++i)
     {
-      Elem * elem = _displaced_mesh->elem(it->first->id());
-      Elem * elem_pair = _displaced_mesh->elem(it->second->id());
-      _sibling_displaced_elems[0].push_back(std::make_pair(elem, elem_pair));
+      for (auto & se : _sibling_elems[_geometric_cuts[i]->getInterfaceId()])
+      {
+        Elem * elem = _displaced_mesh->elem(se.first->id());
+        Elem * elem_pair = _displaced_mesh->elem(se.second->id());
+        _sibling_displaced_elems[_geometric_cuts[i]->getInterfaceId()].push_back(
+            std::make_pair(elem, elem_pair));
+      }
     }
   }
 
@@ -1462,18 +1465,16 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
         crack_tip_elem = _mesh->elem(eid);
       _crack_tip_elems.insert(crack_tip_elem);
 
+      // Store the crack tip elements which are going to be healed
       for (unsigned int i = 0; i < _geometric_cuts.size(); ++i)
       {
         if (_geometric_cuts[i]->healMesh())
         {
-          for (auto const & ide : _geom_id_marked_elems_2d)
-            if (_geometric_cuts[i]->getInterfaceId() == ide.second)
+          for (auto const & mie : _geom_marker_id_elems[_geometric_cuts[i]->getInterfaceId()])
+            if ((*sit)->getParent() != nullptr)
             {
-              if ((*sit)->getParent() != nullptr)
-              {
-                if ((*sit)->getParent()->id() == ide.first)
-                  _crack_tip_elems_need_heal.insert(crack_tip_elem);
-              }
+              if ((*sit)->getParent()->id() == mie)
+                _crack_tip_elems_need_heal.insert(crack_tip_elem);
             }
         }
       }

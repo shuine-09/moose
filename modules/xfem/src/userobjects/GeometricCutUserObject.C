@@ -266,11 +266,17 @@ GeometricCutUserObject::finalize()
 
   for (const auto & it : _marked_elems_2d)
     for (const auto & gmei : it.second)
-      _xfem->addGeomMarkedElem2D(it.first, gmei, _interface_id);
+    {
+      _xfem->addGeomMarkedElem2D(it.first, gmei);
+      _xfem->addGeomMarkerIDElem(_interface_id, it.first);
+    }
 
   for (const auto & it : _marked_elems_3d)
     for (const auto & gmei : it.second)
-      _xfem->addGeomMarkedElem3D(it.first, gmei, _interface_id);
+    {
+      _xfem->addGeomMarkedElem3D(it.first, gmei);
+      _xfem->addGeomMarkerIDElem(_interface_id, it.first);
+    }
 
   _marked_elems_2d.clear();
   _marked_elems_3d.clear();
