@@ -17,6 +17,8 @@
 #include "XFEMAppTypes.h"
 #include "EFAElement2D.h"
 #include "EFAElement3D.h"
+#include "XFEMElementPairLocator.h"
+#include "DisplacedProblem.h"
 
 template <>
 InputParameters
@@ -24,7 +26,6 @@ validParams<GeometricCutUserObject>()
 {
   InputParameters params = validParams<CrackFrontPointsProvider>();
   params.addClassDescription("Base UserObject class for XFEM Geometric Cuts");
-  params.addParam<unsigned int>("interface_id", 0, "The interface id.");
   params.addParam<bool>("heal_mesh", false, "Heal previous cuts at every time step");
   ExecFlagEnum & exec = params.set<ExecFlagEnum>("execute_on");
   exec.addAvailableFlags(EXEC_XFEM_MARK);
@@ -36,16 +37,25 @@ validParams<GeometricCutUserObject>()
 }
 
 GeometricCutUserObject::GeometricCutUserObject(const InputParameters & parameters)
-  : CrackFrontPointsProvider(parameters),
-    _interface_id(getParam<unsigned int>("interface_id")),
-    _heal_mesh(getParam<bool>("heal_mesh"))
+  : CrackFrontPointsProvider(parameters), _heal_mesh(getParam<bool>("heal_mesh"))
 {
-  FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
-  if (fe_problem == NULL)
-    mooseError("Problem casting _subproblem to FEProblemBase in XFEMMaterialStateMarkerBase");
-  _xfem = MooseSharedNamespace::dynamic_pointer_cast<XFEM>(fe_problem->getXFEM());
+  _xfem = MooseSharedNamespace::dynamic_pointer_cast<XFEM>(_fe_problem.getXFEM());
   if (_xfem == NULL)
-    mooseError("Problem casting to XFEM in XFEMMaterialStateMarkerBase");
+    mooseError("Problem casting to XFEM in GeometricCutUserObject");
+
+  _xfem->addGeometricCut(this);
+
+  MooseSharedPointer<XFEMElementPairLocator> new_xfem_epl(
+      new XFEMElementPairLocator(_xfem, _interface_id));
+  _fe_problem.geomSearchData().addElementPairLocator(_interface_id, new_xfem_epl);
+
+  if (_fe_problem.getDisplacedProblem() != NULL)
+  {
+    std::shared_ptr<XFEMElementPairLocator> new_xfem_epl2(
+        new XFEMElementPairLocator(_xfem, _interface_id, true));
+    _fe_problem.getDisplacedProblem()->geomSearchData().addElementPairLocator(_interface_id,
+                                                                              new_xfem_epl2);
+  }
 }
 
 void

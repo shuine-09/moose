@@ -66,7 +66,7 @@ public:
 
   ~XFEM();
 
-  void addGeometricCut(const GeometricCutUserObject * geometric_cut);
+  void addGeometricCut(GeometricCutUserObject * geometric_cut);
 
   void addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal);
   void addStateMarkedElem(unsigned int elem_id, RealVectorValue & normal, unsigned int marked_side);
@@ -101,12 +101,12 @@ public:
   /**
    * Method to update the mesh due to modified cut planes
    */
-  virtual bool update(Real time, NonlinearSystemBase & nl, AuxiliarySystem & aux);
+  virtual bool update(Real time, NonlinearSystemBase & nl, AuxiliarySystem & aux) override;
 
   /**
    * Initialize the solution on newly created nodes
    */
-  virtual void initSolution(NonlinearSystemBase & nl, AuxiliarySystem & aux);
+  virtual void initSolution(NonlinearSystemBase & nl, AuxiliarySystem & aux) override;
 
   void buildEFAMesh();
   bool shouldHealMesh(Real time);
@@ -119,7 +119,7 @@ public:
       Point cut_origin, RealVectorValue cut_normal, Point & edge_p1, Point & edge_p2, Real & dist);
   bool cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux);
   bool healMesh();
-  virtual bool updateHeal(Real time) override;
+  virtual bool updateHeal() override;
   Point getEFANodeCoords(EFANode * CEMnode,
                          EFAElement * CEMElem,
                          const Elem * elem,
@@ -178,12 +178,12 @@ public:
   virtual bool getXFEMWeights(MooseArray<Real> & weights,
                               const Elem * elem,
                               QBase * qrule,
-                              const MooseArray<Point> & q_points);
+                              const MooseArray<Point> & q_points) override;
   virtual bool getXFEMFaceWeights(MooseArray<Real> & weights,
                                   const Elem * elem,
                                   QBase * qrule,
                                   const MooseArray<Point> & q_points,
-                                  unsigned int side);
+                                  unsigned int side) override;
 
   virtual const ElementPairLocator::ElementPairList * getXFEMCutElemPairs(unsigned int interface_id)
   {
@@ -195,6 +195,12 @@ public:
   {
     return &_sibling_displaced_elems[interface_id];
   }
+
+  virtual unsigned int getGeometricCutID(const GeometricCutUserObject * gcu)
+  {
+    return _geom_marker_id_map[gcu];
+  };
+
   virtual void getXFEMIntersectionInfo(const Elem * elem,
                                        unsigned int plane_id,
                                        Point & normal,
@@ -259,6 +265,9 @@ private:
 
   /// TODO
   std::map<unsigned int, std::set<unsigned int>> _geom_marker_id_elems;
+
+  ///TODO
+  std::map<const GeometricCutUserObject *, unsigned int> _geom_marker_id_map;
 
   ElementFragmentAlgorithm _efa_mesh;
 

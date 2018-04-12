@@ -18,29 +18,19 @@
 [XFEM]
   qrule = volfrac
   output_cut_plane = true
-  geometric_cut_userobjects = 'level_set_cut_uo line_seg_cut_uo'
 []
 
 [UserObjects]
-  [./level_set_cut_uo]
-    type = LevelSetCutUserObject
-    level_set_var = ls
-    interface_id = 2
-    heal_mesh = true
-  [../]
   [./line_seg_cut_uo]
     type = LineSegmentCutSetUserObject
     cut_data = '0.3 1.0 0.3 0.2 0 3'
-    interface_id = 0
     heal_mesh = true
   [../]
-  # [./line_seg_cut_uo]
-  #   type = LineSegmentCutSetUserObject
-  #   cut_data = '0.5 1.0 0.5 0.5 0 0
-  #               0.75 1.0 0.75 0.5 3 3'
-  #   interface_id = 100
-  #   heal_mesh = true
-  # [../]
+  [./level_set_cut_uo]
+    type = LevelSetCutUserObject
+    level_set_var = ls
+    heal_mesh = true
+  [../]
 []
 
 [Variables]
@@ -71,16 +61,14 @@
   [../]
   [./ls_func]
     type = ParsedFunction
-    #value = 'sqrt((x-0.)*(x-0.) + (y-0.)*(y-0.))-0.11*t'
     value = 'x-0.7-0.07*(t-1)'
-    #value = 'x-0.5'
   [../]
 []
 
 [Constraints]
   [./u_constraint]
     type = XFEMSingleVariableConstraint
-    interface_id = 2
+    geometric_cut_userobject = 'level_set_cut_uo'
     use_displaced_mesh = false
     variable = u
     use_penalty = true

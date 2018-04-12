@@ -49,9 +49,13 @@ XFEM::~XFEM()
 }
 
 void
-XFEM::addGeometricCut(const GeometricCutUserObject * geometric_cut)
+XFEM::addGeometricCut(GeometricCutUserObject * geometric_cut)
 {
   _geometric_cuts.push_back(geometric_cut);
+
+  geometric_cut->setInterfaceID(_geometric_cuts.size() - 1);
+
+  _geom_marker_id_map[geometric_cut] = _geometric_cuts.size() - 1;
 }
 
 void
@@ -219,7 +223,7 @@ XFEM::storeCrackTipOriginAndDirection()
 }
 
 bool
-XFEM::updateHeal(Real time)
+XFEM::updateHeal()
 {
   bool mesh_changed = false;
 
@@ -939,8 +943,8 @@ XFEM::healMesh()
     if (_geometric_cuts[i]->healMesh())
     {
       for (ElementPairLocator::ElementPairList::iterator it =
-               _sibling_elems[_geometric_cuts[i]->getInterfaceId()].begin();
-           it != _sibling_elems[_geometric_cuts[i]->getInterfaceId()].end();
+               _sibling_elems[_geometric_cuts[i]->getInterfaceID()].begin();
+           it != _sibling_elems[_geometric_cuts[i]->getInterfaceID()].end();
            ++it)
       {
         Elem * elem1 = const_cast<Elem *>(it->first);
@@ -970,14 +974,6 @@ XFEM::healMesh()
         }
         else
           mooseError("Could not find XFEMCutElem for element to be kept in healing");
-
-        cutelems_to_delete.insert(elem2->unique_id());
-        elem2->nullify_neighbors();
-        _mesh->boundary_info->remove(elem2);
-        unsigned int deleted_elem_id = elem2->id();
-        _mesh->delete_elem(elem2);
-        _console << "XFEM healing deleted element: " << deleted_elem_id << "\n";
-        mesh_changed = true;
 
         if (_displaced_mesh)
         {
@@ -1011,6 +1007,14 @@ XFEM::healMesh()
           _displaced_mesh->boundary_info->remove(elem2);
           _displaced_mesh->delete_elem(elem2);
         }
+
+        cutelems_to_delete.insert(elem2->unique_id());
+        elem2->nullify_neighbors();
+        _mesh->boundary_info->remove(elem2);
+        unsigned int deleted_elem_id = elem2->id();
+        _mesh->delete_elem(elem2);
+        _console << "XFEM healing deleted element: " << deleted_elem_id << "\n";
+        mesh_changed = true;
       }
     }
   }
@@ -1047,19 +1051,20 @@ XFEM::healMesh()
 
   for (unsigned int i = 0; i < _geometric_cuts.size(); ++i)
     if (_geometric_cuts[i]->healMesh())
-      _sibling_elems[_geometric_cuts[i]->getInterfaceId()].clear();
+      _sibling_elems[_geometric_cuts[i]->getInterfaceID()].clear();
 
   if (_displaced_mesh)
   {
     for (unsigned int i = 0; i < _geometric_cuts.size(); ++i)
       if (_geometric_cuts[i]->healMesh())
-        _sibling_displaced_elems[_geometric_cuts[i]->getInterfaceId()].clear();
+        _sibling_displaced_elems[_geometric_cuts[i]->getInterfaceID()].clear();
   }
 
   for (auto & ceh : _crack_tip_elems_need_heal)
   {
     _crack_tip_elems.erase(ceh);
     _elem_crack_origin_direction_map.erase(ceh);
+    delete _cut_elem_map.find(ceh->unique_id())->second;
     _cut_elem_map.erase(ceh->unique_id());
   }
 
@@ -1146,8 +1151,8 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
     for (unsigned int m = 0; m < _geometric_cuts.size(); ++m)
     {
       for (ElementPairLocator::ElementPairList::iterator it =
-               _sibling_elems[_geometric_cuts[m]->getInterfaceId()].begin();
-           it != _sibling_elems[_geometric_cuts[m]->getInterfaceId()].end();
+               _sibling_elems[_geometric_cuts[m]->getInterfaceID()].begin();
+           it != _sibling_elems[_geometric_cuts[m]->getInterfaceID()].end();
            ++it)
       {
         if (parent_elem == it->first)
@@ -1171,8 +1176,8 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
       for (unsigned int m = 0; m < _geometric_cuts.size(); ++m)
       {
         for (ElementPairLocator::ElementPairList::iterator it =
-                 _sibling_displaced_elems[_geometric_cuts[m]->getInterfaceId()].begin();
-             it != _sibling_displaced_elems[_geometric_cuts[m]->getInterfaceId()].end();
+                 _sibling_displaced_elems[_geometric_cuts[m]->getInterfaceID()].begin();
+             it != _sibling_displaced_elems[_geometric_cuts[m]->getInterfaceID()].end();
              ++it)
         {
           if (parent_elem == it->first)
@@ -1410,9 +1415,9 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
     // mooseError("Must have exactly 2 sibling elements");
 
     for (unsigned int i = 0; i < _geometric_cuts.size(); ++i)
-      for (auto const & elem_id : _geom_marker_id_elems[_geometric_cuts[i]->getInterfaceId()])
+      for (auto const & elem_id : _geom_marker_id_elems[_geometric_cuts[i]->getInterfaceID()])
         if (it->first == elem_id)
-          _sibling_elems[_geometric_cuts[i]->getInterfaceId()].push_back(
+          _sibling_elems[_geometric_cuts[i]->getInterfaceID()].push_back(
               std::make_pair(sibling_elem_vec[0], sibling_elem_vec[1]));
   }
 
@@ -1421,11 +1426,11 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
   {
     for (unsigned int i = 0; i < _geometric_cuts.size(); ++i)
     {
-      for (auto & se : _sibling_elems[_geometric_cuts[i]->getInterfaceId()])
+      for (auto & se : _sibling_elems[_geometric_cuts[i]->getInterfaceID()])
       {
         Elem * elem = _displaced_mesh->elem(se.first->id());
         Elem * elem_pair = _displaced_mesh->elem(se.second->id());
-        _sibling_displaced_elems[_geometric_cuts[i]->getInterfaceId()].push_back(
+        _sibling_displaced_elems[_geometric_cuts[i]->getInterfaceID()].push_back(
             std::make_pair(elem, elem_pair));
       }
     }
@@ -1457,7 +1462,7 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
       {
         if (_geometric_cuts[i]->healMesh())
         {
-          for (auto const & mie : _geom_marker_id_elems[_geometric_cuts[i]->getInterfaceId()])
+          for (auto const & mie : _geom_marker_id_elems[_geometric_cuts[i]->getInterfaceID()])
             if ((*sit)->getParent() != nullptr)
             {
               if ((*sit)->getParent()->id() == mie)

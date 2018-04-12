@@ -4645,7 +4645,7 @@ FEProblemBase::updateMeshXFEM()
   bool updated = false;
   if (haveXFEM())
   {
-    if (_xfem->updateHeal(_time))
+    if (_xfem->updateHeal())
       meshChanged();
 
     updated = _xfem->update(_time, *_nl, *_aux);

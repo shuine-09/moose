@@ -169,7 +169,9 @@ public:
   /**
    * Get the interface id
    */
-  unsigned int getInterfaceId() const { return _interface_id; };
+  unsigned int getInterfaceID() const { return _interface_id; };
+
+  void setInterfaceID(unsigned int interface_id) { _interface_id = interface_id; };
 
   bool healMesh() const { return _heal_mesh; };
 

@@ -129,7 +129,7 @@ public:
                                   const MooseArray<Point> & q_points,
                                   unsigned int side) = 0;
 
-  virtual bool updateHeal(Real time) = 0;
+  virtual bool updateHeal() = 0;
 
 protected:
   FEProblemBase * _fe_problem;
