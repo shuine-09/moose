@@ -5,45 +5,42 @@
 /*             See LICENSE for full restrictions                */
 /****************************************************************/
 
-#include "XFEMDiffusion.h"
+#include "ConcentrationDiffusion.h"
 #include "MooseMesh.h"
 
-registerMooseObject("XFEMApp", XFEMDiffusion);
+registerMooseObject("XFEMApp", ConcentrationDiffusion);
 
 template <>
 InputParameters
-validParams<XFEMDiffusion>()
+validParams<ConcentrationDiffusion>()
 {
   InputParameters params = validParams<Diffusion>();
   params.addClassDescription(
-      "Computes residual/Jacobian contribution for $(k \\nabla T, \\nabla \\psi)$ term.");
+      "Computes residual/Jacobian contribution for diffusion equation with diffusivity.");
   params.addParam<std::string>("base_name",
                                "Optional parameter that allows the user to define "
-                               "mutliple materials systems on the same block, "
-                               "i.e. for multiple phases");
-  params.set<bool>("use_displaced_mesh") = true;
+                               "mutliple materials systems on the same block.");
   return params;
 }
 
-XFEMDiffusion::XFEMDiffusion(const InputParameters & parameters)
+ConcentrationDiffusion::ConcentrationDiffusion(const InputParameters & parameters)
   : Diffusion(parameters),
     _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
-    _diffusion_coefficient_name(_base_name + "diffusion_coefficient"),
-    _diffusion_coefficient(getMaterialProperty<Real>(_diffusion_coefficient_name)),
-    _diffusion_coefficient_dT(hasMaterialProperty<Real>("diffusion_coefficient_dT")
+    _diffusion_coefficient(getMaterialProperty<Real>(_base_name + "diffusion_coefficient")),
+    _diffusion_coefficient_dT(hasMaterialProperty<Real>(_base_name + "diffusion_coefficient_dT")
                                   ? &getMaterialProperty<Real>("diffusion_coefficient_dT")
                                   : NULL)
 {
 }
 
 Real
-XFEMDiffusion::computeQpResidual()
+ConcentrationDiffusion::computeQpResidual()
 {
   return _diffusion_coefficient[_qp] * Diffusion::computeQpResidual();
 }
 
 Real
-XFEMDiffusion::computeQpJacobian()
+ConcentrationDiffusion::computeQpJacobian()
 {
   Real jac = _diffusion_coefficient[_qp] * Diffusion::computeQpJacobian();
   if (_diffusion_coefficient_dT)
