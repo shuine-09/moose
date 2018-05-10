@@ -109,6 +109,16 @@
   [./ad_phase_transition]
     type = Exodiff
     input = ad_phase_transition.i
+  [./moving_diffusion]
+    type = Exodiff
+    input = moving_diffusion.i
+    exodiff = 'moving_diffusion_out.e moving_diffusion_out.e-s002'
+    map = false
+    unique_id = true
+  [../]
+  [./phase_transition]
+    type = Exodiff
+    input = phase_transition.i
     exodiff = 'phase_transition_out.e  phase_transition_out.e-s002  phase_transition_out.e-s003  phase_transition_out.e-s004'
     map = false
     unique_id = true

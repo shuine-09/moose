@@ -267,6 +267,7 @@
   [../]
   [./combined_stress]
     type = LevelSetBiMaterialRankTwo
+<<<<<<< HEAD
     levelset_positive_base = 'A'
     levelset_negative_base = 'B'
     level_set_var = ls
@@ -277,6 +278,18 @@
     levelset_positive_base = 'A'
     levelset_negative_base = 'B'
     level_set_var = ls
+=======
+    levelset_positive_base = 'A'
+    levelset_negative_base = 'B'
+    level_set_var = ls
+    prop_name = stress
+  [../]
+  [./combined_dstressdstrain]
+    type = LevelSetBiMaterialRankFour
+    levelset_positive_base = 'A'
+    levelset_negative_base = 'B'
+    level_set_var = ls
+>>>>>>> preliminary development of moving interface capability using XFEM
     prop_name = Jacobian_mult
   [../]
 []

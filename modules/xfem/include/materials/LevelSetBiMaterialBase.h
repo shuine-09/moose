@@ -46,6 +46,9 @@ protected:
   /// Property name
   std::string _prop_name;
 
+  /// Property name
+  std::string _prop_name;
+
   /// shared pointer to XFEM
   std::shared_ptr<XFEM> _xfem;
 
