@@ -4,34 +4,40 @@
 /*          All contents are licensed under LGPL V2.1           */
 /*             See LICENSE for full restrictions                */
 /****************************************************************/
-#ifndef XFEMDIFFUSION_H
-#define XFEMDIFFUSION_H
+#ifndef CONCENTRATIONDIFFUSION_H
+#define CONCENTRATIONDIFFUSION_H
 
 #include "Diffusion.h"
 #include "Material.h"
 
 // Forward Declarations
-class XFEMDiffusion;
+class ConcentrationDiffusion;
 
 template <>
-InputParameters validParams<XFEMDiffusion>();
+InputParameters validParams<ConcentrationDiffusion>();
 
-class XFEMDiffusion : public Diffusion
+class ConcentrationDiffusion : public Diffusion
 {
 public:
-  XFEMDiffusion(const InputParameters & parameters);
+  ConcentrationDiffusion(const InputParameters & parameters);
 
 protected:
-  virtual Real computeQpResidual();
+  virtual Real computeQpResidual() override;
 
-  virtual Real computeQpJacobian();
+  virtual Real computeQpJacobian() override;
 
 private:
+  /// String for the base name
   std::string _base_name;
+
+  /// Material property name of diffusion coefficient
   std::string _diffusion_coefficient_name;
 
+  /// Reference to diffusion coefficient property
   const MaterialProperty<Real> & _diffusion_coefficient;
+
+  /// Pointer to material property that computes the derivatie of diffusion coefficient with repsect to temperature
   const MaterialProperty<Real> * const _diffusion_coefficient_dT;
 };
 
-#endif // XFEMDIFFUSION_H
+#endif // CONCENTRATIONDIFFUSION_H
