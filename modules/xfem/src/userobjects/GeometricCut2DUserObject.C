@@ -204,19 +204,21 @@ GeometricCut2DUserObject::cutFraction(unsigned int cut_num, Real time) const
   mooseAssert(_cut_time_ranges.size() > cut_num,
               "cut_num is outside the bounds of _cut_time_ranges");
 
-  Real fraction = 0.0;
+  Real fraction = 1.0;
 
-  if (time >= _cut_time_ranges[cut_num].first)
-  {
-    if (time >= _cut_time_ranges[cut_num].second)
-      fraction = 1.0;
-    else
-    {
-      Real denominator = _cut_time_ranges[cut_num].second - _cut_time_ranges[cut_num].first;
-      if (MooseUtils::absoluteFuzzyEqual(denominator, 0.0))
-        mooseError("time_start_cut and time_end_cut cannot have the same value");
-      fraction = (time - _cut_time_ranges[cut_num].first) / denominator;
-    }
-  }
+  // Real fraction = 0.0;
+  //
+  // if (time >= _cut_time_ranges[cut_num].first)
+  // {
+  //   if (time >= _cut_time_ranges[cut_num].second)
+  //     fraction = 1.0;
+  //   else
+  //   {
+  //     Real denominator = _cut_time_ranges[cut_num].second - _cut_time_ranges[cut_num].first;
+  //     if (MooseUtils::absoluteFuzzyEqual(denominator, 0.0))
+  //       mooseError("time_start_cut and time_end_cut cannot have the same value");
+  //     fraction = (time - _cut_time_ranges[cut_num].first) / denominator;
+  //   }
+  // }
   return fraction;
 }

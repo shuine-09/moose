@@ -12,6 +12,7 @@
 #include "MooseMesh.h"
 #include "VectorPostprocessorInterface.h"
 #include "VectorPostprocessor.h"
+#include "PointValueAtXFEMInterface.h"
 
 // MOOSE includes
 #include "MooseError.h"
@@ -25,12 +26,7 @@ validParams<MovingLineSegmentCutSetUserObject>()
   // Get input parameters from parent class
   InputParameters params = validParams<GeometricCut2DUserObject>();
 
-  params.addRequiredParam<VectorPostprocessorName>(
-      "vectorpostprocessor_positive_level_set_side_value", "XXX");
-  params.addRequiredParam<VectorPostprocessorName>(
-      "vectorpostprocessor_negative_level_set_side_value", "XXX");
-  params.addRequiredParam<std::string>("var_name", "XXX");
-
+  params.addRequiredParam<UserObjectName>("interface_value_uo", "XXX");
   // Add required parameters
   params.addRequiredParam<std::vector<Real>>("cut_data",
                                              "Vector of Real values providing cut information");
@@ -49,16 +45,22 @@ MovingLineSegmentCutSetUserObject::MovingLineSegmentCutSetUserObject(
     const InputParameters & parameters)
   : GeometricCut2DUserObject(parameters),
     VectorPostprocessorInterface(this),
-    _var_name(getParam<std::string>("var_name")),
-    _values_positive_level_set_side(getVectorPostprocessorValue(
-        "vectorpostprocessor_positive_level_set_side_value", _var_name)),
-    _values_negative_level_set_side(getVectorPostprocessorValue(
-        "vectorpostprocessor_negative_level_set_side_value", _var_name)),
     _cut_data(getParam<std::vector<Real>>("cut_data")),
     _var_number(_subproblem.getVariable(_tid, parameters.get<VariableName>("var")).number()),
     _system(_subproblem.getSystem(getParam<VariableName>("var"))),
     _solution(_system.current_local_solution.get())
 {
+  // FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
+
+  // const UserObject * uo =
+  //     &(_fe_problem.getUserObjectBase(getParam<UserObjectName>("interface_value_uo")));
+  //
+  // if (dynamic_cast<const PointValueAtXFEMInterface *>(uo) == nullptr)
+  //   mooseError(
+  //       "UserObject casting to PointValueAtXFEMInterface in MovingLineSegmentCutSetUserObject");
+  //
+  // _interface_value_uo = dynamic_cast<const PointValueAtXFEMInterface *>(uo);
+
   // Set up constant parameters
   const int line_cut_data_len = 6;
 
@@ -119,47 +121,59 @@ MovingLineSegmentCutSetUserObject::getCrackFrontPoints(
 }
 
 void
+MovingLineSegmentCutSetUserObject::initialize()
+{
+  FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
+
+  const UserObject * uo =
+      &(_fe_problem.getUserObjectBase(getParam<UserObjectName>("interface_value_uo")));
+
+  if (dynamic_cast<const PointValueAtXFEMInterface *>(uo) == nullptr)
+    mooseError(
+        "UserObject casting to PointValueAtXFEMInterface in MovingLineSegmentCutSetUserObject");
+
+  _interface_value_uo = dynamic_cast<const PointValueAtXFEMInterface *>(uo);
+}
+
+void
 MovingLineSegmentCutSetUserObject::execute()
 {
-  // if (_values.size())
-  //   std::cout << "pp values = " << _values[0] << std::endl;
-  //
-  // std::vector<Real> cut_data_copy = _cut_data;
-  //
-  // // Set up constant parameters
-  // const int line_cut_data_len = 6;
-  //
-  // // Throw error if length of cut_data is incorrect
-  // if (_cut_data.size() % line_cut_data_len != 0)
-  //   mooseError("Length of MovingLineSegmentCutSetUserObject cut_data must be a multiple of 6.");
-  //
-  // unsigned int num_cuts = _cut_data.size() / line_cut_data_len;
-  //
-  // for (unsigned int i = 0; i < _cut_data.size() / line_cut_data_len; ++i)
-  // {
-  //   if (_values.size())
-  //   {
-  //     cut_data_copy[i * line_cut_data_len + 0] += _values[0] / 200;
-  //     cut_data_copy[i * line_cut_data_len + 2] += _values[0] / 200;
-  //   }
-  //   else
-  //   {
-  //     cut_data_copy[i * line_cut_data_len + 0] = 0.5;
-  //     cut_data_copy[i * line_cut_data_len + 2] = 0.5;
-  //   }
-  // }
-  //
-  // _cut_line_endpoints.clear();
-  // for (unsigned int i = 0; i < num_cuts; ++i)
-  // {
-  //   Real x0 = cut_data_copy[i * line_cut_data_len + 0];
-  //   Real y0 = cut_data_copy[i * line_cut_data_len + 1];
-  //   Real x1 = cut_data_copy[i * line_cut_data_len + 2];
-  //   Real y1 = cut_data_copy[i * line_cut_data_len + 3];
-  //   std::cout << "x0 = " << x0 << ", y0 = " << y0 << ", x1 = " << x1 << ", y1 = " << y1
-  //             << std::endl;
-  //   _cut_line_endpoints.push_back(std::make_pair(Point(x0, y0, 0.0), Point(x1, y1, 0.0)));
-  // }
+  std::vector<Real> cut_data_copy = _cut_data;
+
+  std::vector<Real> value_positive = _interface_value_uo->getValueAtPositiveLevelSet();
+  std::vector<Real> value_negative = _interface_value_uo->getValueAtNegativeLevelSet();
+
+  // Set up constant parameters
+  const int line_cut_data_len = 6;
+
+  // Throw error if length of cut_data is incorrect
+  if (_cut_data.size() % line_cut_data_len != 0)
+    mooseError("Length of MovingLineSegmentCutSetUserObject cut_data must be a multiple of 6.");
+
+  unsigned int num_cuts = _cut_data.size() / line_cut_data_len;
+
+  if (value_positive.size())
+  {
+    for (unsigned i = 0; i < value_positive.size() - 1; ++i)
+    {
+      // cut_data_copy[i * line_cut_data_len + 0] = _values[0] / 50 + 0.5;
+      // cut_data_copy[i * line_cut_data_len + 2] = _values[0] / 50 + 0.5;
+      cut_data_copy[i * 6 + 0] += value_positive[i] / 10;
+      cut_data_copy[i * 6 + 2] += value_positive[i + 1] / 10;
+    }
+  }
+
+  _cut_line_endpoints.clear();
+  for (unsigned int i = 0; i < num_cuts; ++i)
+  {
+    Real x0 = cut_data_copy[i * line_cut_data_len + 0];
+    Real y0 = cut_data_copy[i * line_cut_data_len + 1];
+    Real x1 = cut_data_copy[i * line_cut_data_len + 2];
+    Real y1 = cut_data_copy[i * line_cut_data_len + 3];
+    std::cout << "x0 = " << x0 << ", y0 = " << y0 << ", x1 = " << x1 << ", y1 = " << y1
+              << std::endl;
+    _cut_line_endpoints.push_back(std::make_pair(Point(x0, y0, 0.0), Point(x1, y1, 0.0)));
+  }
 
   GeometricCutUserObject::execute();
 }
@@ -188,12 +202,33 @@ MovingLineSegmentCutSetUserObject::finalize()
   //   }
   // }
 
-  for (unsigned i = 0; i < _values_positive_level_set_side.size(); ++i)
+  std::vector<Real> value_positive = _interface_value_uo->getValueAtPositiveLevelSet();
+  std::vector<Real> value_negative = _interface_value_uo->getValueAtNegativeLevelSet();
+
+  std::cout << "called " << std::endl;
+
+  for (unsigned i = 0; i < value_positive.size(); ++i)
   {
-    std::cout << "positive_size_value[" << i << "] = " << _values_positive_level_set_side[i]
-              << std::endl;
-    std::cout << "negative_size_value[" << i << "] = " << _values_negative_level_set_side[i]
-              << std::endl;
+    std::cout << "positive_size_value[" << i << "] = " << value_positive[i] << std::endl;
+    std::cout << "negative_size_value[" << i << "] = " << value_negative[i] << std::endl;
+  }
+
+  {
+    if (value_positive.size())
+    {
+      for (unsigned i = 0; i < value_positive.size() - 1; ++i)
+      {
+        // cut_data_copy[i * line_cut_data_len + 0] = _values[0] / 50 + 0.5;
+        // cut_data_copy[i * line_cut_data_len + 2] = _values[0] / 50 + 0.5;
+        _cut_data[i * 6 + 0] += value_positive[i] / 10;
+        _cut_data[i * 6 + 2] += value_positive[i + 1] / 10;
+      }
+    }
+    // else
+    // {
+    //   _cut_data[0] = 0.5;
+    //   _cut_data[2] = 0.5;
+    // }
   }
 
   GeometricCutUserObject::finalize();
