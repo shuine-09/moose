@@ -17,6 +17,7 @@
 
 // Forward declarations
 class MovingLineSegmentCutSetUserObject;
+class PointValueAtXFEMInterface;
 
 template <>
 InputParameters validParams<MovingLineSegmentCutSetUserObject>();
@@ -27,6 +28,8 @@ class MovingLineSegmentCutSetUserObject : public GeometricCut2DUserObject,
 {
 public:
   MovingLineSegmentCutSetUserObject(const InputParameters & parameters);
+
+  virtual void initialize() override;
 
   virtual void execute() override;
 
@@ -40,13 +43,7 @@ public:
   virtual std::vector<Real> getCutData() const { return _cut_data; };
 
 protected:
-  /// The name of the variables storing the x, y data
-  const std::string _var_name;
-
-  /// The variables with the x, y data to be fit
-  const VectorPostprocessorValue & _values_positive_level_set_side;
-
-  const VectorPostprocessorValue & _values_negative_level_set_side;
+  const PointValueAtXFEMInterface * _interface_value_uo;
 
   std::vector<Real> _cut_data;
 

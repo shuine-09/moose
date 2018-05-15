@@ -11,25 +11,22 @@
 #define POINTVALUEATXFEMINTERFACE_H
 
 // MOOSE includes
-#include "GeneralVectorPostprocessor.h"
+#include "GeneralUserObject.h"
 #include "CoupleableMooseVariableDependencyIntermediateInterface.h"
 #include "MooseVariableInterface.h"
-#include "SamplerBase.h"
 #include "ElementPairLocator.h"
 
 // Forward Declarations
 class PointValueAtXFEMInterface;
-
 class XFEM;
 class MovingLineSegmentCutSetUserObject;
 
 template <>
 InputParameters validParams<PointValueAtXFEMInterface>();
 
-class PointValueAtXFEMInterface : public GeneralVectorPostprocessor,
+class PointValueAtXFEMInterface : public GeneralUserObject,
                                   public CoupleableMooseVariableDependencyIntermediateInterface,
-                                  public MooseVariableInterface<Real>,
-                                  protected SamplerBase
+                                  public MooseVariableInterface<Real>
 {
 public:
   PointValueAtXFEMInterface(const InputParameters & parameters);
@@ -40,6 +37,20 @@ public:
   virtual void execute();
   virtual void finalize();
 
+  std::vector<Real> getValueAtPositiveLevelSet() const { return _values_positive_level_set_side; };
+
+  std::vector<Real> getValueAtNegativeLevelSet() const { return _values_negative_level_set_side; };
+
+  std::vector<RealVectorValue> getGradientAtPositiveLevelSet() const
+  {
+    return _grad_values_positive_level_set_side;
+  };
+
+  std::vector<RealVectorValue> getGradientAtNegativeLevelSet() const
+  {
+    return _grad_values_negative_level_set_side;
+  };
+
 protected:
   /**
    * Find the local element that contains the point.  This will attempt to use a cached element to
@@ -49,19 +60,15 @@ protected:
    * @return The Elem containing the point or NULL if this processor doesn't contain an element that
    * contains this point.
    */
-  const Elem * getLocalElemContainingPoint(const Point & p);
+  const Elem * getLocalElemContainingPoint(const Point & p, bool positive_level_set);
+
+  void setupVariables(const std::vector<std::string> & variable_names);
 
   /// The Mesh we're using
   MooseMesh & _mesh;
 
   /// The points to evaluate at
   std::vector<Point> _points;
-
-  /// The ID to use for each point (yes, this is Real on purpose)
-  std::vector<Real> _ids;
-
-  /// Vector of values per point
-  std::vector<std::vector<Real>> _point_values;
 
   /// Whether or not the Point was found on this processor (short because bool and char don't work with MPI wrappers)
   std::vector<short> _found_points;
@@ -77,8 +84,6 @@ protected:
 
   const MovingLineSegmentCutSetUserObject * _geo_cut;
 
-  bool _positive_level_set;
-
   /// The variable number of the level set variable we are operating on
   const unsigned int _level_set_var_number;
 
@@ -87,6 +92,14 @@ protected:
 
   /// the subproblem solution vector
   const NumericVector<Number> * _solution;
+
+  std::vector<Real> _values_positive_level_set_side;
+
+  std::vector<Real> _values_negative_level_set_side;
+
+  std::vector<RealVectorValue> _grad_values_positive_level_set_side;
+
+  std::vector<RealVectorValue> _grad_values_negative_level_set_side;
 };
 
 #endif
