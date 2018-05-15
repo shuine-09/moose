@@ -35,7 +35,7 @@ public:
 
   virtual void initialize();
   virtual void execute();
-  virtual void finalize();
+  virtual void finalize(){};
 
   std::vector<Real> getValueAtPositiveLevelSet() const { return _values_positive_level_set_side; };
 
@@ -53,27 +53,19 @@ public:
 
 protected:
   /**
-   * Find the local element that contains the point.  This will attempt to use a cached element to
-   * speed things up.
-   *
+   * Find the local element in the element pairs that contains the point in its physical domain.
    * @param p The point in physical space
+   * @param positive_level_set True if the physical domain is in positive level set region
    * @return The Elem containing the point or NULL if this processor doesn't contain an element that
    * contains this point.
    */
   const Elem * getLocalElemContainingPoint(const Point & p, bool positive_level_set);
-
-  void setupVariables(const std::vector<std::string> & variable_names);
 
   /// The Mesh we're using
   MooseMesh & _mesh;
 
   /// The points to evaluate at
   std::vector<Point> _points;
-
-  /// Whether or not the Point was found on this processor (short because bool and char don't work with MPI wrappers)
-  std::vector<short> _found_points;
-
-  unsigned int _qp;
 
   std::unique_ptr<PointLocatorBase> _pl;
 

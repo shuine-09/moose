@@ -97,8 +97,8 @@
     geometric_cut_userobject = 'moving_line_segments'
     use_displaced_mesh = false
     variable = u
-    level_set_positive_value = 10
-    level_set_negative_value = 2
+    value_at_positive_level_set_interface = 10
+    value_at_negative_level_set_interface = 2
     #level_set_negative_value = 10
     alpha = 1e6
   [../]
