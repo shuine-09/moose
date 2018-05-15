@@ -12,7 +12,6 @@
 
 // MOOSE includes
 #include "ElemElemConstraint.h"
-#include "MooseMesh.h"
 
 // Forward Declarations
 class XFEMTwoSideDirichlet;
@@ -38,13 +37,14 @@ protected:
   /// Vector normal to the internal interface
   Point _interface_normal;
 
-  /// Stabilization parameter in Nitsche's formulation
+  // Penalty parameter in penalty's formulation
   Real _alpha;
 
-  /// Vector normal to the internal interface
-  Real _levelset_positive_value;
+  /// Value at positive level set interface
+  Real _value_at_positive_level_set_interface;
 
-  Real _levelset_negative_value;
+  /// Value at negative level set interface
+  Real _value_at_negative_level_set_interface;
 
   /// Pointer to the XFEM controller object
   std::shared_ptr<XFEM> _xfem;

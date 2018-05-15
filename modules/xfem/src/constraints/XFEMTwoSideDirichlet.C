@@ -25,11 +25,11 @@ InputParameters
 validParams<XFEMTwoSideDirichlet>()
 {
   InputParameters params = validParams<ElemElemConstraint>();
-  params.addParam<Real>("alpha", 100, "Stablization parameter in Nitsche's formulation.");
-  params.addRequiredParam<Real>("level_set_positive_value",
-                                "Dirichlet bc for level set positive region.");
-  params.addRequiredParam<Real>("level_set_negative_value",
-                                "Dirichlet bc for level set negative region.");
+  params.addParam<Real>("alpha", 100, "Penalty parameter in penalty's formulation.");
+  params.addRequiredParam<Real>("value_at_positive_level_set_interface",
+                                "Dirichlet bc at level set positive interface.");
+  params.addRequiredParam<Real>("value_at_negative_level_set_interface",
+                                "Dirichlet bc at level set negative interface.");
   params.addParam<UserObjectName>(
       "geometric_cut_userobject",
       "Name of GeometricCutUserObject associated with this constraint.");
@@ -39,8 +39,8 @@ validParams<XFEMTwoSideDirichlet>()
 XFEMTwoSideDirichlet::XFEMTwoSideDirichlet(const InputParameters & parameters)
   : ElemElemConstraint(parameters),
     _alpha(getParam<Real>("alpha")),
-    _levelset_positive_value(getParam<Real>("level_set_positive_value")),
-    _levelset_negative_value(getParam<Real>("level_set_negative_value"))
+    _value_at_positive_level_set_interface(getParam<Real>("value_at_positive_level_set_interface")),
+    _value_at_negative_level_set_interface(getParam<Real>("value_at_negative_level_set_interface"))
 {
   _xfem = std::dynamic_pointer_cast<XFEM>(_fe_problem.getXFEM());
   if (_xfem == nullptr)
@@ -73,16 +73,18 @@ XFEMTwoSideDirichlet::computeQpResidual(Moose::DGResidualType type)
   {
     case Moose::Element:
       if (_interface_normal(0) > 0.0)
-        r += _alpha * (_u[_qp] - _levelset_positive_value) * _test[_i][_qp];
+        r += _alpha * (_u[_qp] - _value_at_positive_level_set_interface) * _test[_i][_qp];
       else
-        r += _alpha * (_u[_qp] - _levelset_negative_value) * _test[_i][_qp];
+        r += _alpha * (_u[_qp] - _value_at_negative_level_set_interface) * _test[_i][_qp];
       break;
 
     case Moose::Neighbor:
       if (_interface_normal(0) > 0.0)
-        r += _alpha * (_u_neighbor[_qp] - _levelset_negative_value) * _test_neighbor[_i][_qp];
+        r += _alpha * (_u_neighbor[_qp] - _value_at_negative_level_set_interface) *
+             _test_neighbor[_i][_qp];
       else
-        r += _alpha * (_u_neighbor[_qp] - _levelset_positive_value) * _test_neighbor[_i][_qp];
+        r += _alpha * (_u_neighbor[_qp] - _value_at_positive_level_set_interface) *
+             _test_neighbor[_i][_qp];
       break;
   }
   return r;
