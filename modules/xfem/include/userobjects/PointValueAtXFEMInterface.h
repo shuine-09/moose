@@ -35,18 +35,24 @@ public:
 
   virtual void initialize();
   virtual void execute();
-  virtual void finalize(){};
+  virtual void finalize();
 
-  std::vector<Real> getValueAtPositiveLevelSet() const { return _values_positive_level_set_side; };
+  std::map<unsigned int, Real> getValueAtPositiveLevelSet() const
+  {
+    return _values_positive_level_set_side;
+  };
 
-  std::vector<Real> getValueAtNegativeLevelSet() const { return _values_negative_level_set_side; };
+  std::map<unsigned int, Real> getValueAtNegativeLevelSet() const
+  {
+    return _values_negative_level_set_side;
+  };
 
-  std::vector<RealVectorValue> getGradientAtPositiveLevelSet() const
+  std::map<unsigned int, RealVectorValue> getGradientAtPositiveLevelSet() const
   {
     return _grad_values_positive_level_set_side;
   };
 
-  std::vector<RealVectorValue> getGradientAtNegativeLevelSet() const
+  std::map<unsigned int, RealVectorValue> getGradientAtNegativeLevelSet() const
   {
     return _grad_values_negative_level_set_side;
   };
@@ -85,13 +91,13 @@ protected:
   /// the subproblem solution vector
   const NumericVector<Number> * _solution;
 
-  std::vector<Real> _values_positive_level_set_side;
+  std::map<unsigned int, Real> _values_positive_level_set_side;
 
-  std::vector<Real> _values_negative_level_set_side;
+  std::map<unsigned int, Real> _values_negative_level_set_side;
 
-  std::vector<RealVectorValue> _grad_values_positive_level_set_side;
+  std::map<unsigned int, RealVectorValue> _grad_values_positive_level_set_side;
 
-  std::vector<RealVectorValue> _grad_values_negative_level_set_side;
+  std::map<unsigned int, RealVectorValue> _grad_values_negative_level_set_side;
 };
 
 #endif

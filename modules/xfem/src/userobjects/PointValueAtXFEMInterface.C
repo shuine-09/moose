@@ -17,6 +17,9 @@
 #include "libmesh/mesh_tools.h"
 #include "MovingLineSegmentCutSetUserObject.h"
 
+#include "libmesh/parallel_algebra.h"
+#include "libmesh/parallel.h"
+
 registerMooseObject("XFEMApp", PointValueAtXFEMInterface);
 
 template <>
@@ -60,11 +63,6 @@ PointValueAtXFEMInterface::PointValueAtXFEMInterface(const InputParameters & par
   for (unsigned int i = 0; i < _coupled_moose_vars.size(); i++)
     var_names[i] = _coupled_moose_vars[i]->name();
 
-  _values_positive_level_set_side.resize(_points.size());
-  _values_negative_level_set_side.resize(_points.size());
-  _grad_values_positive_level_set_side.resize(_points.size());
-  _grad_values_negative_level_set_side.resize(_points.size());
-
   _xfem = MooseSharedNamespace::dynamic_pointer_cast<XFEM>(_fe_problem.getXFEM());
   if (_xfem == nullptr)
     mooseError("Problem casting to XFEM in PointValueAtXFEMInterface");
@@ -104,11 +102,6 @@ PointValueAtXFEMInterface::execute()
     if (i == cut_data.size() / 6 - 1)
       _points.push_back(Point(cut_data[i * 6 + 2], cut_data[i * 6 + 3]));
   }
-
-  _values_positive_level_set_side.resize(_points.size());
-  _values_negative_level_set_side.resize(_points.size());
-  _grad_values_positive_level_set_side.resize(_points.size());
-  _grad_values_negative_level_set_side.resize(_points.size());
 
   BoundingBox bbox = _mesh.getInflatedProcessorBoundingBox();
 
@@ -152,6 +145,15 @@ PointValueAtXFEMInterface::execute()
   }
 }
 
+void
+PointValueAtXFEMInterface::finalize()
+{
+  _communicator.set_union(_values_positive_level_set_side);
+  _communicator.set_union(_grad_values_positive_level_set_side);
+  _communicator.set_union(_values_negative_level_set_side);
+  _communicator.set_union(_grad_values_negative_level_set_side);
+}
+
 const Elem *
 PointValueAtXFEMInterface::getLocalElemContainingPoint(const Point & p, bool positive_level_set)
 {
@@ -176,7 +178,6 @@ PointValueAtXFEMInterface::getLocalElemContainingPoint(const Point & p, bool pos
   }
 
   const Elem * elem2;
-
   for (auto & pair : *_elem_pairs)
   {
     if (pair.first == elem1)
