@@ -75,6 +75,8 @@
     heal_always = true
     var = u
     interface_value_uo = value_uo
+    diffusivity_at_positive_level_set_side = 1
+    diffusivity_at_negative_level_set_side = 1
   [../]
 []
 
@@ -163,9 +165,9 @@
   nl_abs_tol = 1e-9
 
   start_time = 0.0
-  dt = 0.05
+  dt = 0.01
   end_time = 1.5
-  num_steps = 3
+  num_steps = 100
   max_xfem_update = 1
 []
 

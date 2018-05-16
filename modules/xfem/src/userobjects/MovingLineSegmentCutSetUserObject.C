@@ -23,21 +23,17 @@ template <>
 InputParameters
 validParams<MovingLineSegmentCutSetUserObject>()
 {
-  // Get input parameters from parent class
   InputParameters params = validParams<GeometricCut2DUserObject>();
-
   params.addRequiredParam<UserObjectName>("interface_value_uo", "XXX");
-  // Add required parameters
   params.addRequiredParam<std::vector<Real>>("cut_data",
                                              "Vector of Real values providing cut information");
-  // Add optional parameters
-  params.addParam<std::vector<Real>>("cut_scale", "X,Y scale factors for geometric cuts");
-  params.addParam<std::vector<Real>>("cut_translate", "X,Y translations for geometric cuts");
   params.addRequiredParam<VariableName>(
       "var", "The name of solution variable used to calcuate interface velocity.");
-  // Class description
+  params.addRequiredParam<Real>("diffusivity_at_positive_level_set_side",
+                                "Diffusivity at level set positive side.");
+  params.addRequiredParam<Real>("diffusivity_at_negative_level_set_side",
+                                "Diffusivity at level set negative side.");
   params.addClassDescription("Creates a UserObject for a line segment cut on 2D meshes for XFEM");
-  // Return the parameters
   return params;
 }
 
@@ -48,19 +44,12 @@ MovingLineSegmentCutSetUserObject::MovingLineSegmentCutSetUserObject(
     _cut_data(getParam<std::vector<Real>>("cut_data")),
     _var_number(_subproblem.getVariable(_tid, parameters.get<VariableName>("var")).number()),
     _system(_subproblem.getSystem(getParam<VariableName>("var"))),
-    _solution(_system.current_local_solution.get())
+    _solution(_system.current_local_solution.get()),
+    _diffusivity_at_positive_level_set_side(
+        getParam<Real>("diffusivity_at_positive_level_set_side")),
+    _diffusivity_at_negative_level_set_side(
+        getParam<Real>("diffusivity_at_negative_level_set_side"))
 {
-  // FEProblemBase * fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
-
-  // const UserObject * uo =
-  //     &(_fe_problem.getUserObjectBase(getParam<UserObjectName>("interface_value_uo")));
-  //
-  // if (dynamic_cast<const PointValueAtXFEMInterface *>(uo) == nullptr)
-  //   mooseError(
-  //       "UserObject casting to PointValueAtXFEMInterface in MovingLineSegmentCutSetUserObject");
-  //
-  // _interface_value_uo = dynamic_cast<const PointValueAtXFEMInterface *>(uo);
-
   // Set up constant parameters
   const int line_cut_data_len = 6;
 
@@ -70,39 +59,16 @@ MovingLineSegmentCutSetUserObject::MovingLineSegmentCutSetUserObject(
 
   unsigned int num_cuts = _cut_data.size() / line_cut_data_len;
 
-  // Assign scale and translate parameters
-  std::pair<Real, Real> scale;
-  if (isParamValid("cut_scale"))
-  {
-    auto vec_scale = getParam<std::vector<Real>>("cut_scale");
-    scale = std::make_pair(vec_scale[0], vec_scale[1]);
-  }
-  else
-  {
-    scale = std::make_pair(1.0, 1.0);
-  }
-
-  std::pair<Real, Real> trans;
-  if (isParamValid("cut_translate"))
-  {
-    auto vec_trans = getParam<std::vector<Real>>("cut_translate");
-    trans = std::make_pair(vec_trans[0], vec_trans[1]);
-  }
-  else
-  {
-    trans = std::make_pair(0.0, 0.0);
-  }
-
   // Clear _start_times & _end_times vectors initialized from
   // time_start_cut & time_end_cut values
   _cut_time_ranges.clear();
 
   for (unsigned int i = 0; i < num_cuts; ++i)
   {
-    Real x0 = (_cut_data[i * line_cut_data_len + 0] + trans.first) * scale.first;
-    Real y0 = (_cut_data[i * line_cut_data_len + 1] + trans.second) * scale.second;
-    Real x1 = (_cut_data[i * line_cut_data_len + 2] + trans.first) * scale.first;
-    Real y1 = (_cut_data[i * line_cut_data_len + 3] + trans.second) * scale.second;
+    Real x0 = _cut_data[i * line_cut_data_len + 0];
+    Real y0 = _cut_data[i * line_cut_data_len + 1];
+    Real x1 = _cut_data[i * line_cut_data_len + 2];
+    Real y1 = _cut_data[i * line_cut_data_len + 3];
     _cut_line_endpoints.push_back(std::make_pair(Point(x0, y0, 0.0), Point(x1, y1, 0.0)));
 
     _cut_time_ranges.push_back(
@@ -135,13 +101,31 @@ MovingLineSegmentCutSetUserObject::initialize()
   _interface_value_uo = dynamic_cast<const PointValueAtXFEMInterface *>(uo);
 }
 
+Real
+MovingLineSegmentCutSetUserObject::calculateInterfaceVelocity(Real value_positive,
+                                                              Real value_negative,
+                                                              RealVectorValue grad_positive,
+                                                              RealVectorValue grad_negative)
+{
+  if (!MooseUtils::absoluteFuzzyEqual(value_positive, value_negative))
+    return std::abs((_diffusivity_at_positive_level_set_side * grad_positive(0) -
+                     _diffusivity_at_negative_level_set_side * grad_negative(0)) /
+                    (value_positive - value_negative));
+  else
+    return 0.0;
+}
+
 void
 MovingLineSegmentCutSetUserObject::execute()
 {
   std::vector<Real> cut_data_copy = _cut_data;
 
-  std::vector<Real> value_positive = _interface_value_uo->getValueAtPositiveLevelSet();
-  std::vector<Real> value_negative = _interface_value_uo->getValueAtNegativeLevelSet();
+  std::map<unsigned int, Real> value_positive = _interface_value_uo->getValueAtPositiveLevelSet();
+  std::map<unsigned int, Real> value_negative = _interface_value_uo->getValueAtNegativeLevelSet();
+  std::map<unsigned int, RealVectorValue> grad_positive =
+      _interface_value_uo->getGradientAtPositiveLevelSet();
+  std::map<unsigned int, RealVectorValue> grad_negative =
+      _interface_value_uo->getGradientAtNegativeLevelSet();
 
   // Set up constant parameters
   const int line_cut_data_len = 6;
@@ -152,15 +136,18 @@ MovingLineSegmentCutSetUserObject::execute()
 
   unsigned int num_cuts = _cut_data.size() / line_cut_data_len;
 
-  if (value_positive.size())
+  for (unsigned i = 0; i < value_positive.size() - 1; ++i)
   {
-    for (unsigned i = 0; i < value_positive.size() - 1; ++i)
-    {
-      // cut_data_copy[i * line_cut_data_len + 0] = _values[0] / 50 + 0.5;
-      // cut_data_copy[i * line_cut_data_len + 2] = _values[0] / 50 + 0.5;
-      cut_data_copy[i * 6 + 0] += value_positive[i] / 10;
-      cut_data_copy[i * 6 + 2] += value_positive[i + 1] / 10;
-    }
+    cut_data_copy[i * 6 + 0] +=
+        calculateInterfaceVelocity(
+            value_positive[i], value_negative[i], grad_positive[i], grad_negative[i]) *
+        _dt;
+    cut_data_copy[i * 6 + 2] += calculateInterfaceVelocity(value_positive[i + 1],
+                                                           value_negative[i + 1],
+                                                           grad_positive[i + 1],
+                                                           grad_negative[i + 1]) *
+                                _dt;
+    ;
   }
 
   _cut_line_endpoints.clear();
@@ -170,65 +157,39 @@ MovingLineSegmentCutSetUserObject::execute()
     Real y0 = cut_data_copy[i * line_cut_data_len + 1];
     Real x1 = cut_data_copy[i * line_cut_data_len + 2];
     Real y1 = cut_data_copy[i * line_cut_data_len + 3];
-    std::cout << "x0 = " << x0 << ", y0 = " << y0 << ", x1 = " << x1 << ", y1 = " << y1
-              << std::endl;
     _cut_line_endpoints.push_back(std::make_pair(Point(x0, y0, 0.0), Point(x1, y1, 0.0)));
   }
 
   GeometricCutUserObject::execute();
 }
 
-Real
-MovingLineSegmentCutSetUserObject::getLocationX() const
-{
-  return _cut_data[0];
-}
-
 void
 MovingLineSegmentCutSetUserObject::finalize()
 {
+  std::map<unsigned int, Real> value_positive = _interface_value_uo->getValueAtPositiveLevelSet();
+  std::map<unsigned int, Real> value_negative = _interface_value_uo->getValueAtNegativeLevelSet();
+  std::map<unsigned int, RealVectorValue> grad_positive =
+      _interface_value_uo->getGradientAtPositiveLevelSet();
+  std::map<unsigned int, RealVectorValue> grad_negative =
+      _interface_value_uo->getGradientAtNegativeLevelSet();
+
+  // for (unsigned i = 0; i < value_positive.size(); ++i)
   // {
-  //   if (_values.size())
-  //   {
-  //     // cut_data_copy[i * line_cut_data_len + 0] = _values[0] / 50 + 0.5;
-  //     // cut_data_copy[i * line_cut_data_len + 2] = _values[0] / 50 + 0.5;
-  //     _cut_data[0] += _values[0] / 200;
-  //     _cut_data[2] += _values[0] / 200;
-  //   }
-  //   else
-  //   {
-  //     _cut_data[0] = 0.5;
-  //     _cut_data[2] = 0.5;
-  //   }
+  //   std::cout << "positive_size_value[" << i << "] = " << value_positive[i] << std::endl;
+  //   std::cout << "negative_size_value[" << i << "] = " << value_negative[i] << std::endl;
   // }
 
-  std::vector<Real> value_positive = _interface_value_uo->getValueAtPositiveLevelSet();
-  std::vector<Real> value_negative = _interface_value_uo->getValueAtNegativeLevelSet();
-
-  std::cout << "called " << std::endl;
-
-  for (unsigned i = 0; i < value_positive.size(); ++i)
+  for (unsigned i = 0; i < value_positive.size() - 1; ++i)
   {
-    std::cout << "positive_size_value[" << i << "] = " << value_positive[i] << std::endl;
-    std::cout << "negative_size_value[" << i << "] = " << value_negative[i] << std::endl;
-  }
-
-  {
-    if (value_positive.size())
-    {
-      for (unsigned i = 0; i < value_positive.size() - 1; ++i)
-      {
-        // cut_data_copy[i * line_cut_data_len + 0] = _values[0] / 50 + 0.5;
-        // cut_data_copy[i * line_cut_data_len + 2] = _values[0] / 50 + 0.5;
-        _cut_data[i * 6 + 0] += value_positive[i] / 10;
-        _cut_data[i * 6 + 2] += value_positive[i + 1] / 10;
-      }
-    }
-    // else
-    // {
-    //   _cut_data[0] = 0.5;
-    //   _cut_data[2] = 0.5;
-    // }
+    _cut_data[i * 6 + 0] +=
+        calculateInterfaceVelocity(
+            value_positive[i], value_negative[i], grad_positive[i], grad_negative[i]) *
+        _dt;
+    _cut_data[i * 6 + 2] += calculateInterfaceVelocity(value_positive[i + 1],
+                                                       value_negative[i + 1],
+                                                       grad_positive[i + 1],
+                                                       grad_negative[i + 1]) *
+                            _dt;
   }
 
   GeometricCutUserObject::finalize();

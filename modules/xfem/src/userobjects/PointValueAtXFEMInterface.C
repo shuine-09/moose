@@ -17,9 +17,6 @@
 #include "libmesh/mesh_tools.h"
 #include "MovingLineSegmentCutSetUserObject.h"
 
-#include "libmesh/parallel_algebra.h"
-#include "libmesh/parallel.h"
-
 registerMooseObject("XFEMApp", PointValueAtXFEMInterface);
 
 template <>
@@ -159,9 +156,13 @@ PointValueAtXFEMInterface::getLocalElemContainingPoint(const Point & p, bool pos
 {
   const Elem * elem1 = (*_pl)(p);
 
+  if (elem1->processor_id() != processor_id())
+    return nullptr;
+
   const Node * node = elem1->node_ptr(0);
 
   dof_id_type ls_dof_id = node->dof_number(_system.number(), _level_set_var_number, 0);
+
   Number ls_node_value = (*_solution)(ls_dof_id);
 
   bool positive = false;
@@ -186,12 +187,10 @@ PointValueAtXFEMInterface::getLocalElemContainingPoint(const Point & p, bool pos
       elem2 = pair.first;
   }
 
-  if (((positive && positive_level_set) || (!positive && !positive_level_set)) &&
-      (elem1 && elem1->processor_id() == processor_id()))
+  if ((positive && positive_level_set) || (!positive && !positive_level_set))
     return elem1;
-  else if (((!positive && positive_level_set) || (positive && !positive_level_set)) &&
-           (elem2 && elem2->processor_id() == processor_id()))
+  else if ((!positive && positive_level_set) || (positive && !positive_level_set))
     return elem2;
-
-  return nullptr;
+  else
+    return nullptr;
 }

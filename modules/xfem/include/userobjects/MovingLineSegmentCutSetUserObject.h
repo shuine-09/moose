@@ -38,9 +38,12 @@ public:
   virtual const std::vector<Point>
   getCrackFrontPoints(unsigned int num_crack_front_points) const override;
 
-  Real getLocationX() const;
-
   virtual std::vector<Real> getCutData() const { return _cut_data; };
+
+  virtual Real calculateInterfaceVelocity(Real value_positive,
+                                          Real value_negative,
+                                          RealVectorValue grad_positive,
+                                          RealVectorValue grad_negative);
 
 protected:
   const PointValueAtXFEMInterface * _interface_value_uo;
@@ -55,6 +58,12 @@ protected:
 
   /// the subproblem solution vector
   const NumericVector<Number> * _solution;
+
+  /// Diffusivity in positive level set side
+  Real _diffusivity_at_positive_level_set_side;
+
+  /// Diffusivity in negative level set side
+  Real _diffusivity_at_negative_level_set_side;
 };
 
 #endif // MOVINGMovingLineSegmentCutSetUserObject_H
