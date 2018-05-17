@@ -205,7 +205,7 @@ GeometricCut2DUserObject::cutFraction(unsigned int cut_num, Real time) const
               "cut_num is outside the bounds of _cut_time_ranges");
 
   Real fraction = 1.0;
-
+  //
   // Real fraction = 0.0;
   //
   // if (time >= _cut_time_ranges[cut_num].first)

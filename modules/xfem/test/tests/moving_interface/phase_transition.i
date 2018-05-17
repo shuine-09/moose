@@ -6,8 +6,8 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 21
-  ny = 11
+  nx = 41
+  ny = 21
   xmin = 0
   xmax = 2
   ymin = 0
@@ -32,46 +32,7 @@
 [UserObjects]
   [./moving_line_segments]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '0.5 0 0.5 0.5 0 0
-                0.5 0.5 0.5 1.0 0 0'
-    # cut_data = '0.3 0 0.5 0.5 0 0
-    #             0.5 0.5 0.7 1.0 0 0'
-    # cut_data = '  1.4999    1.0087    1.4908    1.0954         0         0
-    # 1.4908    1.0954    1.4668    1.1792         0         0
-    # 1.4668    1.1792    1.4286    1.2575         0         0
-    # 1.4286    1.2575    1.3774    1.3280         0         0
-    # 1.3774    1.3280    1.3147    1.3886         0         0
-    # 1.3147    1.3886    1.2424    1.4373         0         0
-    # 1.2424    1.4373    1.1628    1.4728         0         0
-    # 1.1628    1.4728    1.0782    1.4938         0         0
-    # 1.0782    1.4938    0.9913    1.4999         0         0
-    # 0.9913    1.4999    0.9046    1.4908         0         0
-    # 0.9046    1.4908    0.8208    1.4668         0         0
-    # 0.8208    1.4668    0.7425    1.4286         0         0
-    # 0.7425    1.4286    0.6720    1.3774         0         0
-    # 0.6720    1.3774    0.6114    1.3147         0         0
-    # 0.6114    1.3147    0.5627    1.2424         0         0
-    # 0.5627    1.2424    0.5272    1.1628         0         0
-    # 0.5272    1.1628    0.5062    1.0782         0         0
-    # 0.5062    1.0782    0.5001    0.9913         0         0
-    # 0.5001    0.9913    0.5092    0.9046         0         0
-    # 0.5092    0.9046    0.5332    0.8208         0         0
-    # 0.5332    0.8208    0.5714    0.7425         0         0
-    # 0.5714    0.7425    0.6226    0.6720         0         0
-    # 0.6226    0.6720    0.6853    0.6114         0         0
-    # 0.6853    0.6114    0.7576    0.5627         0         0
-    # 0.7576    0.5627    0.8372    0.5272         0         0
-    # 0.8372    0.5272    0.9218    0.5062         0         0
-    # 0.9218    0.5062    1.0087    0.5001         0         0
-    # 1.0087    0.5001    1.0954    0.5092         0         0
-    # 1.0954    0.5092    1.1792    0.5332         0         0
-    # 1.1792    0.5332    1.2575    0.5714         0         0
-    # 1.2575    0.5714    1.3280    0.6226         0         0
-    # 1.3280    0.6226    1.3886    0.6853         0         0
-    # 1.3886    0.6853    1.4373    0.7576         0         0
-    # 1.4373    0.7576    1.4728    0.8372         0         0
-    # 1.4728    0.8372    1.4938    0.9218         0         0
-    # 1.4938    0.9218    1.4999    1.0087         0         0'
+    cut_data = '0.5 0 0.5 1.0 0 0'
     heal_always = true
     var = u
     interface_value_uo = value_uo
@@ -82,7 +43,14 @@
 
 [Variables]
   [./u]
-    initial_condition = 10
+  [../]
+[]
+
+[ICs]
+  [./ic_u]
+    type = FunctionIC
+    variable = u
+    function = 'if(x<0.5, 4, 1)'
   [../]
 []
 
@@ -95,20 +63,21 @@
 
 [Constraints]
   [./u_constraint]
-    type = XFEMTwoSideDirichlet
+    type = XFEMTwoSideDirichletNitsche
     geometric_cut_userobject = 'moving_line_segments'
     use_displaced_mesh = false
     variable = u
-    value_at_positive_level_set_interface = 10
+    value_at_positive_level_set_interface = 2 #10
     value_at_negative_level_set_interface = 2
-    #level_set_negative_value = 10
-    alpha = 1e6
+    alpha = 1e5
+    diffusivity_at_positive_level_set_side = 5 #1
+    diffusivity_at_negative_level_set_side = 1
   [../]
 []
 
 [Kernels]
   [./diff]
-    type = Diffusion
+    type = ConcentrationDiffusion
     variable = u
   [../]
   [./time]
@@ -125,22 +94,56 @@
   [../]
 []
 
+[Materials]
+  [./diffusivity_A]
+    type = GenericConstantMaterial
+    prop_names = A_diffusion_coefficient
+    prop_values = 5
+  [../]
+
+  [./diffusivity_B]
+    type = GenericConstantMaterial
+    prop_names = B_diffusion_coefficient
+    prop_values = 1 #1.0e-5
+  [../]
+
+  [./diff_combined]
+    type = LevelSetBiMaterialProperty
+    levelset_positive_base = 'A'
+    levelset_negative_base = 'B'
+    level_set_var = ls
+    prop_name = diffusion_coefficient
+  [../]
+
+  [./time_A]
+    type = GenericConstantMaterial
+    prop_names = A_time_step_scale
+    prop_values = 5
+  [../]
+
+  [./time_B]
+    type = GenericConstantMaterial
+    prop_names = B_time_step_scale
+    prop_values = 1
+  [../]
+
+  [./time_combined]
+    type = LevelSetBiMaterialProperty
+    levelset_positive_base = 'A'
+    levelset_negative_base = 'B'
+    level_set_var = ls
+    prop_name = time_step_scale
+  [../]
+[]
+
 [BCs]
 # Define boundary conditions
   [./left_u]
     type = DirichletBC
     variable = u
-    value = 10
+    value = 4
     boundary = 3
   [../]
-
-  # [./left_u_all]
-  #   type = XFEMOneSideConstantBC
-  #   variable = u
-  #   value = 10
-  #   left_x = 0.47
-  #   boundary = all
-  # [../]
 
   [./right_u]
     type = NeumannBC
