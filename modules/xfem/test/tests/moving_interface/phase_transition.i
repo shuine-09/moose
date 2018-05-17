@@ -50,12 +50,16 @@
   [./ic_u]
     type = FunctionIC
     variable = u
-    function = 'if(x<0.5, 4, 1)'
+    function = 'if(x<0.5, 2, 1)'
   [../]
 []
 
 [AuxVariables]
   [./ls]
+    order = FIRST
+    family = LAGRANGE
+  [../]
+  [./u_scale]
     order = FIRST
     family = LAGRANGE
   [../]
@@ -91,6 +95,12 @@
     type = LineSegmentLevelSetAux
     geometric_cut_userobject = 'moving_line_segments'
     variable = ls
+  [../]
+  [./u_scale]
+    type = VariableScaleAux
+    scale_var = u
+    variable = u_scale
+    scale_factor = 5
   [../]
 []
 
@@ -141,7 +151,7 @@
   [./left_u]
     type = DirichletBC
     variable = u
-    value = 4
+    value = 2
     boundary = 3
   [../]
 

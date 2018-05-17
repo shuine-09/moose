@@ -176,12 +176,6 @@ MovingLineSegmentCutSetUserObject::finalize()
   std::map<unsigned int, RealVectorValue> grad_negative =
       _interface_value_uo->getGradientAtNegativeLevelSet();
 
-  // for (unsigned i = 0; i < value_positive.size(); ++i)
-  // {
-  //   std::cout << "positive_size_value[" << i << "] = " << value_positive[i] << std::endl;
-  //   std::cout << "negative_size_value[" << i << "] = " << value_negative[i] << std::endl;
-  // }
-
   for (unsigned i = 0; i < value_positive.size() - 1; ++i)
   {
     _cut_data[i * 6 + 0] +=
