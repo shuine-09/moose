@@ -90,7 +90,7 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
 
   // 2nd derivative wrt c and strain = 0.0 if we used the previous step's history varible
   if (_use_current_hist)
-    _d2Fdcdstrain[_qp] = -stress0pos * (1.0 - c) * (1 - _kdamage);
+    _d2Fdcdstrain[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
 
   // Used in StressDivergencePFFracTensors off-diagonal Jacobian
   _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
