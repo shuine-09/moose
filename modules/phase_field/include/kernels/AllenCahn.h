@@ -39,6 +39,12 @@ protected:
   const MaterialProperty<Real> & _d2FdEta2;
 
   std::vector<const MaterialProperty<Real> *> _d2FdEtadarg;
+
+  ///@{ Displacement variables used for off-diagonal Jacobian
+  const unsigned int _ndisp;
+  std::vector<unsigned int> _disp_var;
+
+  const MaterialProperty<RankTwoTensor> & _d2Fdcdstrain;
 };
 
 #endif // ALLENCAHN_H

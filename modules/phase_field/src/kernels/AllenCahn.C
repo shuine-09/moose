@@ -19,6 +19,8 @@ validParams<AllenCahn>()
   params.addClassDescription("Allen-Cahn Kernel that uses a DerivativeMaterial Free Energy");
   params.addRequiredParam<MaterialPropertyName>(
       "f_name", "Base name of the free energy function F defined in a DerivativeParsedMaterial");
+  params.addCoupledVar("displacements",
+                       "The string of displacements suitable for the problem statement");
   return params;
 }
 
@@ -27,12 +29,18 @@ AllenCahn::AllenCahn(const InputParameters & parameters)
     _nvar(_coupled_moose_vars.size()),
     _dFdEta(getMaterialPropertyDerivative<Real>("f_name", _var.name())),
     _d2FdEta2(getMaterialPropertyDerivative<Real>("f_name", _var.name(), _var.name())),
-    _d2FdEtadarg(_nvar)
+    _d2FdEtadarg(_nvar),
+    _ndisp(coupledComponents("displacements")),
+    _disp_var(_ndisp),
+    _d2Fdcdstrain(getMaterialProperty<RankTwoTensor>("d2Fdcdstrain"))
 {
   // Iterate over all coupled variables
   for (unsigned int i = 0; i < _nvar; ++i)
     _d2FdEtadarg[i] =
         &getMaterialPropertyDerivative<Real>("f_name", _var.name(), _coupled_moose_vars[i]->name());
+
+  for (unsigned int i = 0; i < _ndisp; ++i)
+    _disp_var[i] = coupled("displacements", i);
 }
 
 void
@@ -63,6 +71,16 @@ AllenCahn::computeQpOffDiagJacobian(unsigned int jvar)
 {
   // get the coupled variable jvar is referring to
   const unsigned int cvar = mapJvarToCvar(jvar);
+
+  for (unsigned int c_comp = 0; c_comp < _ndisp; ++c_comp)
+    if (jvar == _disp_var[c_comp])
+    {
+      const Real dxddFdc = _L[_qp] * _test[_i][_qp];
+      const Real d2Fdcdstrain_comp =
+          (_d2Fdcdstrain[_qp].column(c_comp) + _d2Fdcdstrain[_qp].row(c_comp)) / 2.0 *
+          _grad_phi[_j][_qp];
+      return dxddFdc * d2Fdcdstrain_comp;
+    }
 
   return ACBulk<Real>::computeQpOffDiagJacobian(jvar) +
          _L[_qp] * (*_d2FdEtadarg[cvar])[_qp] * _phi[_j][_qp] * _test[_i][_qp];
