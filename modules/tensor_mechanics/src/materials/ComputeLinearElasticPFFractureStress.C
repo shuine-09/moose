@@ -36,7 +36,11 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
   RankTwoTensor eigvec;
   std::vector<Real> eigval(LIBMESH_DIM);
   RankTwoTensor stress = _elasticity_tensor[_qp] * _mechanical_strain[_qp];
-  stress.symmetricEigenvaluesEigenvectors(eigval, eigvec);
+
+  // projection tensor
+  RankFourTensor proj_pos = stress.positiveProjectionEigenDecomposition(eigval, eigvec);
+  RankFourTensor I4sym(RankFourTensor::initIdentitySymmetricFour);
+  RankFourTensor proj_neg = I4sym - proj_pos;
 
   // Calculate tensors of outerproduct of eigen vectors
   std::vector<RankTwoTensor> etens(LIBMESH_DIM);
@@ -94,11 +98,6 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
 
   // Used in StressDivergencePFFracTensors off-diagonal Jacobian
   _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
-
-  // projection tensor
-  RankFourTensor proj_pos = stress.positveProjectionEigenDecomposition();
-  RankFourTensor I4sym(RankFourTensor::initIdentitySymmetricFour);
-  RankFourTensor proj_neg = I4sym - proj_pos;
 
   _Jacobian_mult[_qp] =
       ((1.0 - c) * (1.0 - c) * (1.0 - _kdamage) + _kdamage) * (proj_pos * _elasticity_tensor[_qp]) +
