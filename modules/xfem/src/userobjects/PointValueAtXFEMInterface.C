@@ -24,11 +24,11 @@ InputParameters
 validParams<PointValueAtXFEMInterface>()
 {
   InputParameters params = validParams<GeneralUserObject>();
-  params.addRequiredCoupledVar(
-      "variable", "The names of the variables that this VectorPostprocessor operates on");
+  params.addRequiredCoupledVar("variable",
+                               "The names of the variables that this UserObject operates on");
   params.addParam<UserObjectName>(
       "geometric_cut_userobject",
-      "Name of GeometricCutUserObject associated with this constraint.");
+      "Name of GeometricCutUserObject that provides the points to this UserObject.");
   params.addRequiredParam<VariableName>(
       "level_set_var", "The name of level set variable used to represent the interface");
   return params;
@@ -80,13 +80,6 @@ void
 PointValueAtXFEMInterface::initialize()
 {
   _pl = _mesh.getPointLocator();
-
-  _pl->enable_out_of_mesh_mode();
-
-  _values_positive_level_set_side.clear();
-  _values_negative_level_set_side.clear();
-  _grad_values_positive_level_set_side.clear();
-  _grad_values_negative_level_set_side.clear();
 }
 
 void
@@ -135,17 +128,11 @@ PointValueAtXFEMInterface::execute()
 
     if (bbox.contains_point(p))
     {
-      const Elem * elem = getLocalElemContainingPoint(p, true);
+      const Elem * elem = getElemContainingPoint(p, true);
 
       if (elem)
       {
         point_vec[0] = p;
-
-        std::cout << "elem p = " << p << std::endl;
-
-        // std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-        // elem->print_info();
-        // std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 
         _subproblem.setCurrentSubdomainID(elem, 0);
         _subproblem.reinitElemPhys(elem, point_vec, 0);
@@ -156,16 +143,10 @@ PointValueAtXFEMInterface::execute()
             ((dynamic_cast<MooseVariable *>(_coupled_moose_vars[0]))->gradSln())[0];
       }
 
-      const Elem * elem2 = getLocalElemContainingPoint(p, false);
+      const Elem * elem2 = getElemContainingPoint(p, false);
       if (elem2)
       {
         point_vec[0] = p;
-
-        std::cout << "elem2 p = " << p << std::endl;
-
-        // std::cout << "==================================================" << std::endl;
-        // elem2->print_info();
-        // std::cout << "==================================================" << std::endl;
 
         _subproblem.setCurrentSubdomainID(elem2, 0);
         _subproblem.reinitElemPhys(elem2, point_vec, 0);
@@ -189,7 +170,7 @@ PointValueAtXFEMInterface::finalize()
 }
 
 const Elem *
-PointValueAtXFEMInterface::getLocalElemContainingPoint(const Point & p, bool positive_level_set)
+PointValueAtXFEMInterface::getElemContainingPoint(const Point & p, bool positive_level_set)
 {
   const Elem * elem1 = (*_pl)(p);
 
@@ -218,34 +199,16 @@ PointValueAtXFEMInterface::getLocalElemContainingPoint(const Point & p, bool pos
   const Elem * elem2;
   for (auto & pair : *_elem_pairs)
   {
-    // std::cout << "pair.first = " << pair.first->id() << " pair.second = " << pair.second->id()
-    //           << std::endl;
-
     if (pair.first == elem1)
-    {
-      std::cout << "FIND elem 2" << std::endl;
       elem2 = pair.second;
-    }
     else if (pair.second == elem1)
-    {
-      std::cout << "FIND elem 2" << std::endl;
       elem2 = pair.first;
-    }
   }
 
   if ((positive && positive_level_set) || (!positive && !positive_level_set))
-  {
-    std::cout << "return elem1" << std::endl;
     return elem1;
-  }
   else if ((!positive && positive_level_set) || (positive && !positive_level_set))
-  {
-    std::cout << "return elem2" << std::endl;
     return elem2;
-  }
   else
-  {
-    std::cout << "return null" << std::endl;
     return nullptr;
-  }
 }

@@ -180,7 +180,7 @@
   start_time = 0.0
   dt = 0.01
   end_time = 1.5
-  num_steps = 100
+  num_steps = 10
   max_xfem_update = 1
 []
 

@@ -59,13 +59,13 @@ public:
 
 protected:
   /**
-   * Find the local element in the element pairs that contains the point in its physical domain.
+   * Find the element in the element pairs that contains the point in its physical domain.
    * @param p The point in physical space
    * @param positive_level_set True if the physical domain is in positive level set region
    * @return The Elem containing the point or NULL if this processor doesn't contain an element that
    * contains this point.
    */
-  const Elem * getLocalElemContainingPoint(const Point & p, bool positive_level_set);
+  const Elem * getElemContainingPoint(const Point & p, bool positive_level_set);
 
   /// The Mesh we're using
   MooseMesh & _mesh;
