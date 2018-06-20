@@ -80,6 +80,13 @@ void
 PointValueAtXFEMInterface::initialize()
 {
   _pl = _mesh.getPointLocator();
+
+  _pl->enable_out_of_mesh_mode();
+
+  _values_positive_level_set_side.clear();
+  _values_negative_level_set_side.clear();
+  _grad_values_positive_level_set_side.clear();
+  _grad_values_negative_level_set_side.clear();
 }
 
 void
@@ -106,7 +113,25 @@ PointValueAtXFEMInterface::execute()
 
   for (auto i = beginIndex(_points); i < _points.size(); ++i)
   {
-    Point & p = _points[i];
+    std::cout << "point[" << i << "]= " << _points[i] << std::endl;
+  }
+
+  for (auto i = beginIndex(_points); i < _points.size(); ++i)
+  {
+    // Point & p = _points[i];
+    Point p = _points[i];
+
+    if (i == 0)
+    {
+      p = _points[1];
+    }
+
+    if (i == _points.size() - 1)
+    {
+      p = _points[_points.size() - 2];
+    }
+
+    // TODO : fix bug: crack tip element cannot find pair element!
 
     if (bbox.contains_point(p))
     {
@@ -115,6 +140,12 @@ PointValueAtXFEMInterface::execute()
       if (elem)
       {
         point_vec[0] = p;
+
+        std::cout << "elem p = " << p << std::endl;
+
+        // std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+        // elem->print_info();
+        // std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 
         _subproblem.setCurrentSubdomainID(elem, 0);
         _subproblem.reinitElemPhys(elem, point_vec, 0);
@@ -129,6 +160,12 @@ PointValueAtXFEMInterface::execute()
       if (elem2)
       {
         point_vec[0] = p;
+
+        std::cout << "elem2 p = " << p << std::endl;
+
+        // std::cout << "==================================================" << std::endl;
+        // elem2->print_info();
+        // std::cout << "==================================================" << std::endl;
 
         _subproblem.setCurrentSubdomainID(elem2, 0);
         _subproblem.reinitElemPhys(elem2, point_vec, 0);
@@ -181,16 +218,34 @@ PointValueAtXFEMInterface::getLocalElemContainingPoint(const Point & p, bool pos
   const Elem * elem2;
   for (auto & pair : *_elem_pairs)
   {
+    // std::cout << "pair.first = " << pair.first->id() << " pair.second = " << pair.second->id()
+    //           << std::endl;
+
     if (pair.first == elem1)
+    {
+      std::cout << "FIND elem 2" << std::endl;
       elem2 = pair.second;
+    }
     else if (pair.second == elem1)
+    {
+      std::cout << "FIND elem 2" << std::endl;
       elem2 = pair.first;
+    }
   }
 
   if ((positive && positive_level_set) || (!positive && !positive_level_set))
+  {
+    std::cout << "return elem1" << std::endl;
     return elem1;
+  }
   else if ((!positive && positive_level_set) || (positive && !positive_level_set))
+  {
+    std::cout << "return elem2" << std::endl;
     return elem2;
+  }
   else
+  {
+    std::cout << "return null" << std::endl;
     return nullptr;
+  }
 }

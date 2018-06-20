@@ -111,11 +111,12 @@ MovingLineSegmentCutSetUserObject::calculateInterfaceVelocity(Real value_positiv
     // return std::abs((_diffusivity_at_positive_level_set_side * grad_positive(0) -
     //                  _diffusivity_at_negative_level_set_side * grad_negative(0)) /
     //                 (value_positive - value_negative));
-    return std::abs((_diffusivity_at_positive_level_set_side * grad_positive(0) -
-                     _diffusivity_at_negative_level_set_side * grad_negative(0)) /
-                    (value_positive - value_negative + 8));
+    // return std::abs((_diffusivity_at_positive_level_set_side * grad_positive(0) -
+    //                  _diffusivity_at_negative_level_set_side * grad_negative(0)) /
+    //                 (value_positive - value_negative + 8));
+    return -4.111e-8;
   else
-    return 0.0;
+    return -4.111e-8;
 }
 
 void
@@ -139,18 +140,23 @@ MovingLineSegmentCutSetUserObject::execute()
 
   unsigned int num_cuts = _cut_data.size() / line_cut_data_len;
 
-  for (unsigned i = 0; i < value_positive.size() - 1; ++i)
+  if (value_positive.size() > 0)
   {
-    cut_data_copy[i * 6 + 0] +=
-        calculateInterfaceVelocity(
-            value_positive[i], value_negative[i], grad_positive[i], grad_negative[i]) *
-        _dt;
-    cut_data_copy[i * 6 + 2] += calculateInterfaceVelocity(value_positive[i + 1],
-                                                           value_negative[i + 1],
-                                                           grad_positive[i + 1],
-                                                           grad_negative[i + 1]) *
-                                _dt;
-    ;
+    for (unsigned i = 0; i < value_positive.size() - 1; ++i)
+    {
+      cut_data_copy[i * 6 + 0] +=
+          calculateInterfaceVelocity(
+              value_positive[i], value_negative[i], grad_positive[i], grad_negative[i]) *
+          100;
+      //_dt;
+      cut_data_copy[i * 6 + 2] += calculateInterfaceVelocity(value_positive[i + 1],
+                                                             value_negative[i + 1],
+                                                             grad_positive[i + 1],
+                                                             grad_negative[i + 1]) *
+                                  100;
+      //  _dt;
+      ;
+    }
   }
 
   _cut_line_endpoints.clear();
@@ -176,17 +182,29 @@ MovingLineSegmentCutSetUserObject::finalize()
   std::map<unsigned int, RealVectorValue> grad_negative =
       _interface_value_uo->getGradientAtNegativeLevelSet();
 
-  for (unsigned i = 0; i < value_positive.size() - 1; ++i)
+  if (value_positive.size() > 0)
   {
-    _cut_data[i * 6 + 0] +=
-        calculateInterfaceVelocity(
-            value_positive[i], value_negative[i], grad_positive[i], grad_negative[i]) *
-        _dt;
-    _cut_data[i * 6 + 2] += calculateInterfaceVelocity(value_positive[i + 1],
-                                                       value_negative[i + 1],
-                                                       grad_positive[i + 1],
-                                                       grad_negative[i + 1]) *
-                            _dt;
+
+    for (int i = 0; i < value_positive.size() - 1; ++i)
+    {
+      _cut_data[i * 6 + 0] +=
+          calculateInterfaceVelocity(
+              value_positive[i], value_negative[i], grad_positive[i], grad_negative[i]) *
+          100;
+      //_dt;
+      _cut_data[i * 6 + 2] += calculateInterfaceVelocity(value_positive[i + 1],
+                                                         value_negative[i + 1],
+                                                         grad_positive[i + 1],
+                                                         grad_negative[i + 1]) *
+                              100;
+      //  _dt;
+    }
+
+    for (int i = 0; i < value_positive.size() - 1; ++i)
+    {
+      std::cout << "finalize x_a[ " << i << "] = " << _cut_data[i * 6 + 0] << ", x_b[ " << i
+                << "] = " << _cut_data[i * 6 + 2] << std::endl;
+    }
   }
 
   GeometricCutUserObject::finalize();
