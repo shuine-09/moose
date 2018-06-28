@@ -8,7 +8,7 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "PolycrystalVoronoiVoidICAction.h"
-#include "PolycrystalVoronoiVoidIC.h"
+#include "PolycrystalVoronoiBubbleIC.h"
 #include "Factory.h"
 #include "FEProblem.h"
 #include "Conversion.h"
@@ -20,7 +20,7 @@ InputParameters
 validParams<PolycrystalVoronoiVoidICAction>()
 {
   InputParameters params = validParams<Action>();
-  params += PolycrystalVoronoiVoidIC::actionParameters();
+  params += PolycrystalVoronoiBubbleIC::actionParameters();
   params.addRequiredParam<std::string>("var_name_base", "specifies the base name of the variables");
   params.suppressParameter<VariableName>("variable");
 
@@ -41,7 +41,7 @@ PolycrystalVoronoiVoidICAction::act()
   for (unsigned int op = 0; op < _op_num; op++)
   {
     // Set parameters for BoundingBoxIC
-    InputParameters poly_params = _factory.getValidParams("PolycrystalVoronoiVoidIC");
+    InputParameters poly_params = _factory.getValidParams("PolycrystalVoronoiBubbleIC");
     poly_params.applyParameters(parameters());
     poly_params.set<unsigned int>("op_index") = op;
     poly_params.set<VariableName>("variable") = _var_name_base + Moose::stringify(op);
@@ -49,6 +49,6 @@ PolycrystalVoronoiVoidICAction::act()
 
     // Add initial condition
     _problem->addInitialCondition(
-        "PolycrystalVoronoiVoidIC", name() + "_" + Moose::stringify(op), poly_params);
+        "PolycrystalVoronoiBubbleIC", name() + "_" + Moose::stringify(op), poly_params);
   }
 }
