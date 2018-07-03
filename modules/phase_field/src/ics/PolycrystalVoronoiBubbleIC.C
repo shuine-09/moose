@@ -27,6 +27,8 @@ PolycrystalVoronoiBubbleIC::actionParameters()
   params.addParam<bool>(
       "columnar_3D", false, "3D microstructure will be columnar in the z-direction?");
 
+  params.addParam<Real>("R0", 50, "R0");
+  params.addParam<Real>("r0", 35, "r0");
   return params;
 }
 
@@ -56,7 +58,9 @@ PolycrystalVoronoiBubbleIC::PolycrystalVoronoiBubbleIC(const InputParameters & p
     _grain_num(getParam<unsigned int>("grain_num")),
     _op_index(getParam<unsigned int>("op_index")),
     _rand_seed(getParam<unsigned int>("rand_seed")),
-    _columnar_3D(getParam<bool>("columnar_3D"))
+    _columnar_3D(getParam<bool>("columnar_3D")),
+    _R0(getParam<Real>("R0")),
+    _r0(getParam<Real>("r0"))
 {
   if (_invalue < _outvalue)
     mooseError("PolycrystalVoronoiBubbleIC requires that the voids be "
@@ -245,16 +249,13 @@ PolycrystalVoronoiBubbleIC::value(const Point & p)
   Real bub_value = _outvalue;
   Real val2 = 0.0;
 
-  Real R0 = 50;
-  Real r0 = 35;
-
   for (unsigned int bub = 0; bub < _centers.size() && bub_value != _invalue; ++bub)
   {
     Point center = _centers[bub];
     Point normal = _gb_normal[bub];
 
-    Point O1 = center + normal * r0;
-    Point O2 = center - normal * r0;
+    Point O1 = center + normal * _r0;
+    Point O2 = center - normal * _r0;
 
     Real r1 = _mesh.minPeriodicDistance(_var.number(), p, O1);
     Real r2 = _mesh.minPeriodicDistance(_var.number(), p, O2);
@@ -266,7 +267,7 @@ PolycrystalVoronoiBubbleIC::value(const Point & p)
     //           << ", O1 = " << O1 << ", O2 = " << O2 << ", r1 = " << r1 << ", r2 = " << r2
     //           << std::endl;
 
-    val2 = 0.5 * (1 - std::tanh((r1 - R0) / 8)) * 0.5 * (1 - std::tanh((r2 - R0) / 8));
+    val2 = 0.5 * (1 - std::tanh((r1 - _R0) / 8)) * 0.5 * (1 - std::tanh((r2 - _R0) / 8));
 
     if ((val2 > bub_value && _invalue > _outvalue) || (val2 < bub_value && _outvalue > _invalue))
       bub_value = val2;

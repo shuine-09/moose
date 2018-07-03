@@ -57,6 +57,9 @@ protected:
 
   std::vector<Point> _gb_normal;
 
+  Real _R0;
+  Real _r0;
+
   /// Type for distance and point
   struct DistancePoint
   {
