@@ -267,7 +267,7 @@ PolycrystalVoronoiBubbleIC::value(const Point & p)
     //           << ", O1 = " << O1 << ", O2 = " << O2 << ", r1 = " << r1 << ", r2 = " << r2
     //           << std::endl;
 
-    val2 = 0.5 * (1 - std::tanh((r1 - _R0) / 8)) * 0.5 * (1 - std::tanh((r2 - _R0) / 8));
+    val2 = 0.5 * (1 - std::tanh((r1 - _R0) / _int_width)) * 0.5 * (1 - std::tanh((r2 - _R0) / _int_width));
 
     if ((val2 > bub_value && _invalue > _outvalue) || (val2 < bub_value && _outvalue > _invalue))
       bub_value = val2;
