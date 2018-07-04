@@ -54,33 +54,33 @@ ComputeIsotropicLinearElasticPressurizedPFFractureStress::
 void
 ComputeIsotropicLinearElasticPressurizedPFFractureStress::initQpStatefulProperties()
 {
-  //_hist[_qp] = 0.0;
-  Real d;
-  Real x = _q_point[_qp](0);
-  Real y = _q_point[_qp](1);
-
-  Real x_center = 0.4;
-  Real y_center = 0.5;
-
-  Real x_center2 = 0.6;
-  Real y_center2 = 0.5;
-
-  // if (x < x_center)
+  _hist[_qp] = 0.0;
+  // Real d;
+  // Real x = _q_point[_qp](0);
+  // Real y = _q_point[_qp](1);
+  //
+  // Real x_center = 0.4;
+  // Real y_center = 0.5;
+  //
+  // Real x_center2 = 0.6;
+  // Real y_center2 = 0.5;
+  //
+  // // if (x < x_center)
+  // //   d = std::abs(y - y_center);
+  // // else
+  // //   d = std::sqrt((x - x_center) * (x - x_center) + (y - y_center) * (y - y_center));
+  //
+  // if (x < x_center2 && x > x_center)
   //   d = std::abs(y - y_center);
-  // else
+  // else if (x < x_center)
   //   d = std::sqrt((x - x_center) * (x - x_center) + (y - y_center) * (y - y_center));
-
-  if (x < x_center2 && x > x_center)
-    d = std::abs(y - y_center);
-  else if (x < x_center)
-    d = std::sqrt((x - x_center) * (x - x_center) + (y - y_center) * (y - y_center));
-  else
-    d = std::sqrt((x - x_center2) * (x - x_center2) + (y - y_center2) * (y - y_center2));
-
-  if (d <= _l[_qp])
-    _hist[_qp] = 1000 * (_gc[_qp] / 4 / _l[_qp] * (1 - d / _l[_qp]));
-  else
-    _hist[_qp] = 0;
+  // else
+  //   d = std::sqrt((x - x_center2) * (x - x_center2) + (y - y_center2) * (y - y_center2));
+  //
+  // if (d <= _l[_qp])
+  //   _hist[_qp] = 1000 * (_gc[_qp] / 4 / _l[_qp] * (1 - d / _l[_qp]));
+  // else
+  //   _hist[_qp] = 0;
 }
 
 void
