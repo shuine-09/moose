@@ -21,6 +21,7 @@ validParams<ComputeMultiPhaseLinearElasticPFFractureStress>()
   params.addRequiredParam<std::vector<std::string>>("phase_base",
                                                     "Base names for the Phase strains");
   params.addParam<std::string>("base_name", "Base name for the computed global stress (optional)");
+  params.addParam<Real>("pressure", 0.0, "Pressure on the crack surfaces.");
   params.addClassDescription("Computes the stress and free energy derivatives for the phase field "
                              "fracture model, with linear anistropic elasticity");
   return params;
@@ -35,7 +36,8 @@ ComputeMultiPhaseLinearElasticPFFractureStress::ComputeMultiPhaseLinearElasticPF
     _phase_base(getParam<std::vector<std::string>>("phase_base")),
     _phase_stress(_n_phase),
     _dphase_stress_dstrain(_n_phase),
-    _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : "")
+    _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
+    _pressure(getParam<Real>("pressure"))
 {
   // verify parameter length
   if (_n_phase != _phase_base.size())
@@ -108,24 +110,28 @@ ComputeMultiPhaseLinearElasticPFFractureStress::computeQpStress()
   if (_use_current_hist)
     hist_variable = _hist[_qp];
 
-  _stress[_qp] = stress0pos * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - stress0neg;
+  _stress[_qp] = stress0pos * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - stress0neg +
+                 _pressure * RankTwoTensor(RankTwoTensor::initIdentity) * c * c;
 
   // Elastic free energy density
   _F[_qp] = hist_variable * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - G0_neg +
-            _gc[_qp] / (2 * _l[_qp]) * c * c;
+            _gc[_qp] / (2 * _l[_qp]) * c * c + c * c * _mechanical_strain[_qp].trace() * _pressure;
 
   // derivative of elastic free energy density wrt c
-  _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + _gc[_qp] / _l[_qp] * c;
+  _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + _gc[_qp] / _l[_qp] * c +
+               2 * c * _mechanical_strain[_qp].trace() * _pressure;
 
   // 2nd derivative of elastic free energy density wrt c
-  _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage) + _gc[_qp] / _l[_qp];
+  _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage) + _gc[_qp] / _l[_qp] +
+                 2 * _mechanical_strain[_qp].trace() * _pressure;
 
   // 2nd derivative wrt c and strain = 0.0 if we used the previous step's history varible
-  if (_use_current_hist)
-    _d2Fdcdstrain[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
+  // if (_use_current_hist)
+  _d2Fdcdstrain[_qp] = 2 * c * _pressure * RankTwoTensor(RankTwoTensor::initIdentity);
 
   // Used in StressDivergencePFFracTensors off-diagonal Jacobian
-  _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
+  _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage) +
+                     _pressure * RankTwoTensor(RankTwoTensor::initIdentity) * c * 2;
 
   RankFourTensor dstress_dstrain;
   for (unsigned int i = 0; i < _n_phase; ++i)

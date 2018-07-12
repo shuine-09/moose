@@ -47,6 +47,8 @@ protected:
 
   // global material properties
   std::string _base_name;
+
+  Real _pressure;
 };
 
 #endif // COMPUTEMULTIPHASELINEARELASTICPFFRACTURESTRESS_H
