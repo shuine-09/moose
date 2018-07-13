@@ -130,8 +130,10 @@ ComputeMultiPhaseLinearElasticPFFractureStress::computeQpStress()
   _d2Fdcdstrain[_qp] = 2 * c * _pressure * RankTwoTensor(RankTwoTensor::initIdentity);
 
   // Used in StressDivergencePFFracTensors off-diagonal Jacobian
-  _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage) +
-                     _pressure * RankTwoTensor(RankTwoTensor::initIdentity) * c * 2;
+  // _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage) +
+  //                    _pressure * RankTwoTensor(RankTwoTensor::initIdentity) * c * 2;
+
+  _dstress_dc[_qp] = _pressure * RankTwoTensor(RankTwoTensor::initIdentity) * c * 2;
 
   RankFourTensor dstress_dstrain;
   for (unsigned int i = 0; i < _n_phase; ++i)

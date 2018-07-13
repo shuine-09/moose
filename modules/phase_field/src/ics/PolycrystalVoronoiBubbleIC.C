@@ -364,7 +364,7 @@ PolycrystalVoronoiBubbleIC::computeGrainCenters()
   // }
 
   Real _x_offset = 0.5;
-  Real _perturbation_percent = 0.25;
+  Real _perturbation_percent = 0.1;
   unsigned int _dim = _mesh.dimension();
   const unsigned int root = MathUtils::round(std::pow(_grain_num, 1.0 / _dim));
 
@@ -387,7 +387,7 @@ PolycrystalVoronoiBubbleIC::computeGrainCenters()
         holder[count](1) = j * ndist + (0.5 * ndist * (k % 2));
 
         // set z-coordinate
-        holder[count](2) = k * ndist;
+        holder[count](2) = k * ndist + _x_offset * ndist;
 
         // increment counter
         count++;
