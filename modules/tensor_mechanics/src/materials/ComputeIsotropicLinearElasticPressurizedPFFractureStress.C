@@ -7,14 +7,14 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "ComputeIsotropicLinearElasticPFFractureStress.h"
+#include "ComputeIsotropicLinearElasticPressurizedPFFractureStress.h"
 #include "MathUtils.h"
 
-registerMooseObject("TensorMechanicsApp", ComputeIsotropicLinearElasticPFFractureStress);
+registerMooseObject("TensorMechanicsApp", ComputeIsotropicLinearElasticPressurizedPFFractureStress);
 
 template <>
 InputParameters
-validParams<ComputeIsotropicLinearElasticPFFractureStress>()
+validParams<ComputeIsotropicLinearElasticPressurizedPFFractureStress>()
 {
   InputParameters params = validParams<ComputeStressBase>();
   params.addClassDescription("Computes the stress and free energy derivatives for the phase field "
@@ -23,13 +23,14 @@ validParams<ComputeIsotropicLinearElasticPFFractureStress>()
   params.addParam<Real>("kdamage", 0.0, "Stiffness of damaged matrix");
   params.addParam<bool>(
       "use_current_history_variable", false, "Use the current value of the history variable.");
+  params.addParam<Real>("pressure", 0.0, "Pressure on the crack surfaces.");
   params.addParam<MaterialPropertyName>(
       "F_name", "E_el", "Name of material property storing the elastic energy");
   return params;
 }
 
-ComputeIsotropicLinearElasticPFFractureStress::ComputeIsotropicLinearElasticPFFractureStress(
-    const InputParameters & parameters)
+ComputeIsotropicLinearElasticPressurizedPFFractureStress::
+    ComputeIsotropicLinearElasticPressurizedPFFractureStress(const InputParameters & parameters)
   : ComputeStressBase(parameters),
     _c(coupledValue("c")),
     _kdamage(getParam<Real>("kdamage")),
@@ -45,28 +46,59 @@ ComputeIsotropicLinearElasticPFFractureStress::ComputeIsotropicLinearElasticPFFr
         declarePropertyDerivative<RankTwoTensor>(_base_name + "stress", getVar("c", 0)->name())),
     _d2Fdcdstrain(declareProperty<RankTwoTensor>("d2Fdcdstrain")),
     _hist(declareProperty<Real>("hist")),
-    _hist_old(getMaterialPropertyOld<Real>("hist"))
+    _hist_old(getMaterialPropertyOld<Real>("hist")),
+    _pressure(getParam<Real>("pressure"))
 {
 }
 
 void
-ComputeIsotropicLinearElasticPFFractureStress::initQpStatefulProperties()
+ComputeIsotropicLinearElasticPressurizedPFFractureStress::initQpStatefulProperties()
 {
   _hist[_qp] = 0.0;
+  // Real d;
+  // Real x = _q_point[_qp](0);
+  // Real y = _q_point[_qp](1);
+  //
+  // Real x_center = 0.4;
+  // Real y_center = 0.5;
+  //
+  // Real x_center2 = 0.6;
+  // Real y_center2 = 0.5;
+  //
+  // // if (x < x_center)
+  // //   d = std::abs(y - y_center);
+  // // else
+  // //   d = std::sqrt((x - x_center) * (x - x_center) + (y - y_center) * (y - y_center));
+  //
+  // if (x < x_center2 && x > x_center)
+  //   d = std::abs(y - y_center);
+  // else if (x < x_center)
+  //   d = std::sqrt((x - x_center) * (x - x_center) + (y - y_center) * (y - y_center));
+  // else
+  //   d = std::sqrt((x - x_center2) * (x - x_center2) + (y - y_center2) * (y - y_center2));
+  //
+  // if (d <= _l[_qp])
+  //   _hist[_qp] = 1000 * (_gc[_qp] / 4 / _l[_qp] * (1 - d / _l[_qp]));
+  // else
+  //   _hist[_qp] = 0;
 }
 
 void
-ComputeIsotropicLinearElasticPFFractureStress::computeQpStress()
+ComputeIsotropicLinearElasticPressurizedPFFractureStress::computeQpStress()
 {
+  _pressure = -1000 * _t;
+
   const Real c = _c[_qp];
 
   // Isotropic elasticity is assumed and should be enforced
   const Real lambda = _elasticity_tensor[_qp](0, 0, 1, 1);
   const Real mu = _elasticity_tensor[_qp](0, 1, 0, 1);
 
-  // Compute eigenvectors and eigenvalues of mechanical strain and projection tensor
+  // Compute eigenvectors and eigenvalues of mechanical strain
   RankTwoTensor eigvec;
   std::vector<Real> eigval(LIBMESH_DIM);
+
+  // projection tensor
   RankFourTensor proj_pos =
       _mechanical_strain[_qp].positiveProjectionEigenDecomposition(eigval, eigvec);
   RankFourTensor I4sym(RankFourTensor::initIdentitySymmetricFour);
@@ -117,34 +149,39 @@ ComputeIsotropicLinearElasticPFFractureStress::computeQpStress()
   const Real G0_neg = lambda * etrneg * etrneg / 2.0 + mu * nval;
 
   // Assign history variable and derivative
-  //if (G0_pos > _hist_old[_qp])
+  if (G0_pos > _hist_old[_qp])
     _hist[_qp] = G0_pos;
-  //else
-  //  _hist[_qp] = _hist_old[_qp];
+  else
+    _hist[_qp] = _hist_old[_qp];
 
   Real hist_variable = _hist_old[_qp];
   if (_use_current_hist)
     hist_variable = _hist[_qp];
 
   // Damage associated with positive component of stress
-  _stress[_qp] = stress0pos * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - stress0neg;
+  _stress[_qp] = stress0pos * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - stress0neg +
+                 _pressure * RankTwoTensor(RankTwoTensor::initIdentity) * c * c;
 
   // Elastic free energy density
   _F[_qp] = hist_variable * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - G0_neg +
-            _gc[_qp] / (2 * _l[_qp]) * c * c;
+            _gc[_qp] / (2 * _l[_qp]) * c * c + c * c * _mechanical_strain[_qp].trace() * _pressure;
 
   // derivative of elastic free energy density wrt c
-  _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + _gc[_qp] / _l[_qp] * c;
+  _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + _gc[_qp] / _l[_qp] * c +
+               2 * c * _mechanical_strain[_qp].trace() * _pressure;
 
   // 2nd derivative of elastic free energy density wrt c
-  _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage) + _gc[_qp] / _l[_qp];
-
-  // 2nd derivative wrt c and strain = 0.0 if we used the previous step's history varible
-  if (_use_current_hist)
-    _d2Fdcdstrain[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
+  _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage) + _gc[_qp] / _l[_qp] +
+                 2 * _mechanical_strain[_qp].trace() * _pressure;
 
   // Used in StressDivergencePFFracTensors off-diagonal Jacobian
-  _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
+  _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage) +
+                     _pressure * RankTwoTensor(RankTwoTensor::initIdentity) * c * 2;
+
+  // 2nd derivative wrt c and strain = 0.0 if we used the previous step's history varible
+
+  // if (_use_current_hist)
+  _d2Fdcdstrain[_qp] = 2 * c * _pressure * RankTwoTensor(RankTwoTensor::initIdentity);
 
   // Calculate dstress/dstrain
   // dstress/dstrain = dstress_pos/dstrain_pos * dstrain_pos/dstrain

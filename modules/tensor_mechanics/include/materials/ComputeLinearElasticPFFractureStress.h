@@ -66,6 +66,10 @@ protected:
 
   /// Property where the value for L will be defined
   MaterialProperty<Real> & _L;
+
+  MaterialProperty<RankFourTensor> & _proj;
+  const MaterialProperty<RankFourTensor> & _proj_old;
+  const MaterialProperty<RankFourTensor> & _proj_older;
 };
 
 #endif // COMPUTELINEARELASTICPFFRACTURESTRESS_H

@@ -7,14 +7,15 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "ComputeIsotropicLinearElasticPFFractureStress.h"
+#include "ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy.h"
 #include "MathUtils.h"
 
-registerMooseObject("TensorMechanicsApp", ComputeIsotropicLinearElasticPFFractureStress);
+registerMooseObject("TensorMechanicsApp",
+                    ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy);
 
 template <>
 InputParameters
-validParams<ComputeIsotropicLinearElasticPFFractureStress>()
+validParams<ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy>()
 {
   InputParameters params = validParams<ComputeStressBase>();
   params.addClassDescription("Computes the stress and free energy derivatives for the phase field "
@@ -28,8 +29,9 @@ validParams<ComputeIsotropicLinearElasticPFFractureStress>()
   return params;
 }
 
-ComputeIsotropicLinearElasticPFFractureStress::ComputeIsotropicLinearElasticPFFractureStress(
-    const InputParameters & parameters)
+ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy::
+    ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy(
+        const InputParameters & parameters)
   : ComputeStressBase(parameters),
     _c(coupledValue("c")),
     _kdamage(getParam<Real>("kdamage")),
@@ -50,13 +52,13 @@ ComputeIsotropicLinearElasticPFFractureStress::ComputeIsotropicLinearElasticPFFr
 }
 
 void
-ComputeIsotropicLinearElasticPFFractureStress::initQpStatefulProperties()
+ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy::initQpStatefulProperties()
 {
-  _hist[_qp] = 0.0;
+  _hist[_qp] = 3 * _gc[_qp] / 16 / _l[_qp];
 }
 
 void
-ComputeIsotropicLinearElasticPFFractureStress::computeQpStress()
+ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy::computeQpStress()
 {
   const Real c = _c[_qp];
 
@@ -64,9 +66,11 @@ ComputeIsotropicLinearElasticPFFractureStress::computeQpStress()
   const Real lambda = _elasticity_tensor[_qp](0, 0, 1, 1);
   const Real mu = _elasticity_tensor[_qp](0, 1, 0, 1);
 
-  // Compute eigenvectors and eigenvalues of mechanical strain and projection tensor
+  // Compute eigenvectors and eigenvalues of mechanical strain
   RankTwoTensor eigvec;
   std::vector<Real> eigval(LIBMESH_DIM);
+
+  // projection tensor
   RankFourTensor proj_pos =
       _mechanical_strain[_qp].positiveProjectionEigenDecomposition(eigval, eigvec);
   RankFourTensor I4sym(RankFourTensor::initIdentitySymmetricFour);
@@ -117,10 +121,10 @@ ComputeIsotropicLinearElasticPFFractureStress::computeQpStress()
   const Real G0_neg = lambda * etrneg * etrneg / 2.0 + mu * nval;
 
   // Assign history variable and derivative
-  //if (G0_pos > _hist_old[_qp])
+  if (G0_pos > _hist_old[_qp])
     _hist[_qp] = G0_pos;
-  //else
-  //  _hist[_qp] = _hist_old[_qp];
+  else
+    _hist[_qp] = _hist_old[_qp];
 
   Real hist_variable = _hist_old[_qp];
   if (_use_current_hist)
@@ -130,18 +134,18 @@ ComputeIsotropicLinearElasticPFFractureStress::computeQpStress()
   _stress[_qp] = stress0pos * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - stress0neg;
 
   // Elastic free energy density
-  _F[_qp] = hist_variable * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - G0_neg +
-            _gc[_qp] / (2 * _l[_qp]) * c * c;
+  _F[_qp] = hist_variable * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) + G0_neg +
+            3 * _gc[_qp] / (8 * _l[_qp]) * c;
 
   // derivative of elastic free energy density wrt c
-  _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + _gc[_qp] / _l[_qp] * c;
+  _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + 3 * _gc[_qp] / (8 * _l[_qp]);
 
   // 2nd derivative of elastic free energy density wrt c
-  _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage) + _gc[_qp] / _l[_qp];
+  _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage);
 
   // 2nd derivative wrt c and strain = 0.0 if we used the previous step's history varible
   if (_use_current_hist)
-    _d2Fdcdstrain[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
+    _d2Fdcdstrain[_qp] = -stress0pos * (1.0 - c) * (1 - _kdamage);
 
   // Used in StressDivergencePFFracTensors off-diagonal Jacobian
   _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);

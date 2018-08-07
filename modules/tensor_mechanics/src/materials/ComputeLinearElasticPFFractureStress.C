@@ -52,7 +52,10 @@ ComputeLinearElasticPFFractureStress::ComputeLinearElasticPFFractureStress(
     _hist(declareProperty<Real>("hist")),
     _hist_old(getMaterialPropertyOld<Real>("hist")),
     _kappa(declareProperty<Real>(getParam<MaterialPropertyName>("kappa_name"))),
-    _L(declareProperty<Real>(getParam<MaterialPropertyName>("mobility_name")))
+    _L(declareProperty<Real>(getParam<MaterialPropertyName>("mobility_name"))),
+    _proj(declareProperty<RankFourTensor>("proj")),
+    _proj_old(getMaterialPropertyOld<RankFourTensor>("proj")),
+    _proj_older(getMaterialPropertyOlder<RankFourTensor>("proj"))
 {
 }
 
@@ -76,6 +79,17 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
   RankFourTensor Ppos = uncracked_stress.positiveProjectionEigenDecomposition(eigval, eigvec);
   RankFourTensor Pneg = I4sym - Ppos;
 
+  _proj[_qp] = Ppos;
+
+  // Ppos = _proj_old[_qp] + (_proj_old[_qp] - _proj_older[_qp]) / _dt_old * _dt;
+
+  // Ppos = _proj_old[_qp];
+
+  if (c > 0.9)
+    Ppos = _proj_old[_qp];
+
+  Pneg = I4sym - Ppos;
+
   // Project the positive and negative stresses
   RankTwoTensor stress0pos = Ppos * uncracked_stress;
   RankTwoTensor stress0neg = Pneg * uncracked_stress;
@@ -85,10 +99,10 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
   Real G0_neg = (stress0neg).doubleContraction(_mechanical_strain[_qp]) / 2.0;
 
   // Update the history variable
-  if (G0_pos > _hist_old[_qp])
-    _hist[_qp] = G0_pos;
-  else
-    _hist[_qp] = _hist_old[_qp];
+  // if (G0_pos > _hist_old[_qp])
+  _hist[_qp] = G0_pos;
+  // else
+  //   _hist[_qp] = _hist_old[_qp];
 
   Real hist_variable = _hist_old[_qp];
   if (_use_current_hist)
