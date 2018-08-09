@@ -14,6 +14,8 @@
 #include "MooseVariable.h"
 #include "MathUtils.h"
 
+#include <fstream>
+
 InputParameters
 PolycrystalVoronoiBubbleIC::actionParameters()
 {
@@ -49,6 +51,8 @@ validParams<PolycrystalVoronoiBubbleIC>()
                                 "The index for the current "
                                 "order parameter, not needed if "
                                 "structure_type = voids");
+
+  params.addParam<FileName>("grain_center_file_name", "", "Name of the grain center file name");
   return params;
 }
 
@@ -61,7 +65,8 @@ PolycrystalVoronoiBubbleIC::PolycrystalVoronoiBubbleIC(const InputParameters & p
     _rand_seed(getParam<unsigned int>("rand_seed")),
     _columnar_3D(getParam<bool>("columnar_3D")),
     _R0(getParam<Real>("R0")),
-    _r0(getParam<Real>("r0"))
+    _r0(getParam<Real>("r0")),
+    _grain_center_file_name(getParam<FileName>("grain_center_file_name"))
 {
   if (_invalue < _outvalue)
     mooseError("PolycrystalVoronoiBubbleIC requires that the voids be "
@@ -352,19 +357,22 @@ PolycrystalVoronoiBubbleIC::computeGrainCenters()
   _centerpoints.resize(_grain_num);
   _assigned_op.resize(_grain_num);
 
-  // // Randomly generate the centers of the individual grains represented by the
-  // // Voronoi tessellation
-  // for (unsigned int grain = 0; grain < _grain_num; grain++)
-  // {
-  //   for (unsigned int i = 0; i < LIBMESH_DIM; i++)
-  //     _centerpoints[grain](i) = _bottom_left(i) + _range(i) * MooseRandom::rand();
-  //
-  //   if (_columnar_3D)
-  //     _centerpoints[grain](2) = _bottom_left(2) + _range(2) * 0.5;
-  // }
+  // Randomly generate the centers of the individual grains represented by the
+  // Voronoi tessellation
+  /*
+   for (unsigned int grain = 0; grain < _grain_num; grain++)
+   {
+     for (unsigned int i = 0; i < LIBMESH_DIM; i++)
+       _centerpoints[grain](i) = _bottom_left(i) + _range(i) * MooseRandom::rand();
 
+     if (_columnar_3D)
+       _centerpoints[grain](2) = _bottom_left(2) + _range(2) * 0.5;
+   }
+*/
+
+  /*
   Real _x_offset = 0.5;
-  Real _perturbation_percent = 0.1;
+  Real _perturbation_percent = 0.4;
   unsigned int _dim = _mesh.dimension();
   const unsigned int root = MathUtils::round(std::pow(_grain_num, 1.0 / _dim));
 
@@ -409,6 +417,21 @@ PolycrystalVoronoiBubbleIC::computeGrainCenters()
       if (_centerpoints[grain](i) < _bottom_left(i))
         _centerpoints[grain](i) = _bottom_left(i);
     }
+
+    */
+
+  _grain_center_file_name = "grain_center.txt";
+  MooseUtils::checkFileReadable(_grain_center_file_name);
+
+  std::ifstream file_prop;
+  file_prop.open(_grain_center_file_name.c_str());
+
+  for (unsigned int i = 0; i < _grain_num; i++)
+    for (unsigned int j = 0; j < 3; j++)
+      if (!(file_prop >> _centerpoints[i](j)))
+        mooseError("Error: Premature end of file");
+
+  file_prop.close();
 
   // Assign grains to specific order parameters in a way that maximizes the
   // distance

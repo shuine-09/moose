@@ -60,6 +60,8 @@ protected:
   Real _R0;
   Real _r0;
 
+  std::string _grain_center_file_name;
+
   /// Type for distance and point
   struct DistancePoint
   {
