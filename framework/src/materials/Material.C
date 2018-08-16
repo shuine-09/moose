@@ -16,7 +16,6 @@ validParams<Material>()
 {
   InputParameters params = validParams<MaterialBase>();
   params += validParams<MaterialPropertyInterface>();
-  params.registerBase("Material");
   return params;
 }
 
