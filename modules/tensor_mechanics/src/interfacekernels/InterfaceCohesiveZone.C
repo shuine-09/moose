@@ -35,8 +35,8 @@ InterfaceCohesiveZone::InterfaceCohesiveZone(const InputParameters & parameters)
         "In order to use the InterfaceCohesiveZone dgkernel, you must specify a boundary where "
         "it will live.");
   }
-  _max_normal_separation = &getMaterialProperty<Real>("max_normal_separation");
-  _max_normal_separation_old = &getMaterialPropertyOld<Real>("max_normal_separation");
+  // _max_normal_separation = &getMaterialProperty<Real>("max_normal_separation");
+  // _max_normal_separation_old = &getMaterialPropertyOld<Real>("max_normal_separation");
 }
 
 Real
@@ -56,11 +56,11 @@ InterfaceCohesiveZone::computeQpResidual(Moose::DGResidualType type)
   switch (type)
   {
     case Moose::Element:
-      r += 1.0e8 * (_u[_qp] - _neighbor_value[_qp]) * _test[_i][_qp];
+      r += 1.0e1 * (_u[_qp] - _neighbor_value[_qp]) * _test[_i][_qp];
       break;
 
     case Moose::Neighbor:
-      r -= 1.0e8 * (_u[_qp] - _neighbor_value[_qp]) * _test_neighbor[_i][_qp];
+      r -= 1.0e1 * (_u[_qp] - _neighbor_value[_qp]) * _test_neighbor[_i][_qp];
       break;
   }
   return r;
@@ -74,19 +74,19 @@ InterfaceCohesiveZone::computeQpJacobian(Moose::DGJacobianType type)
   switch (type)
   {
     case Moose::ElementElement:
-      r += 1.0e8 * _phi[_j][_qp] * _test[_i][_qp];
+      r += 1.0e1 * _phi[_j][_qp] * _test[_i][_qp];
       break;
 
     case Moose::ElementNeighbor:
-      r -= 1.0e8 * _phi_neighbor[_j][_qp] * _test[_i][_qp];
+      r -= 1.0e1 * _phi_neighbor[_j][_qp] * _test[_i][_qp];
       break;
 
     case Moose::NeighborElement:
-      r -= 1.0e8 * _phi[_j][_qp] * _test_neighbor[_i][_qp];
+      r -= 1.0e1 * _phi[_j][_qp] * _test_neighbor[_i][_qp];
       break;
 
     case Moose::NeighborNeighbor:
-      r += 1.0e8 * _phi_neighbor[_j][_qp] * _test_neighbor[_i][_qp];
+      r += 1.0e1 * _phi_neighbor[_j][_qp] * _test_neighbor[_i][_qp];
       break;
   }
 

@@ -35,8 +35,8 @@ protected:
   virtual Real computeQpResidual(Moose::DGResidualType type);
   virtual Real computeQpJacobian(Moose::DGJacobianType type);
 
-  const MaterialProperty<Real> * _max_normal_separation;
-  const MaterialProperty<Real> * _max_normal_separation_old;
+  // const MaterialProperty<Real> * _max_normal_separation;
+  // const MaterialProperty<Real> * _max_normal_separation_old;
 };
 
 #endif
