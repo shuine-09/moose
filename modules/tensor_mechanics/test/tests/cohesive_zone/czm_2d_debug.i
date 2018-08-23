@@ -1,5 +1,5 @@
 [GlobalParams]
-  displacements = 'disp_x disp_y disp_z'
+  displacements = 'disp_x disp_y'
 []
 
 [Mesh]
@@ -7,8 +7,7 @@
 # file = grains_debug.e
 #  file = poly_3d.e
 #  file = gmsh_test_in.e
-#  file = hex_grains_v2.e
-  file = poly3d_cubit.e
+  file = poly2d.msh
   parallel_type = REPLICATED
 []
 
@@ -22,11 +21,9 @@
      normals = '0  -1  0
                 0  1  0
                 -1 0  0
-                1  0  0
-                0  0  -1
-                0  0  1'
+                1  0  0'
      fixed_normal = true
-     new_boundary = '101 102 103 104 105 106'
+     new_boundary = '101 102 103 104'
    [../]
 []
 
@@ -36,10 +33,6 @@
     family = LAGRANGE
   [../]
   [./disp_y]
-    order = FIRST
-    family = LAGRANGE
-  [../]
-  [./disp_z]
     order = FIRST
     family = LAGRANGE
   [../]
@@ -85,18 +78,6 @@
     type = FunctionDirichletBC
     variable = disp_y
     boundary = 102
-    function = 0.01*t
-  [../]
-  [./z1]
-    type = FunctionDirichletBC
-    variable = disp_z
-    boundary = 105
-    function = -0.01*t
-  [../]
-  [./z2]
-    type = FunctionDirichletBC
-    variable = disp_z
-    boundary = 106
     function = 0.01*t
   [../]
 []
