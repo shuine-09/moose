@@ -69,7 +69,7 @@
   issues = '#11775'
 [../]
 
-[./3D3BlocksBreakMeshPolycrystal_test]
+[./3DPolyCrystalBreakMesh_test]
   ###  compare manual vs automatic mesh split
   type = 'Exodiff'
   input = 'TestBreakMesh_3D_polycrystal.i'

@@ -69,6 +69,17 @@
   issues = '#11775'
 [../]
 
+[./2DPolyCrystalBreakMesh_test]
+  ###  compare manual vs automatic mesh split
+  type = 'Exodiff'
+  input = 'TestBreakMesh_2D_polycrystal.i'
+  cli_args = '--mesh-only'
+  exodiff = 'TestBreakMesh_2D_polycrystal_in.e'
+  mesh_mode = REPLICATED
+  recover = false
+  design = 'BreakMeshByBlock.md'
+[../]
+
 [./2D4ElementJunctionBreakMeshSplitInterfaceCompare_test]
   ###  compare manual vs automatic mesh split
   type = 'Exodiff'
