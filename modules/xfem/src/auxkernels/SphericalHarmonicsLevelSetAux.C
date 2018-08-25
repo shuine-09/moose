@@ -159,28 +159,27 @@ SphericalHarmonicsLevelSetAux::computAngle(unsigned int object_id)
   Point center(_object_centers_rotation[object_id][0], _object_centers_rotation[object_id][1], 0);
   Point center_to_node = *_current_node - center;
 
-  // std::cout << "center = " << center << ", center_to_node = " << center_to_node
-  //           << ", angle = " << atan2(center_to_node(1), center_to_node(0)) << std::endl;
-
   Real atan2_v = atan2(center_to_node(1), center_to_node(0));
-
   return atan2_v > 0 ? atan2_v : 2 * libMesh::pi + atan2_v;
 }
 
 Real
-SphericalHarmonicsLevelSetAux::ytotalfunction(int n, int m, Real x, Real y)
+SphericalHarmonicsLevelSetAux::ytotalfunction_real(int n, int m, Real x, Real y)
 {
   // Calculations all from Garboczi 2002 spherical harmonics paper i = sqrt(-1);
   Real factor = sqrt(((2 * n + 1) * factorial(n - m)) / (4 * libMesh::pi * factorial(n + m)));
-
-  if (m < 0)
-    factor *= factorial(n - abs(m)) / factorial(n + abs(m)) * pow(-1, abs(m));
-
   Real yout = boost::math::legendre_p(n, m, x);
-
   Real exp_value_real = cos(m * y);
-
   return factor * yout * exp_value_real;
+}
+
+Real
+SphericalHarmonicsLevelSetAux::ytotalfunction_imaginary(int n, int m, Real x, Real y)
+{
+  Real factor = sqrt(((2 * n + 1) * factorial(n - m)) / (4 * libMesh::pi * factorial(n + m)));
+  Real yout = boost::math::legendre_p(n, m, x);
+  Real exp_value_imaginary = sin(m * y);
+  return factor * yout * exp_value_imaginary;
 }
 
 Real
@@ -190,15 +189,19 @@ SphericalHarmonicsLevelSetAux::computeSHdistance(unsigned int object_id)
 
   std::vector<std::array<Real, 4>> coef = _point_data[object_id];
 
+  Real y = computAngle(object_id);
+
   for (auto & c : coef)
   {
     Real n = c[0];
     Real m = c[1];
     Real real = c[2];
-    Real y = computAngle(object_id);
-    Real y_function_value = ytotalfunction(n, m, 1, y);
-    radius = radius + real * y_function_value;
+    Real imaginary = c[3];
+    Real y_function_value_real = ytotalfunction_real(n, m, 0, y);
+    Real y_function_value_imaginary = ytotalfunction_imaginary(n, m, 0, y);
+    radius = radius + (real * y_function_value_real - imaginary * y_function_value_imaginary);
   }
+
   return radius;
 }
 

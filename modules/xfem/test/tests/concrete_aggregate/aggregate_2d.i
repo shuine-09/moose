@@ -12,9 +12,9 @@
   nx = 101
   ny = 101
   xmin = 0
-  xmax = 100
+  xmax = 60
   ymin = 0
-  ymax = 100
+  ymax = 60
   elem_type = QUAD4
 []
 
@@ -55,8 +55,8 @@
     SH_n = SH_n
     SH_real = SH_real
     SH_imaginary = SH_imaginary
-    point_data_file = SH_data_file.csv
-    center_rotation_data_file = center_rotation_data_file.csv
+    point_data_file = SH_data_file2.csv
+    center_rotation_data_file = center_rotation_data_file2.csv
   [../]
 []
 

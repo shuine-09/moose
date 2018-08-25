@@ -32,7 +32,9 @@ protected:
 
   Real computAngle(unsigned int object_id);
 
-  Real ytotalfunction(int n, int m, Real x, Real y);
+  Real ytotalfunction_real(int n, int m, Real x, Real y);
+
+  Real ytotalfunction_imaginary(int n, int m, Real x, Real y);
 
   Real computeSHdistance(unsigned int object_id);
 
