@@ -78,6 +78,9 @@
 #include "VesicleVolumeConstraint.h"
 #include "VesicleAreaConstraint.h"
 
+#include "ScalarLagrangeMultiplier.h"
+#include "PostprocessorCED.h"
+
 // bcs
 #include "TestLapBC.h"
 
@@ -596,6 +599,8 @@ registerObjects(Factory & factory)
   registerKernel(MaterialDerivativeRankFourTestKernel);
   registerKernel(VesicleVolumeConstraint);
   registerKernel(VesicleAreaConstraint);
+  registerKernel(ScalarLagrangeMultiplier);
+  registerScalarKernel(PostprocessorCED);
 
   // bcs
   registerBoundaryCondition(TestLapBC);
