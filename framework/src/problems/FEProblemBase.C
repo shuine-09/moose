@@ -2290,7 +2290,9 @@ FEProblemBase::addMaterial(const std::string & mat_name,
   for (THREAD_ID tid = 0; tid < libMesh::n_threads(); tid++)
   {
     // Create the general Block/Boundary Material object
-    std::shared_ptr<Material> material = _factory.create<Material>(mat_name, name, parameters, tid);
+    std::shared_ptr<MaterialBase> material =
+        _factory.create<MaterialBase>(mat_name, name, parameters, tid);
+
     bool discrete = !material->getParam<bool>("compute");
 
     // If the object is boundary restricted do not create the neighbor and face objects
@@ -2318,16 +2320,20 @@ FEProblemBase::addMaterial(const std::string & mat_name,
       current_parameters.set<Moose::MaterialDataType>("_material_data_type") =
           Moose::FACE_MATERIAL_DATA;
       object_name = name + "_face";
-      std::shared_ptr<Material> face_material =
-          _factory.create<Material>(mat_name, object_name, current_parameters, tid);
+
+      std::shared_ptr<MaterialBase> face_material =
+          _factory.create<MaterialBase>(mat_name, object_name, current_parameters, tid);
 
       // neighbor material
       current_parameters.set<Moose::MaterialDataType>("_material_data_type") =
           Moose::NEIGHBOR_MATERIAL_DATA;
       current_parameters.set<bool>("_neighbor") = true;
       object_name = name + "_neighbor";
-      std::shared_ptr<Material> neighbor_material =
-          _factory.create<Material>(mat_name, object_name, current_parameters, tid);
+      // std::shared_ptr<Material> neighbor_material =
+      //     _factory.create<Material>(mat_name, object_name, current_parameters, tid);
+
+      std::shared_ptr<MaterialBase> neighbor_material =
+          _factory.create<MaterialBase>(mat_name, object_name, current_parameters, tid);
 
       // Store the material objects
       _all_materials.addObjects(material, neighbor_material, face_material, tid);
