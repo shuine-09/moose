@@ -52,7 +52,7 @@ protected:
    * @param materials Vector of pointers to the Material objects of interest
    */
   void printMaterialProperties(std::stringstream & output,
-                               const std::vector<std::shared_ptr<Material>> & materials) const;
+                               const std::vector<std::shared_ptr<MaterialBase>> & materials) const;
 };
 
 #endif // MATERIALPROPERTYEBUGOUTPUT_H

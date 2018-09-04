@@ -2213,7 +2213,7 @@ FEProblemBase::projectSolution()
   _aux->solution().localize(*_aux->sys().current_local_solution, _aux->dofMap().get_send_list());
 }
 
-std::shared_ptr<Material>
+std::shared_ptr<MaterialBase>
 FEProblemBase::getMaterial(std::string name,
                            Moose::MaterialDataType type,
                            THREAD_ID tid,
@@ -2231,7 +2231,7 @@ FEProblemBase::getMaterial(std::string name,
       break;
   }
 
-  std::shared_ptr<Material> material = _all_materials[type].getActiveObject(name, tid);
+  std::shared_ptr<MaterialBase> material = _all_materials[type].getActiveObject(name, tid);
   if (!no_warn && material->getParam<bool>("compute") && type == Moose::BLOCK_MATERIAL_DATA)
     mooseWarning("You are retrieving a Material object (",
                  material->name(),
@@ -5181,7 +5181,7 @@ FEProblemBase::checkUserObjects()
 
 void
 FEProblemBase::checkDependMaterialsHelper(
-    const std::map<SubdomainID, std::vector<std::shared_ptr<Material>>> & materials_map)
+    const std::map<SubdomainID, std::vector<std::shared_ptr<MaterialBase>>> & materials_map)
 {
   auto & prop_names = _material_props.statefulPropNames();
 
@@ -5195,7 +5195,10 @@ FEProblemBase::checkDependMaterialsHelper(
       const std::set<std::string> & depend_props = mat1->getRequestedItems();
       block_depend_props.insert(depend_props.begin(), depend_props.end());
 
-      auto & alldeps = mat1->getMatPropDependencies(); // includes requested stateful props
+      // TODO:WJ
+      // auto & alldeps = mat1->getMatPropDependencies(); // includes requested stateful props
+      auto & alldeps = std::dynamic_pointer_cast<Material>(mat1)
+                           ->getMatPropDependencies(); // includes requested stateful props
       for (auto & dep : alldeps)
       {
         if (prop_names.count(dep) > 0)

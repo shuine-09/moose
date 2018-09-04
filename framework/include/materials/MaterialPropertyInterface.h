@@ -135,8 +135,8 @@ public:
    * potentially during its calculation. If you don't know what this is/means,
    * then you don't need it.
    */
-  Material & getMaterial(const std::string & name);
-  Material & getMaterialByName(const std::string & name, bool no_warn = false);
+  MaterialBase & getMaterial(const std::string & name);
+  MaterialBase & getMaterialByName(const std::string & name, bool no_warn = false);
   ///@}
 
   ///@{

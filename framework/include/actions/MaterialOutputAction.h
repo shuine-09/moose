@@ -63,7 +63,8 @@ private:
    * act() method.
    */
   template <typename T>
-  void materialOutputHelper(const std::string & property_name, std::shared_ptr<Material> material);
+  void materialOutputHelper(const std::string & property_name,
+                            std::shared_ptr<MaterialBase> material);
 
   /**
    * A method for creating an AuxVariable and associated action
@@ -75,7 +76,7 @@ private:
   std::shared_ptr<MooseObjectAction> createAction(const std::string & type,
                                                   const std::string & property_name,
                                                   const std::string & variable_name,
-                                                  std::shared_ptr<Material> material);
+                                                  std::shared_ptr<MaterialBase> material);
 
   /// Pointer the MaterialData object storing the block restricted materials
   std::shared_ptr<MaterialData> _block_material_data;
@@ -102,7 +103,7 @@ private:
 template <typename T>
 void
 MaterialOutputAction::materialOutputHelper(const std::string & /*property_name*/,
-                                           std::shared_ptr<Material> /*material*/)
+                                           std::shared_ptr<MaterialBase> /*material*/)
 {
   mooseError("Unknown type, you must create a specialization of materialOutputHelper");
 }

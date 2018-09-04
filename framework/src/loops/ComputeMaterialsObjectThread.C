@@ -117,6 +117,7 @@ void
 ComputeMaterialsObjectThread::onBoundary(const Elem * elem, unsigned int side, BoundaryID bnd_id)
 {
   if (_fe_problem.needBoundaryMaterialOnSide(bnd_id, _tid))
+  // if (_mesh.getBoundaryID("Block1_Block2") == bnd_id)
   {
     _assembly[_tid]->reinit(elem, side);
     unsigned int face_n_points = _assembly[_tid]->qRuleFace()->n_points();

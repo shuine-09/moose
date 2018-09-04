@@ -35,21 +35,20 @@ InterfaceCohesiveZone::InterfaceCohesiveZone(const InputParameters & parameters)
         "In order to use the InterfaceCohesiveZone dgkernel, you must specify a boundary where "
         "it will live.");
   }
-  // _max_normal_separation = &getMaterialProperty<Real>("max_normal_separation");
-  // _max_normal_separation_old = &getMaterialPropertyOld<Real>("max_normal_separation");
+  _max_normal_separation = &getMaterialProperty<Real>("max_normal_separation");
+  _max_normal_separation_old = &getMaterialPropertyOld<Real>("max_normal_separation");
 }
 
 Real
 InterfaceCohesiveZone::computeQpResidual(Moose::DGResidualType type)
 {
 
-  // std::cout << "_max_normal_separation_old size = " << (*_max_normal_separation_old).size()
-  //           << std::endl;
-  // std::cout << "_max_normal_separation[ " << _qp << "] = " << (*_max_normal_separation)[_qp]
-  //           << std::endl;
-  // std::cout << "_max_normal_separation_old[ " << _qp << "] = " <<
-  // (*_max_normal_separation_old)[_qp]
-  //           << std::endl;
+  std::cout << "_max_normal_separation_old size = " << (*_max_normal_separation_old).size()
+            << std::endl;
+  std::cout << "_max_normal_separation[ " << _qp << "] = " << (*_max_normal_separation)[_qp]
+            << std::endl;
+  std::cout << "_max_normal_separation_old[ " << _qp << "] = " << (*_max_normal_separation_old)[_qp]
+            << std::endl;
 
   Real r = 0;
 

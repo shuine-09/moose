@@ -1352,10 +1352,10 @@ public:
    *
    * This will return enabled or disabled objects, the main purpose is for iterative materials.
    */
-  std::shared_ptr<Material> getMaterial(std::string name,
-                                        Moose::MaterialDataType type,
-                                        THREAD_ID tid = 0,
-                                        bool no_warn = false);
+  std::shared_ptr<MaterialBase> getMaterial(std::string name,
+                                            Moose::MaterialDataType type,
+                                            THREAD_ID tid = 0,
+                                            bool no_warn = false);
 
   /*
    * Return a pointer to the MaterialData
@@ -1629,7 +1629,7 @@ protected:
    * @see checkProblemIntegrity
    */
   void checkDependMaterialsHelper(
-      const std::map<SubdomainID, std::vector<std::shared_ptr<Material>>> & materials_map);
+      const std::map<SubdomainID, std::vector<std::shared_ptr<MaterialBase>>> & materials_map);
 
   /// Verify that there are no element type/coordinate type conflicts
   void checkCoordinateSystems();
