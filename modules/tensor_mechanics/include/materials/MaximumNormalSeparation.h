@@ -29,9 +29,9 @@ protected:
   virtual void initQpStatefulProperties() override;
 
   const std::string _base_name;
+  MaterialProperty<Real> & _normal_separation;
   MaterialProperty<Real> & _max_normal_separation;
   const MaterialProperty<Real> & _max_normal_separation_old;
-  const MaterialProperty<RankTwoTensor> & _stress;
 
   const VariableValue & _disp_x;
   const VariableValue & _disp_x_neighbor;

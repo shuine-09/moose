@@ -27,9 +27,9 @@ validParams<MaximumNormalSeparation>()
 MaximumNormalSeparation::MaximumNormalSeparation(const InputParameters & parameters)
   : InterfaceMaterial(parameters),
     _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
+    _normal_separation(declareProperty<Real>(_base_name + "normal_separation")),
     _max_normal_separation(declareProperty<Real>(_base_name + "max_normal_separation")),
     _max_normal_separation_old(getMaterialPropertyOld<Real>(_base_name + "max_normal_separation")),
-    _stress(getMaterialPropertyByName<RankTwoTensor>(_base_name + "stress")),
     _disp_x(coupledValue("disp_x")),
     _disp_x_neighbor(coupledNeighborValue("disp_x")),
     _disp_y(coupledValue("disp_y")),
@@ -41,12 +41,18 @@ MaximumNormalSeparation::MaximumNormalSeparation(const InputParameters & paramet
 void
 MaximumNormalSeparation::computeQpProperties()
 {
-  // std::cout << "stress[" << _qp << "] = " << _stress[_qp] << std::endl;
-  _max_normal_separation[_qp] = _disp_y[_qp] - _disp_y_neighbor[_qp];
+  _normal_separation[_qp] = _normals[_qp](0) * (_disp_x_neighbor[_qp] - _disp_x[_qp]) +
+                            _normals[_qp](1) * (_disp_y_neighbor[_qp] - _disp_y[_qp]);
+
+  if (_normal_separation[_qp] > _max_normal_separation_old[_qp])
+    _max_normal_separation[_qp] = _normal_separation[_qp];
+  else
+    _max_normal_separation[_qp] = _max_normal_separation_old[_qp];
 }
 
 void
 MaximumNormalSeparation::initQpStatefulProperties()
 {
   _max_normal_separation[_qp] = 0.0;
+  _normal_separation[_qp] = 0.0;
 }

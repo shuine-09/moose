@@ -5195,10 +5195,8 @@ FEProblemBase::checkDependMaterialsHelper(
       const std::set<std::string> & depend_props = mat1->getRequestedItems();
       block_depend_props.insert(depend_props.begin(), depend_props.end());
 
-      // TODO:WJ
-      // auto & alldeps = mat1->getMatPropDependencies(); // includes requested stateful props
-      auto & alldeps = std::dynamic_pointer_cast<Material>(mat1)
-                           ->getMatPropDependencies(); // includes requested stateful props
+      auto & alldeps = mat1->getMatPropDependencies(); // includes requested stateful props
+
       for (auto & dep : alldeps)
       {
         if (prop_names.count(dep) > 0)

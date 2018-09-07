@@ -12,40 +12,32 @@
 /*            See COPYRIGHT for full restrictions               */
 /****************************************************************/
 
-#ifndef INTERFACECOHESIVEZONE_H
-#define INTERFACECOHESIVEZONE_H
+#ifndef INTERFACEGLUEDCONTACT_H
+#define INTERFACEGLUEDCONTACT_H
 
 #include "InterfaceKernel.h"
 
 // Forward Declarations
-class InterfaceCohesiveZone;
+class InterfaceGluedContact;
 
 template <>
-InputParameters validParams<InterfaceCohesiveZone>();
+InputParameters validParams<InterfaceGluedContact>();
 
 /**
  * DG kernel for interfacing diffusion between two variables on adjacent blocks
  */
-class InterfaceCohesiveZone : public InterfaceKernel
+class InterfaceGluedContact : public InterfaceKernel
 {
 public:
-  InterfaceCohesiveZone(const InputParameters & parameters);
+  InterfaceGluedContact(const InputParameters & parameters);
 
 protected:
   virtual Real computeQpResidual(Moose::DGResidualType type);
   virtual Real computeQpJacobian(Moose::DGJacobianType type);
 
-  /// Initial stiffness for the cohesive zone
-  Real _stiffness;
-  /// Max traction
-  Real _max_traction;
-  /// Strain energy release rate
-  Real _Gc;
-
+  const Real _alpha;
   const unsigned int _component;
-
-  const MaterialProperty<Real> & _max_normal_separation;
-  const MaterialProperty<Real> & _normal_separation;
+  const bool _tangential;
 };
 
 #endif
