@@ -985,7 +985,7 @@ XFEM::markCutEdgesByState(Real time)
     if (edge_cut)
     {
       if (!_use_crack_growth_increment)
-      // if (1)
+      //if (1)
       {
         _efa_mesh.addElemEdgeIntersection(elem->id(), edge_id_keep, distance_keep);
         marked_edges = true;
