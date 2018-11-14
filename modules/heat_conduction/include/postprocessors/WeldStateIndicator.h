@@ -50,6 +50,8 @@ protected:
 
   Real _min_u;
 
+  bool _has_melted;
+
   WeldStateType _state;
 
   Real _start_time;

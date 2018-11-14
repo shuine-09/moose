@@ -32,6 +32,7 @@ WeldStateIndicator::WeldStateIndicator(const InputParameters & parameters)
   : ElementUserObject(parameters),
     _u(coupledValue("variable")),
     _min_u(std::numeric_limits<Real>::max()),
+    _has_melted(false),
     _start_time(getParam<Real>("start_time")),
     _end_time(getParam<Real>("end_time")),
     _melting_temp(getParam<Real>("melting_temp"))
@@ -64,12 +65,17 @@ WeldStateIndicator::finalize()
 {
   gatherMin(_min_u);
 
+  _min_u *= 1.5;
+
   if (_t < _start_time)
     _state = BEFORE;
-  else if (_min_u < _melting_temp && _t < _end_time)
+  else if (_min_u < _melting_temp && _t < _end_time && !_has_melted)
     _state = HEATING;
   else if (_min_u >= _melting_temp && _t < _end_time)
+  {
     _state = COOLING;
+    _has_melted = true;
+  }
   else
     _state = AFTER;
 }

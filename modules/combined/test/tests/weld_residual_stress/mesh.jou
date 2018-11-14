@@ -1,0 +1,200 @@
+reset
+undo on
+graphics axis on
+
+# ---- dimensions ----
+#{upper_diameter=4672}
+#{lower_diameter=4432}
+#{lower_radius=lower_diameter/2}
+#{upper_radius=upper_diameter/2}
+#{wall_thickness=40}
+#{y1=750}
+#{y2=76}
+#{y3=300}
+#{weld_length=25}
+#{factor=.001}
+
+### Create general structure:
+create surface rectangle width {wall_thickness} height {y1} zplane
+surface 1 move x {lower_radius + wall_thickness/2} y {y1/2}
+create surface rectangle width {upper_radius - lower_radius + wall_thickness} height {y2} zplane
+surface 2 move x {lower_radius + (upper_radius - lower_radius + wall_thickness)/2} y {y1+y2/2}
+create surface rectangle width {wall_thickness} height {y3} zplane
+surface 3 move x {upper_radius + wall_thickness/2} y {y1+y2+y3/2}
+
+### Create Weld Area (Approximated dimensions based on picture in paper)
+create surface rectangle width {weld_length} height {weld_length} zplane
+surface 4 move x {upper_radius - weld_length/2} y {y1+y2+weld_length/2}
+create curve vertex 13 15 
+webcut volume 4  sweep curve 17  yaxis angle 360 
+delete volume 5
+create vertex {upper_radius+wall_thickness} {y1+y2+15} 0
+create vertex {upper_radius+wall_thickness+2.5} {y1+y2+15/2} 0
+create curve arc three vertex 21 22 5  
+create curve vertex 21 5
+create surface curve 20 21
+create vertex {upper_radius+wall_thickness-14} {y1+y2+6}
+create vertex {upper_radius+wall_thickness-7} {y1+y2+11}
+create curve arc three vertex 26 27 21
+create vertex {upper_radius+14} {y1+y2+18}
+create curve arc three vertex 26 29 13
+create surface curve 16 23 22 21 11
+unite body 4 7
+subtract volume 4 from volume 3 keep
+delete volume 3
+merge all
+compress ids all
+
+### whoops! - change weld to ellipse ###
+delete volume 4
+create surface ellipse major radius 7.5 minor radius 2 zplane 
+volume 6 rotate 90 about z
+volume 6 move x {upper_radius+wall_thickness} y {y1+y2+15/2}
+webcut volume 6 with plane xplane offset {upper_radius+wall_thickness}
+delete body 7
+merge all
+compress ids all
+
+
+###Partition Weld Area
+webcut volume 3 with plane xplane offset {upper_radius+wall_thickness-14}  noimprint nomerge 
+webcut volume 3 with plane xplane offset {upper_radius+wall_thickness-2*14/3}  noimprint nomerge 
+webcut volume 3 with plane xplane offset {upper_radius+wall_thickness-14/3}  noimprint nomerge 
+webcut volume 5 with plane yplane offset {y1+y2+15/2} noimprint nomerge
+#{segment=((upper_radius+wall_thickness-14)-(upper_radius-weld_length))/5}
+create vertex {upper_radius-weld_length+segment} {y1+y2}
+create vertex {upper_radius-weld_length+2*segment} {y1+y2}
+create vertex {upper_radius-weld_length+3*segment} {y1+y2}
+create vertex {upper_radius-weld_length+4*segment} {y1+y2}
+create vertex on curve 23  fraction .2 from vertex 18  
+create vertex on curve 23  fraction .4 from vertex 18  
+create vertex on curve 23  fraction .6 from vertex 18  
+create vertex on curve 23  fraction .8 from vertex 18 
+create curve vertex 32 39   
+create curve vertex 38 33  
+create curve vertex 34 37  
+create curve vertex 35 36  
+webcut volume 6  sweep curve 43  yaxis angle 360 
+webcut volume 10  sweep curve 44  yaxis angle 360 
+webcut volume 10  sweep curve 45  yaxis angle 360 
+webcut volume 12  sweep curve 46  yaxis angle 360 
+create vertex on curve 10  fraction .5 
+create vertex on curve 56  fraction .5 
+create curve vertex 57 56  
+webcut volume 11 6  sweep curve 71  yaxis angle 360
+
+
+delete curve 10
+delete curve 43
+delete curve 44
+delete curve 71
+delete vertex 11
+delete vertex 13
+delete vertex 14
+
+### mesh weld area
+merge all
+surface 25 24 22 23 18 20 size 1
+mesh surface 25 24 22 23 
+imprint volume 10  with curve 74 76 
+merge all
+mesh surface 18 20 
+imprint volume 3  with volume 9 5  
+merge volume 3  
+surface 12 13 size .5
+mesh surface 12 13
+merge all
+surface 10 size .8
+mesh surface 10
+surface 11 size 1
+mesh surface 11
+surface 9 21 size .8 
+mesh surface 9 21
+
+
+
+### Mesh other stuff
+surface 1 size 30
+mesh surface 1
+imprint volume 2 with volume 6 11 12 13 7 8 3
+imprint volume 2 with volume 1
+merge all
+curve 8  interval 32
+curve 8  scheme bias factor .925 
+mesh curve 8 
+curve 94  interval 17
+curve 94  scheme bias factor 1.2 
+mesh curve 94 
+surface 2 size 15 scheme pave
+mesh surface 2
+curve 15 interval 2 
+curve 16  interval 42
+curve 16  scheme bias factor .925 
+mesh curve 16 
+curve 14  interval 50
+curve 14  scheme bias factor 1.075 
+mesh curve 14 
+imprint volume 4 with volume 15 14 13 12 8 7 3
+merge all
+mesh surface 4
+
+
+
+### Final Preparations:
+block 1 surface 21
+block 2 surface 20 
+block 3 surface 18
+block 4 surface 9
+block 5 surface 11
+block 6 surface 10
+block 7 surface 12
+block 8 surface 13
+block 9 surface 22
+block 10 surface 23
+block 11 surface 25
+block 12 surface 24
+block 100 surface 1 2 4
+
+block all element type QUAD4
+
+
+#top
+sideset 1 curve 15
+
+#bottom
+sideset 2 curve 3
+
+#inner top node
+nodeset 3 vertex 6
+
+#outer bottom node
+nodeset 4 vertex 7
+
+#all nodes in nodeset
+nodeset 1000 node all
+
+volume all scale 0.001
+
+export mesh 'weld_mesh.e' overwrite
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

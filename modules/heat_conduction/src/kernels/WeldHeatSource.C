@@ -50,5 +50,7 @@ WeldHeatSource::computeQpResidual()
   if (_state != WeldStateIndicator::WeldStateType::HEATING)
     factor = 0.0;
 
+  // std::cout << "WeldHeatSource : State = " << _state << std::endl;
+
   return _test[_i][_qp] * -factor;
 }

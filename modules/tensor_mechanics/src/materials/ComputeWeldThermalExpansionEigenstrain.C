@@ -7,24 +7,29 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "ComputeWeldingIsotropicElasticityTensor.h"
+#include "ComputeWeldThermalExpansionEigenstrain.h"
+#include "Function.h"
 #include "WeldStateIndicator.h"
 
-registerMooseObject("TensorMechanicsApp", ComputeWeldingIsotropicElasticityTensor);
+registerMooseObject("TensorMechanicsApp", ComputeWeldThermalExpansionEigenstrain);
 
 template <>
 InputParameters
-validParams<ComputeWeldingIsotropicElasticityTensor>()
+validParams<ComputeWeldThermalExpansionEigenstrain>()
 {
-  InputParameters params = validParams<ComputeIsotropicElasticityTensor>();
-  params.addClassDescription("Compute weld isotropic elasticity tensor.");
+  InputParameters params = validParams<ComputeThermalExpansionEigenstrainBase>();
+  params.addClassDescription("Computes eigenstrain due to thermal expansion "
+                             "with a constant coefficient");
+  params.addRequiredParam<Real>("thermal_expansion_coeff", "Thermal expansion coefficient");
   params.addRequiredParam<UserObjectName>("weld_state", "UserObject name of weld state indicator.");
+
   return params;
 }
 
-ComputeWeldingIsotropicElasticityTensor::ComputeWeldingIsotropicElasticityTensor(
+ComputeWeldThermalExpansionEigenstrain::ComputeWeldThermalExpansionEigenstrain(
     const InputParameters & parameters)
-  : ComputeIsotropicElasticityTensor(parameters)
+  : ComputeThermalExpansionEigenstrainBase(parameters),
+    _thermal_expansion_coeff(getParam<Real>("thermal_expansion_coeff"))
 {
   UserObjectName uo_name = getParam<UserObjectName>("weld_state");
   const UserObject * uo = &(getUserObjectByName<WeldStateIndicator>(uo_name));
@@ -37,20 +42,29 @@ ComputeWeldingIsotropicElasticityTensor::ComputeWeldingIsotropicElasticityTensor
 }
 
 void
-ComputeWeldingIsotropicElasticityTensor::computeQpElasticityTensor()
+ComputeWeldThermalExpansionEigenstrain::computeThermalStrain(Real & thermal_strain,
+                                                             Real & instantaneous_cte)
 {
   WeldStateIndicator::WeldStateType _state = _weld_state->getWeldState();
 
   Real factor = 1.0;
   // Assign elasticity tensor at a given quad point
   if (_state == WeldStateIndicator::WeldStateType::BEFORE)
-    factor = 0.00001;
+  {
+    factor = 0.00000001;
+  }
   else if (_state == WeldStateIndicator::WeldStateType::HEATING)
-    factor = 0.00001;
+  {
+    factor = 0.00000001;
+  }
   else if (_state == WeldStateIndicator::WeldStateType::COOLING)
+  {
     factor = 1.0;
+  }
   else
     factor = 1.0;
 
-  _elasticity_tensor[_qp] = factor * _Cijkl;
+  thermal_strain =
+      _thermal_expansion_coeff * (_temperature[_qp] - _stress_free_temperature[_qp]) * factor;
+  instantaneous_cte = _thermal_expansion_coeff * factor;
 }
