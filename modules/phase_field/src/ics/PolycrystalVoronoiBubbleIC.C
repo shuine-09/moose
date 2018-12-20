@@ -359,16 +359,15 @@ PolycrystalVoronoiBubbleIC::computeGrainCenters()
 
   // Randomly generate the centers of the individual grains represented by the
   // Voronoi tessellation
-  /*
-   for (unsigned int grain = 0; grain < _grain_num; grain++)
-   {
-     for (unsigned int i = 0; i < LIBMESH_DIM; i++)
-       _centerpoints[grain](i) = _bottom_left(i) + _range(i) * MooseRandom::rand();
 
-     if (_columnar_3D)
-       _centerpoints[grain](2) = _bottom_left(2) + _range(2) * 0.5;
-   }
-*/
+  for (unsigned int grain = 0; grain < _grain_num; grain++)
+  {
+    for (unsigned int i = 0; i < LIBMESH_DIM; i++)
+      _centerpoints[grain](i) = _bottom_left(i) + _range(i) * MooseRandom::rand();
+
+    if (_columnar_3D)
+      _centerpoints[grain](2) = _bottom_left(2) + _range(2) * 0.5;
+  }
 
   /*
   Real _x_offset = 0.5;
@@ -420,18 +419,33 @@ PolycrystalVoronoiBubbleIC::computeGrainCenters()
 
     */
 
-  _grain_center_file_name = "grain_center.txt";
-  MooseUtils::checkFileReadable(_grain_center_file_name);
-
-  std::ifstream file_prop;
-  file_prop.open(_grain_center_file_name.c_str());
+  // _grain_center_file_name = "grain_center.txt";
+  // MooseUtils::checkFileReadable(_grain_center_file_name);
+  //
+  // std::ifstream file_prop;
+  // file_prop.open(_grain_center_file_name.c_str());
+  //
+  // for (unsigned int i = 0; i < _grain_num; i++)
+  // {
+  //   for (unsigned int j = 0; j < 3; j++)
+  //   {
+  //     if (j != 2)
+  //     {
+  //       if (!(file_prop >> _centerpoints[i](j)))
+  //         mooseError("Error: Premature end of file");
+  //     }
+  //     else
+  //     {
+  //       _centerpoints[i](2) = 0.;
+  //     }
+  //   }
+  // }
+  // file_prop.close();
 
   for (unsigned int i = 0; i < _grain_num; i++)
-    for (unsigned int j = 0; j < 3; j++)
-      if (!(file_prop >> _centerpoints[i](j)))
-        mooseError("Error: Premature end of file");
-
-  file_prop.close();
+  {
+    std::cout << "grain id = " << i << ", center = " << _centerpoints[i] << std::endl;
+  }
 
   // Assign grains to specific order parameters in a way that maximizes the
   // distance

@@ -46,6 +46,7 @@ validParams<PolycrystalVoronoiVoidIC>()
                                 "The index for the current "
                                 "order parameter, not needed if "
                                 "structure_type = voids");
+  params.addParam<FileName>("grain_center_file_name", "", "Name of the grain center file name");
   return params;
 }
 
@@ -56,7 +57,8 @@ PolycrystalVoronoiVoidIC::PolycrystalVoronoiVoidIC(const InputParameters & param
     _grain_num(getParam<unsigned int>("grain_num")),
     _op_index(getParam<unsigned int>("op_index")),
     _rand_seed(getParam<unsigned int>("rand_seed")),
-    _columnar_3D(getParam<bool>("columnar_3D"))
+    _columnar_3D(getParam<bool>("columnar_3D")),
+    _grain_center_file_name(getParam<FileName>("grain_center_file_name"))
 {
   if (_invalue < _outvalue)
     mooseError("PolycrystalVoronoiVoidIC requires that the voids be "
@@ -288,16 +290,39 @@ PolycrystalVoronoiVoidIC::computeGrainCenters()
   _centerpoints.resize(_grain_num);
   _assigned_op.resize(_grain_num);
 
-  // Randomly generate the centers of the individual grains represented by the
-  // Voronoi tessellation
-  for (unsigned int grain = 0; grain < _grain_num; grain++)
-  {
-    for (unsigned int i = 0; i < LIBMESH_DIM; i++)
-      _centerpoints[grain](i) = _bottom_left(i) + _range(i) * MooseRandom::rand();
+  // Randomly generate the centers of the individual grains represented by the Voronoi
+  //     tessellation
+  // for (unsigned int grain = 0; grain < _grain_num; grain++)
+  // {
+  //   for (unsigned int i = 0; i < LIBMESH_DIM; i++)
+  //     _centerpoints[grain](i) = _bottom_left(i) + _range(i) * MooseRandom::rand();
+  //
+  //   if (_columnar_3D)
+  //     _centerpoints[grain](2) = _bottom_left(2) + _range(2) * 0.5;
+  // }
 
-    if (_columnar_3D)
-      _centerpoints[grain](2) = _bottom_left(2) + _range(2) * 0.5;
+  _grain_center_file_name = "grain_center.txt";
+  MooseUtils::checkFileReadable(_grain_center_file_name);
+
+  std::ifstream file_prop;
+  file_prop.open(_grain_center_file_name.c_str());
+
+  for (unsigned int i = 0; i < _grain_num; i++)
+  {
+    for (unsigned int j = 0; j < 3; j++)
+    {
+      if (j != 2)
+      {
+        if (!(file_prop >> _centerpoints[i](j)))
+          mooseError("Error: Premature end of file");
+      }
+      else
+      {
+        _centerpoints[i](2) = 0.;
+      }
+    }
   }
+  file_prop.close();
 
   // Assign grains to specific order parameters in a way that maximizes the
   // distance

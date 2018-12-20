@@ -55,6 +55,8 @@ protected:
   std::vector<Point> _centerpoints;
   std::vector<unsigned int> _assigned_op;
 
+  std::string _grain_center_file_name;
+
   /// Type for distance and point
   struct DistancePoint
   {

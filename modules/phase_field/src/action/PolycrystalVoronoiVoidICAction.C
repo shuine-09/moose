@@ -41,14 +41,16 @@ PolycrystalVoronoiVoidICAction::act()
   for (unsigned int op = 0; op < _op_num; op++)
   {
     // Set parameters for BoundingBoxIC
-    InputParameters poly_params = _factory.getValidParams("PolycrystalVoronoiBubbleIC");
+    InputParameters poly_params = _factory.getValidParams("PolycrystalVoronoiVoidIC");
     poly_params.applyParameters(parameters());
     poly_params.set<unsigned int>("op_index") = op;
     poly_params.set<VariableName>("variable") = _var_name_base + Moose::stringify(op);
     poly_params.set<MooseEnum>("structure_type") = "grains";
 
+    // poly_params.set<FileName>("grain_center_file_name") = "grain_center.txt";
+
     // Add initial condition
     _problem->addInitialCondition(
-        "PolycrystalVoronoiBubbleIC", name() + "_" + Moose::stringify(op), poly_params);
+        "PolycrystalVoronoiVoidIC", name() + "_" + Moose::stringify(op), poly_params);
   }
 }
