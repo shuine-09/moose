@@ -61,6 +61,8 @@ protected:
 
   /// Old value of history variable
   const MaterialProperty<Real> & _hist_old;
+
+  bool _use_spectral;
 };
 
 #endif // COMPUTEISOTROPICLINEARELASTICPFFRACTURESTRESS_H
