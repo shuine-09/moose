@@ -176,7 +176,7 @@
   [./pfbulkmat]
     type = GenericConstantMaterial
     prop_names = 'l visco'
-    prop_values = '0.8e-4 1e-5' #'1e-3 0.02 1e-3'
+      prop_values = '0.2e-4 1e-5' #'1e-3 0.02 1e-3'
   [../]
   [./define_mobility]
     type = ParsedMaterial
@@ -193,12 +193,13 @@
   [./elastic]
     #type = ComputeIsotropicLinearElasticPFFractureStress
     #type = ComputeLinearElasticPFFractureStress
-    type = ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy
+    type = ComputeLinearElasticPFFractureStressWithLinearFractureEnergy
+    #type = ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy
     c = c
     F_name = E_el
-    kdamage = 1.0e-6
+    kdamage = 1.0e-4
     #use_spectral = false
-    #use_current_history_variable = false
+    use_current_history_variable = false
   [../]
   [./gc]
     type = GenericFunctionMaterial
@@ -239,7 +240,7 @@
   nl_rel_tol = 1e-7
   l_max_its = 20
   nl_max_its = 30
-  dt = 1
+  dt = 5
   #dt_min = 1.0e-2
   end_time = 15000
   line_search = default
