@@ -97,20 +97,26 @@
   [../]
 []
 
-# [Kernels]
-#   [./solid_x]
-#     type = PhaseFieldFractureMechanicsOffDiag
-#     variable = disp_x
-#     component = 0
-#     c = c
-#   [../]
-#   [./solid_y]
-#     type = PhaseFieldFractureMechanicsOffDiag
-#     variable = disp_y
-#     component = 1
-#     c = c
-#   [../]
-# []
+[Kernels]
+  [./solid_x]
+    type = PhaseFieldFractureMechanicsOffDiag
+    variable = disp_x
+    component = 0
+    c = c
+  [../]
+  [./solid_y]
+    type = PhaseFieldFractureMechanicsOffDiag
+    variable = disp_y
+    component = 1
+    c = c
+  [../]
+  # [./off_disp]
+  #   type = AllenCahnElasticEnergyOffDiag
+  #   variable = c
+  #   displacements = 'disp_x disp_y'
+  #   mob_name = L
+  # [../]
+[]
 
 [BCs]
   [no_x_center]
@@ -196,14 +202,14 @@
   [../]
   [./elastic]
     #type = ComputeIsotropicLinearElasticPFFractureStress
-    type = ComputeLinearElasticPFFractureStress
-    #type = ComputeLinearElasticPFFractureStressWithLinearFractureEnergy
+    #type = ComputeLinearElasticPFFractureStress
+    type = ComputeLinearElasticPFFractureStressWithLinearFractureEnergy
     #type = ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy
     c = c
     F_name = E_el
     kdamage = 1.0e-4
     #use_spectral = false
-    use_current_history_variable = false
+    use_current_history_variable = true
     use_vi_solver = true
   [../]
   [./gc]
