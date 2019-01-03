@@ -40,7 +40,7 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
 
   RankTwoTensor stress0pos, stress0neg;
 
-  if (c < 0.9)
+  //if (c < 0.9)
   {
     // projection tensor
     RankFourTensor proj_pos = stress.positiveProjectionEigenDecomposition(eigval, eigvec);
@@ -106,6 +106,7 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
                               (proj_pos * _elasticity_tensor[_qp]) +
                           proj_neg * _elasticity_tensor[_qp];
   }
+  /*
   else
   {
     RankTwoTensor I(RankTwoTensor::initIdentity);
@@ -160,7 +161,8 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
                             _elasticity_tensor[_qp];
 
     RankTwoTensor test = _stress[_qp] - _Jacobian_mult[_qp] * _mechanical_strain[_qp];
-    if (test.L2norm() > 1e-8)
-      mooseWarning("Wrong Jacobian");
+    //if (test.L2norm() > 1e-8)
+    //  mooseWarning("Wrong Jacobian");
   }
+  */
 }
