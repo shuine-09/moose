@@ -9,6 +9,7 @@
 
 #include "FiniteStrainHyperElasticViscoPlastic.h"
 #include "libmesh/utility.h"
+#include "MooseException.h"
 
 registerMooseObject("TensorMechanicsApp", FiniteStrainHyperElasticViscoPlastic);
 
@@ -235,12 +236,15 @@ FiniteStrainHyperElasticViscoPlastic::computeQpStress()
     }
 
     if (substep_iter > _max_substep_iter)
-      mooseError("Constitutive failure with substepping at quadrature point ",
-                 _q_point[_qp](0),
-                 " ",
-                 _q_point[_qp](1),
-                 " ",
-                 _q_point[_qp](2));
+    {
+      mooseWarning("Constitutive failure with substepping at quadrature point ",
+                   _q_point[_qp](0),
+                   " ",
+                   _q_point[_qp](1),
+                   " ",
+                   _q_point[_qp](2));
+      throw MooseException("FiniteStrainHyperElasticViscoPlastic: Constitutive failure.");
+    }
   } while (!converge);
 
   postSolveQp();
