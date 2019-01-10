@@ -115,14 +115,14 @@ ComputeMultiPhaseLinearElasticPFFractureStress::computeQpStress()
 
   // Elastic free energy density
   _F[_qp] = hist_variable * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - G0_neg +
-            _gc[_qp] / (2 * _l[_qp]) * c * c + c * c * _mechanical_strain[_qp].trace() * _pressure;
+            _gc_prop[_qp] / (2 * _l[_qp]) * c * c + c * c * _mechanical_strain[_qp].trace() * _pressure;
 
   // derivative of elastic free energy density wrt c
-  _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + _gc[_qp] / _l[_qp] * c +
+  _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + _gc_prop[_qp] / _l[_qp] * c +
                2 * c * _mechanical_strain[_qp].trace() * _pressure;
 
   // 2nd derivative of elastic free energy density wrt c
-  _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage) + _gc[_qp] / _l[_qp] +
+  _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage) + _gc_prop[_qp] / _l[_qp] +
                  2 * _mechanical_strain[_qp].trace() * _pressure;
 
   // 2nd derivative wrt c and strain = 0.0 if we used the previous step's history varible

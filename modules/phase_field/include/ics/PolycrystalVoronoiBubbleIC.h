@@ -37,7 +37,7 @@ protected:
   const MooseEnum _structure_type;
 
   const unsigned int _op_num;
-  const unsigned int _grain_num;
+  unsigned int _grain_num;
   const unsigned int _op_index;
 
   const unsigned int _rand_seed;
@@ -59,6 +59,8 @@ protected:
 
   Real _R0;
   Real _r0;
+
+  FileName _file_name;
 
   /// Type for distance and point
   struct DistancePoint

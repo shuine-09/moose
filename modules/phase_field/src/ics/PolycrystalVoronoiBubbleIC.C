@@ -13,6 +13,7 @@
 #include "MooseMesh.h"
 #include "MooseVariable.h"
 #include "MathUtils.h"
+#include "DelimitedFileReader.h"
 
 InputParameters
 PolycrystalVoronoiBubbleIC::actionParameters()
@@ -20,8 +21,8 @@ PolycrystalVoronoiBubbleIC::actionParameters()
   InputParameters params = validParams<MultiSmoothCircleIC>();
 
   params.addRequiredParam<unsigned int>("op_num", "Number of order parameters");
-  params.addRequiredParam<unsigned int>(
-      "grain_num", "Number of grains being represented by the order parameters");
+  params.addParam<unsigned int>(
+      "grain_num",0, "Number of grains being represented by the order parameters");
 
   params.addParam<unsigned int>("rand_seed", 12444, "The random seed");
 
@@ -49,6 +50,10 @@ validParams<PolycrystalVoronoiBubbleIC>()
                                 "The index for the current "
                                 "order parameter, not needed if "
                                 "structure_type = voids");
+  params.addParam<FileName>("file_name",
+                            "",
+                            "File containing grain centroids, if file_name is provided, the centroids "
+                            "from the file will be used.");
   return params;
 }
 
@@ -61,7 +66,8 @@ PolycrystalVoronoiBubbleIC::PolycrystalVoronoiBubbleIC(const InputParameters & p
     _rand_seed(getParam<unsigned int>("rand_seed")),
     _columnar_3D(getParam<bool>("columnar_3D")),
     _R0(getParam<Real>("R0")),
-    _r0(getParam<Real>("r0"))
+    _r0(getParam<Real>("r0")),
+    _file_name(getParam<FileName>("file_name"))
 {
   if (_invalue < _outvalue)
     mooseError("PolycrystalVoronoiBubbleIC requires that the voids be "
@@ -343,81 +349,58 @@ PolycrystalVoronoiBubbleIC::grainValueCalc(const Point & p)
 void
 PolycrystalVoronoiBubbleIC::computeGrainCenters()
 {
+  if (!_file_name.empty())
+  {
+    MooseUtils::DelimitedFileReader txt_reader(_file_name, &_communicator);
+
+    txt_reader.read();
+    std::vector<std::string> col_names = txt_reader.getNames();
+    std::vector<std::vector<Real>> data = txt_reader.getData();
+
+    _grain_num = data[0].size();
+    _centerpoints.resize(_grain_num);
+
+    for (unsigned int i = 0; i < col_names.size(); ++i)
+    {
+      // Check vector lengths
+      if (data[i].size() != _grain_num)
+        paramError("Columns in ", _file_name, " do not have uniform lengths.");
+    }
+
+    for (unsigned int grain = 0; grain < _grain_num; ++grain)
+    {
+      _centerpoints[grain](0) = data[0][grain];
+      _centerpoints[grain](1) = data[1][grain];
+      if (col_names.size() > 2)
+        _centerpoints[grain](2) = data[2][grain];
+      else
+        _centerpoints[grain](2) = 0.0;
+    }
+  }
+  else
+  {
+    _centerpoints.resize(_grain_num);
+    // Randomly generate the centers of the individual grains represented by the
+    // Voronoi tessellation
+    for (unsigned int grain = 0; grain < _grain_num; grain++)
+    {
+      for (unsigned int i = 0; i < LIBMESH_DIM; i++)
+        _centerpoints[grain](i) = _bottom_left(i) + _range(i) * MooseRandom::rand();
+
+      if (_columnar_3D)
+        _centerpoints[grain](2) = _bottom_left(2) + _range(2) * 0.5;
+    }
+  }
+
   if (_op_num > _grain_num)
-    mooseError("ERROR in PolycrystalVoronoiBubbleIC: Number of order parameters "
+    mooseError("ERROR in PolycrystalVoronoiVoidIC: Number of order parameters "
                "(op_num) can't be "
                "larger than the number of grains (grain_num)");
 
-  // Initialize vectors
-  _centerpoints.resize(_grain_num);
   _assigned_op.resize(_grain_num);
-
-  // // Randomly generate the centers of the individual grains represented by the
-  // // Voronoi tessellation
-  // for (unsigned int grain = 0; grain < _grain_num; grain++)
-  // {
-  //   for (unsigned int i = 0; i < LIBMESH_DIM; i++)
-  //     _centerpoints[grain](i) = _bottom_left(i) + _range(i) * MooseRandom::rand();
-  //
-  //   if (_columnar_3D)
-  //     _centerpoints[grain](2) = _bottom_left(2) + _range(2) * 0.5;
-  // }
-
-  Real _x_offset = 0.25;
-  Real _perturbation_percent = 0.1;
-  unsigned int _dim = _mesh.dimension();
-  const unsigned int root = MathUtils::round(std::pow(_grain_num, 1.0 / _dim));
-
-  std::vector<Real> distances(_grain_num);
-  std::vector<Point> holder(_grain_num);
-
-  const Real ndist = 1.0 / root;
-
-  // Assign the relative center points positions, defining the grains according to a hexagonal
-  // pattern
-  unsigned int count = 0;
-  for (unsigned int k = 0; k < (_dim == 3 ? root : 1); ++k)
-    for (unsigned int j = 0; j < (_dim >= 2 ? root : 1); ++j)
-      for (unsigned int i = 0; i < root; ++i)
-      {
-        // set x-coordinate
-        holder[count](0) = i * ndist * 1.1 + (0.5 * ndist * 1.1 * (j % 2)) + _x_offset * ndist;
-
-        // set y-coordinate
-        holder[count](1) = j * ndist * 1.1 + (0.5 * ndist * 1.1 * (k % 2)) + _x_offset * ndist;
-
-        // set z-coordinate
-        holder[count](2) = k * ndist * 1.1 + _x_offset * ndist;
-
-           // set y-coordinate
-        //holder[count](1) = j * ndist + (0.5 * ndist * (k % 2));
-
-        // set z-coordinate
-        //holder[count](2) = k * ndist;
-
-
-        // increment counter
-        count++;
-      }
-
-  // Assign center point values
-  for (unsigned int grain = 0; grain < _grain_num; ++grain)
-    for (unsigned int i = 0; i < LIBMESH_DIM; ++i)
-    {
-      if (_range(i) == 0)
-        continue;
-
-      Real perturbation_dist = (_range(i) / root * (_random.rand(_tid) * 2 - 1.0)) *
-                               _perturbation_percent; // Perturb -100 to 100%
-      _centerpoints[grain](i) = _bottom_left(i) + _range(i) * holder[grain](i) + perturbation_dist;
-
-      if (_centerpoints[grain](i) > _top_right(i))
-        _centerpoints[grain](i) = _top_right(i);
-      if (_centerpoints[grain](i) < _bottom_left(i))
-        _centerpoints[grain](i) = _bottom_left(i);
-    }
 
   // Assign grains to specific order parameters in a way that maximizes the
   // distance
   _assigned_op = PolycrystalICTools::assignPointsToVariables(_centerpoints, _op_num, _mesh, _var);
 }
+
