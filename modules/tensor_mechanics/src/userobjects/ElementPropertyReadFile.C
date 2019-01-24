@@ -27,7 +27,7 @@ validParams<ElementPropertyReadFile>()
   params.addParam<unsigned int>("ngrain", 0, "Number of grains");
   params.addParam<unsigned int>("nblock", 0, "Number of blocks");
   params.addParam<MooseEnum>("read_type",
-                             MooseEnum("element grain block none", "none"),
+                             MooseEnum("element grain block voxel none", "none"),
                              "Type of property distribution: element:element by element property "
                              "variation; grain:voronoi grain structure");
   params.addParam<unsigned int>("rand_seed", 2000, "random seed");
@@ -76,6 +76,9 @@ ElementPropertyReadFile::ElementPropertyReadFile(const InputParameters & paramet
     case 2:
       readBlockData();
       break;
+    case 3:
+      readVoxelData();
+      break;
 
     default:
       mooseError("Error ElementPropertyReadFile: Provide valid read type");
@@ -84,6 +87,24 @@ ElementPropertyReadFile::ElementPropertyReadFile(const InputParameters & paramet
 
 void
 ElementPropertyReadFile::readElementData()
+{
+  _data.resize(_nprop * _nelem);
+
+  MooseUtils::checkFileReadable(_prop_file_name);
+
+  std::ifstream file_prop;
+  file_prop.open(_prop_file_name.c_str());
+
+  for (unsigned int i = 0; i < _nelem; i++)
+    for (unsigned int j = 0; j < _nprop; j++)
+      if (!(file_prop >> _data[i * _nprop + j]))
+        mooseError("Error ElementPropertyReadFile: Premature end of file");
+
+  file_prop.close();
+}
+
+void
+ElementPropertyReadFile::readVoxelData()
 {
   _data.resize(_nprop * _nelem);
 
@@ -160,6 +181,9 @@ ElementPropertyReadFile::getData(const Elem * elem, unsigned int prop_num) const
 
     case 2:
       return getBlockData(elem, prop_num);
+
+    case 3:
+      return getVoxelData(elem, prop_num);
   }
   mooseError("Error ElementPropertyReadFile: Provide valid read type");
 }
@@ -189,6 +213,33 @@ ElementPropertyReadFile::getBlockData(const Elem * elem, unsigned int prop_num) 
               "Error ElementPropertyReadFile: Property number "
                   << prop_num << " greater than than total number of properties " << _nprop);
   return _data[elem_subdomain_id * _nprop + prop_num];
+}
+
+Real
+ElementPropertyReadFile::getVoxelData(const Elem * elem, unsigned int prop_num) const
+{
+  Point centroid = elem->centroid();
+  Real elem_size = cbrt(elem->volume());
+  unsigned int nelem_x = _range(0) / elem_size;
+  unsigned int nelem_y = _range(1) / elem_size;
+  unsigned int nelem_z = _range(2) / elem_size;
+  unsigned int id_x = centroid(0) / elem_size;
+  unsigned int id_y = centroid(1) / elem_size;
+  unsigned int id_z = centroid(2) / elem_size;
+
+  unsigned int jelem = id_z * (nelem_x * nelem_y) + id_y * (nelem_x) + id_x;
+
+  // std::cout << "elem centroid = " << centroid << ", id_x = " << id_x << ", id_y = " << id_y
+  //           << ", id_z = " << id_z << ", nelem_x = " << nelem_x << ", elem_size = " << elem_size
+  //           << ", elem_vol = " << elem->volume() << std::endl;
+
+  mooseAssert(jelem < _nelem,
+              "Error ElementPropertyReadFile: Element "
+                  << jelem << " greater than than total number of element in mesh " << _nelem);
+  mooseAssert(prop_num < _nprop,
+              "Error ElementPropertyReadFile: Property number "
+                  << prop_num << " greater than than total number of properties " << _nprop);
+  return _data[jelem * _nprop + prop_num];
 }
 
 Real

@@ -50,6 +50,8 @@ public:
    */
   virtual void readBlockData();
 
+  virtual void readVoxelData();
+
   /**
    * This function generates grain center point
    * Presently random generated
@@ -76,6 +78,8 @@ public:
    * This function assign properties to element read from file with block  based properties
    */
   Real getBlockData(const Elem *, unsigned int) const;
+
+  Real getVoxelData(const Elem *, unsigned int) const;
 
   /**
    * This function calculates minimum distance between 2 points
