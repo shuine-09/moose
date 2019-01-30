@@ -470,6 +470,9 @@ public:
   /// set the tensor to the identity matrix
   void setToIdentity();
 
+  void calculateEigenvalueAndVector(std::array<T, 3> & eval,
+                                    std::array<std::array<T, 3>, 3> & evec) const;
+
 private:
   static constexpr unsigned int N = LIBMESH_DIM;
   static constexpr unsigned int N2 = N * N;
@@ -483,6 +486,29 @@ private:
   template <class T2>
   friend class RankFourTensorTempl;
   friend class RankThreeTensor;
+
+  static std::array<T, 3> Multiply(T s, std::array<T, 3> const & U);
+  static std::array<T, 3> Subtract(std::array<T, 3> const & U, std::array<T, 3> const & V);
+  static std::array<T, 3> Divide(std::array<T, 3> const & U, T s);
+  static T Dot(std::array<T, 3> const & U, std::array<T, 3> const & V);
+  static std::array<T, 3> Cross(std::array<T, 3> const & U, std::array<T, 3> const & V);
+
+  void ComputeOrthogonalComplement(std::array<T, 3> const & W,
+                                   std::array<T, 3> & U,
+                                   std::array<T, 3> & V) const;
+
+  void ComputeEigenvector0(
+      T a00, T a01, T a02, T a11, T a12, T a22, T eval0, std::array<T, 3> & evec0) const;
+
+  void ComputeEigenvector1(T a00,
+                           T a01,
+                           T a02,
+                           T a11,
+                           T a12,
+                           T a22,
+                           std::array<T, 3> const & evec0,
+                           T eval1,
+                           std::array<T, 3> & evec1) const;
 };
 
 typedef RankTwoTensorTempl<Real> RankTwoTensor;
