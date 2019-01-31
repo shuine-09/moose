@@ -30,6 +30,8 @@ validParams<ComputeLinearElasticPFFractureStress>()
       "Name of material property being created to store the interfacial parameter kappa");
   params.addParam<MaterialPropertyName>(
       "mobility_name", "L", "Name of material property being created to store the mobility L");
+  params.addParam<bool>(
+                        "use_current_damage", true, "Use the current value of the damamge variable.");
   return params;
 }
 
@@ -52,19 +54,23 @@ ComputeLinearElasticPFFractureStress::ComputeLinearElasticPFFractureStress(
     _hist(declareProperty<Real>("hist")),
     _hist_old(getMaterialPropertyOld<Real>("hist")),
     _kappa(declareProperty<Real>(getParam<MaterialPropertyName>("kappa_name"))),
-    _L(declareProperty<Real>(getParam<MaterialPropertyName>("mobility_name")))
+    _L(declareProperty<Real>(getParam<MaterialPropertyName>("mobility_name"))),
+    _use_current_damage(getParam<bool>("use_current_damage")),
+    _c_old(coupledValueOld("c")),
+    _c_older(coupledValueOlder("c"))
 {
 }
 
 void
 ComputeLinearElasticPFFractureStress::computeQpStress()
 {
-  const Real c = _c[_qp];
+  Real c = _c_old[_qp];
+
+  if (_use_current_damage)
+    c = _c[_qp];
 
   // Zero out values when c > 1
   Real cfactor = 1.0;
-  if (c > 1.0)
-    cfactor = 0.0;
 
   // Compute Uncracked stress
   RankTwoTensor uncracked_stress = _elasticity_tensor[_qp] * _mechanical_strain[_qp];
@@ -105,13 +111,13 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
   _Jacobian_mult[_qp] = (Ppos * h + Pneg) * _elasticity_tensor[_qp];
 
   // Compute energy and its derivatives
-  _F[_qp] = hist_variable * h - G0_neg + _gc_prop[_qp] * c * c / (2 * _l[_qp]);
-  _dFdc[_qp] = hist_variable * dhdc + _gc_prop[_qp] * c / _l[_qp];
-  _d2Fdc2[_qp] = hist_variable * d2hdc2 + _gc_prop[_qp] / _l[_qp];
-
+  _F[_qp] = hist_variable * h - G0_neg + _gc_prop[_qp] * _c[_qp] * _c[_qp] / (2 * _l[_qp]);
+  _dFdc[_qp] = hist_variable * (-2.0 * (1.0 - _c[_qp]) * (1 - _kdamage)) + _gc_prop[_qp] * _c[_qp] / _l[_qp];
+  _d2Fdc2[_qp] = hist_variable * (2.0 * (1 - _kdamage)) + _gc_prop[_qp] / _l[_qp];
+  
   // 2nd derivative wrt c and strain = 0.0 if we used the previous step's history varible
   if (_use_current_hist)
-    _d2Fdcdstrain[_qp] = _dstress_dc[_qp];
+    _d2Fdcdstrain[_qp] = -stress0pos * 2.0 * (1.0 - _c[_qp]) * (1 - _kdamage);
 
   // Assign L and kappa
   _kappa[_qp] = _gc_prop[_qp] * _l[_qp];

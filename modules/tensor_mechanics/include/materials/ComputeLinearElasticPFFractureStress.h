@@ -66,6 +66,10 @@ protected:
 
   /// Property where the value for L will be defined
   MaterialProperty<Real> & _L;
+
+  bool _use_current_damage;
+  const VariableValue & _c_old;
+  const VariableValue & _c_older;
 };
 
 #endif // COMPUTELINEARELASTICPFFRACTURESTRESS_H

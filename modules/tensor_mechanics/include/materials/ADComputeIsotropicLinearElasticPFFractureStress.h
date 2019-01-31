@@ -35,6 +35,8 @@ protected:
   /// Coupled order parameter defining the crack
   const ADVariableValue & _c;
 
+  const VariableValue & _c_old;
+
   /// Small number to avoid non-positive definiteness at or near complete damage
   const Real _kdamage;
 

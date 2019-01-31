@@ -473,6 +473,8 @@ public:
   void calculateEigenvalueAndVector(std::array<T, 3> & eval,
                                     std::array<std::array<T, 3>, 3> & evec) const;
 
+  void diagonalize(RankTwoTensorTempl<T> & Q, RankTwoTensorTempl<T> & D) const;
+
 private:
   static constexpr unsigned int N = LIBMESH_DIM;
   static constexpr unsigned int N2 = N * N;

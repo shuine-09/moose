@@ -38,6 +38,8 @@ protected:
   /// Characteristic length, controls damage zone thickness
   const MaterialProperty<Real> & _l;
 
+  const ADMaterialProperty(Real) & _hist;
+
   const MaterialProperty<Real> & _hist_old;
 
   usingKernelMembers;
