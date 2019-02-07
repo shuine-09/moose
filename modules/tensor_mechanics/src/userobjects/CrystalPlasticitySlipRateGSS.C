@@ -162,7 +162,7 @@ CrystalPlasticitySlipRateGSS::calcFlowDirection(unsigned int qp,
 }
 
 bool
-CrystalPlasticitySlipRateGSS::calcSlipRate(unsigned int qp, Real dt, std::vector<Real> & val) const
+CrystalPlasticitySlipRateGSS::calcSlipRate(unsigned int qp, Real dt, std::vector<Real> & val, Real factor) const
 {
   DenseVector<Real> tau(_variable_size);
 
@@ -171,10 +171,12 @@ CrystalPlasticitySlipRateGSS::calcSlipRate(unsigned int qp, Real dt, std::vector
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
-    val[i] = _a0(i) * std::pow(std::abs(tau(i) / _mat_prop_state_var[qp][i]), 1.0 / _xm(i)) *
+    val[i] = _a0(i) * std::pow(std::abs(tau(i) / (_mat_prop_state_var[qp][i] * factor)), 1.0 / _xm(i)) *
              std::copysign(1.0, tau(i));
+
     if (std::abs(val[i] * dt) > _slip_incr_tol)
     {
+    //std::cout << "i = " << i << ", qp = " << qp << ", val = " << val[i] << ", tau = " << tau(i) << ", resistance = " << _mat_prop_state_var[qp][i] << std::endl;
 #ifdef DEBUG
       mooseWarning("Maximum allowable slip increment exceeded ", std::abs(val[i]) * dt);
 #endif
@@ -185,10 +187,30 @@ CrystalPlasticitySlipRateGSS::calcSlipRate(unsigned int qp, Real dt, std::vector
   return true;
 }
 
+Real
+CrystalPlasticitySlipRateGSS::calcPlasticWork(unsigned int qp, Real dt) const
+{
+  DenseVector<Real> tau(_variable_size);
+
+  Real plastic_work = 0.0;
+
+  for (unsigned int i = 0; i < _variable_size; ++i)
+    tau(i) = _pk2[qp].doubleContraction(_flow_direction[qp][i]);
+
+  for (unsigned int i = 0; i < _variable_size; ++i)
+  {
+    Real gamma = _a0(i) * std::pow(std::abs(tau(i) / _mat_prop_state_var[qp][i]), 1.0 / _xm(i)) *
+             std::copysign(1.0, tau(i));
+    plastic_work += std::abs(gamma * dt * tau(i));
+  }
+
+  return plastic_work;
+}
+
 bool
 CrystalPlasticitySlipRateGSS::calcSlipRateDerivative(unsigned int qp,
                                                      Real /*dt*/,
-                                                     std::vector<Real> & val) const
+                                                     std::vector<Real> & val, Real factor) const
 {
   DenseVector<Real> tau(_variable_size);
 
@@ -197,7 +219,7 @@ CrystalPlasticitySlipRateGSS::calcSlipRateDerivative(unsigned int qp,
 
   for (unsigned int i = 0; i < _variable_size; ++i)
     val[i] = _a0(i) / _xm(i) *
-             std::pow(std::abs(tau(i) / _mat_prop_state_var[qp][i]), 1.0 / _xm(i) - 1.0) /
+             std::pow(std::abs(tau(i) / (_mat_prop_state_var[qp][i] * factor)), 1.0 / _xm(i) - 1.0) /
              _mat_prop_state_var[qp][i];
 
   return true;

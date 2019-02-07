@@ -144,7 +144,7 @@ CrystalPlasticityStateVarRateComponentVoce::CrystalPlasticityStateVarRateCompone
 
 bool
 CrystalPlasticityStateVarRateComponentVoce::calcStateVariableEvolutionRateComponent(
-    unsigned int qp, std::vector<Real> & val) const
+    unsigned int qp, std::vector<Real> & val, Real factor) const
 {
   val.assign(_variable_size, 0.0);
 

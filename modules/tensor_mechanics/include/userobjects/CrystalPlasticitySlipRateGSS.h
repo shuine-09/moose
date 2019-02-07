@@ -26,10 +26,11 @@ class CrystalPlasticitySlipRateGSS : public CrystalPlasticitySlipRate
 public:
   CrystalPlasticitySlipRateGSS(const InputParameters & parameters);
 
-  virtual bool calcSlipRate(unsigned int qp, Real dt, std::vector<Real> & val) const;
-  virtual bool calcSlipRateDerivative(unsigned int qp, Real /*dt*/, std::vector<Real> & val) const;
+  virtual bool calcSlipRate(unsigned int qp, Real dt, std::vector<Real> & val, Real factor = 1.0) const;
+  virtual bool calcSlipRateDerivative(unsigned int qp, Real /*dt*/, std::vector<Real> & val, Real factor = 1.0) const;
   virtual void calcFlowDirection(unsigned int qp,
                                  std::vector<RankTwoTensor> & flow_direction) const;
+  virtual Real calcPlasticWork(unsigned int qp, Real dt) const;
 
 protected:
   virtual void readFileFlowRateParams();

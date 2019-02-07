@@ -28,7 +28,7 @@ public:
   CrystalPlasticityStateVarRateComponent(const InputParameters & parameters);
 
   virtual bool calcStateVariableEvolutionRateComponent(unsigned int qp,
-                                                       std::vector<Real> & val) const = 0;
+                                                       std::vector<Real> & val, Real factor = 1.0) const = 0;
 };
 
 #endif // CRYSTALPLASTICITYSTATEVARRATECOMPONENT_H

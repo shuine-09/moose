@@ -48,7 +48,7 @@ CrystalPlasticityStateVarRateComponentGSS::CrystalPlasticityStateVarRateComponen
 
 bool
 CrystalPlasticityStateVarRateComponentGSS::calcStateVariableEvolutionRateComponent(
-    unsigned int qp, std::vector<Real> & val) const
+    unsigned int qp, std::vector<Real> & val, Real factor) const
 {
   val.assign(_variable_size, 0.0);
 
@@ -61,8 +61,8 @@ CrystalPlasticityStateVarRateComponentGSS::calcStateVariableEvolutionRateCompone
   Real a = _hprops[3]; // Kalidindi
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    hb(i) = h0 * std::pow(std::abs(1.0 - _mat_prop_state_var[qp][i] / tau_sat), a) *
-            std::copysign(1.0, 1.0 - _mat_prop_state_var[qp][i] / tau_sat);
+    hb(i) = h0 * std::pow(std::abs(1.0 - factor * _mat_prop_state_var[qp][i] / tau_sat), a) *
+            std::copysign(1.0, 1.0 - factor *_mat_prop_state_var[qp][i] / tau_sat);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
     for (unsigned int j = 0; j < _variable_size; ++j)

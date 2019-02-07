@@ -28,7 +28,7 @@ public:
 
   /// computing the slip system hardening rate
   virtual bool calcStateVariableEvolutionRateComponent(unsigned int qp,
-                                                       std::vector<Real> & val) const;
+                                                       std::vector<Real> & val, Real factor) const;
 
   /// class for switching between different crystal lattice types
   static MooseEnum crystalLatticeTypeOptions();
