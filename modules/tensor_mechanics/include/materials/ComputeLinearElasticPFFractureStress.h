@@ -33,7 +33,8 @@ protected:
 
   /// Use current value of history variable
   bool _use_current_hist;
-
+  bool _decomp;
+ 
   /// Base name of the stress and strain modified to include cracks
   const std::string _uncracked_base_name;
 

@@ -21,7 +21,10 @@ validParams<ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnerg
   params.addClassDescription("Computes the stress and free energy derivatives for the phase field "
                              "fracture model, with linear isotropic elasticity");
   params.addRequiredCoupledVar("c", "Order parameter for damage");
+  params.addRequiredCoupledVar("bnd", "Order parameter for damage");
   params.addParam<Real>("kdamage", 0.0, "Stiffness of damaged matrix");
+  params.addRequiredParam<Real>("gc0", "gc0");
+  params.addRequiredParam<Real>("gc1", "gc1");
   params.addParam<bool>(
       "use_current_history_variable", false, "Use the current value of the history variable.");
   params.addParam<MaterialPropertyName>(
@@ -34,10 +37,13 @@ ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy::
         const InputParameters & parameters)
   : ComputeStressBase(parameters),
     _c(coupledValue("c")),
+    _bnd(coupledValue("bnd")),
     _kdamage(getParam<Real>("kdamage")),
     _use_current_hist(getParam<bool>("use_current_history_variable")),
     _l(getMaterialProperty<Real>("l")),
     _gc(getMaterialProperty<Real>("gc_prop")),
+    _gc0(getParam<Real>("gc0")),
+    _gc1(getParam<Real>("gc1")),
     _F(declareProperty<Real>(getParam<MaterialPropertyName>("F_name"))),
     _dFdc(declarePropertyDerivative<Real>(getParam<MaterialPropertyName>("F_name"),
                                           getVar("c", 0)->name())),
@@ -54,7 +60,10 @@ ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy::
 void
 ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy::initQpStatefulProperties()
 {
-  _hist[_qp] = 3 * _gc[_qp] / 16 / _l[_qp];
+  // if (_bnd[_qp] < 0.75)
+  //   _hist[_qp] = 3 * _gc0 / 16 / _l[_qp];
+  // else
+  //   _hist[_qp] = 3 * _gc1 / 16 / _l[_qp];
 }
 
 void
@@ -121,10 +130,19 @@ ComputeIsotropicLinearElasticPFFractureStressWithLinearFractureEnergy::computeQp
   const Real G0_neg = lambda * etrneg * etrneg / 2.0 + mu * nval;
 
   // Assign history variable and derivative
-  if (G0_pos > _hist_old[_qp])
-    _hist[_qp] = G0_pos;
-  else
-    _hist[_qp] = _hist_old[_qp];
+  // if (G0_pos > _hist_old[_qp])
+  //   _hist[_qp] = G0_pos;
+  // else
+  //   _hist[_qp] = _hist_old[_qp];
+  //
+  // Real hist_variable = _hist_old[_qp];
+  // if (_use_current_hist)
+  //   hist_variable = _hist[_qp];
+
+  // if (G0_pos > _hist_old[_qp])
+  _hist[_qp] = G0_pos;
+  // else
+  //   _hist[_qp] = _hist_old[_qp];
 
   Real hist_variable = _hist_old[_qp];
   if (_use_current_hist)

@@ -40,6 +40,9 @@ protected:
   /// Coupled order parameter defining the crack
   const VariableValue & _c;
 
+  /// Coupled order parameter defining the crack
+  const VariableValue & _bnd;
+
   /// Small number to avoid non-positive definiteness at or near complete damage
   const Real _kdamage;
 
@@ -51,6 +54,9 @@ protected:
 
   /// Material property defining gc parameter, declared elsewhere
   const MaterialProperty<Real> & _gc;
+
+  const Real _gc0;
+  const Real _gc1;
 
   /// Elastic energy and derivatives, declared in this material
   MaterialProperty<Real> & _F;

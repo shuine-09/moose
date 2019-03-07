@@ -23,6 +23,9 @@ validParams<ComputePolycrystalElasticityTensor>()
       "grain_tracker", "Name of GrainTracker user object that provides RankFourTensors");
   params.addParam<Real>("length_scale", 1.0e-9, "Lengthscale of the problem, in meters");
   params.addParam<Real>("pressure_scale", 1.0e6, "Pressure scale of the problem, in pa");
+  params.addParam<Real>("factor", 1e-8, "factor");
+  params.addParam<Real>("c_scale", 1.0, "c_scale");
+  params.addRequiredCoupledVar("c", "Concentration");
   params.addRequiredCoupledVarWithAutoBuild(
       "v", "var_name_base", "op_num", "Array of coupled variables");
   return params;
@@ -33,6 +36,9 @@ ComputePolycrystalElasticityTensor::ComputePolycrystalElasticityTensor(
   : ComputeElasticityTensorBase(parameters),
     _length_scale(getParam<Real>("length_scale")),
     _pressure_scale(getParam<Real>("pressure_scale")),
+    _factor(getParam<Real>("factor")),
+    _c_scale(getParam<Real>("c_scale")),
+    _c(coupledValue("c")),
     _grain_tracker(getUserObject<GrainDataTracker<RankFourTensor>>("grain_tracker")),
     _op_num(coupledComponents("v")),
     _vals(_op_num),
@@ -77,6 +83,14 @@ ComputePolycrystalElasticityTensor::computeQpElasticityTensor()
   const Real tol = 1.0e-10;
   sum_h = std::max(sum_h, tol);
   _elasticity_tensor[_qp] /= sum_h;
+
+  Real c = _c[_qp];
+  if (_c[_qp] > 0.9)
+    c = 1.0;
+
+  _elasticity_tensor[_qp] =
+      _elasticity_tensor[_qp] +
+      (_elasticity_tensor[_qp] * _factor - _elasticity_tensor[_qp]) * c;
 
   // Calculate elasticity tensor derivative: Cderiv = dhdopi/sum_h * (Cop - _Cijkl)
   for (auto op_index = decltype(_op_num)(0); op_index < _op_num; ++op_index)

@@ -24,6 +24,7 @@ validParams<ComputeMultiPhaseLinearElasticPFFractureStress>()
   params.addParam<Real>("pressure", 0.0, "Pressure on the crack surfaces.");
   params.addClassDescription("Computes the stress and free energy derivatives for the phase field "
                              "fracture model, with linear anistropic elasticity");
+  params.addRequiredCoupledVar("bubble", "bubble");
   return params;
 }
 
@@ -37,7 +38,8 @@ ComputeMultiPhaseLinearElasticPFFractureStress::ComputeMultiPhaseLinearElasticPF
     _phase_stress(_n_phase),
     _dphase_stress_dstrain(_n_phase),
     _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
-    _pressure(getParam<Real>("pressure"))
+    _pressure(getParam<Real>("pressure")),
+    _bubble(coupledValue("bubble"))
 {
   // verify parameter length
   if (_n_phase != _phase_base.size())
@@ -64,8 +66,9 @@ ComputeMultiPhaseLinearElasticPFFractureStress::computeQpStress()
   std::vector<Real> eigval(LIBMESH_DIM);
 
   RankTwoTensor stress;
-  for (unsigned int i = 0; i < _n_phase; ++i)
-    stress += (*_h_eta[i])[_qp] * (*_phase_stress[i])[_qp];
+  stress.zero();
+
+  stress = _bubble[_qp] * (*_phase_stress[0])[_qp] + (1 - _bubble[_qp]) * (*_phase_stress[1])[_qp];
 
   // projection tensor
   RankFourTensor proj_pos = stress.positiveProjectionEigenDecomposition(eigval, eigvec);
@@ -101,10 +104,10 @@ ComputeMultiPhaseLinearElasticPFFractureStress::computeQpStress()
   const Real G0_neg = (stress0neg).doubleContraction(_mechanical_strain[_qp]) / 2.0;
 
   // Assign history variable and derivative
-  if (G0_pos > _hist_old[_qp])
+//  if (G0_pos > _hist_old[_qp])
     _hist[_qp] = G0_pos;
-  else
-    _hist[_qp] = _hist_old[_qp];
+//  else
+//    _hist[_qp] = _hist_old[_qp];
 
   Real hist_variable = _hist_old[_qp];
   if (_use_current_hist)
@@ -115,7 +118,8 @@ ComputeMultiPhaseLinearElasticPFFractureStress::computeQpStress()
 
   // Elastic free energy density
   _F[_qp] = hist_variable * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - G0_neg +
-            _gc_prop[_qp] / (2 * _l[_qp]) * c * c + c * c * _mechanical_strain[_qp].trace() * _pressure;
+            _gc_prop[_qp] / (2 * _l[_qp]) * c * c +
+            c * c * _mechanical_strain[_qp].trace() * _pressure;
 
   // derivative of elastic free energy density wrt c
   _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + _gc_prop[_qp] / _l[_qp] * c +
@@ -136,10 +140,16 @@ ComputeMultiPhaseLinearElasticPFFractureStress::computeQpStress()
   _dstress_dc[_qp] = _pressure * RankTwoTensor(RankTwoTensor::initIdentity) * c * 2;
 
   RankFourTensor dstress_dstrain;
-  for (unsigned int i = 0; i < _n_phase; ++i)
-    dstress_dstrain += (*_h_eta[i])[_qp] * (*_dphase_stress_dstrain[i])[_qp];
+  // for (unsigned int i = 0; i < _n_phase; ++i)
+  //   dstress_dstrain += (*_h_eta[i])[_qp] * (*_dphase_stress_dstrain[i])[_qp];
+
+  dstress_dstrain = _bubble[_qp] * _elasticity_tensor[_qp] * 1.0e-8 +
+                    (1 - _bubble[_qp]) * _elasticity_tensor[_qp];
 
   _Jacobian_mult[_qp] =
       (((1.0 - c) * (1.0 - c) * (1.0 - _kdamage) + _kdamage) * proj_pos + proj_neg) *
       dstress_dstrain;
+
+  _kappa[_qp] = _gc_prop[_qp] * _l[_qp];
+  _L[_qp] = 1.0 / (_gc_prop[_qp] * _visco[_qp]);
 }

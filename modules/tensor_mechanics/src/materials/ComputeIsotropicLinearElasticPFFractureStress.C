@@ -117,9 +117,9 @@ ComputeIsotropicLinearElasticPFFractureStress::computeQpStress()
   const Real G0_neg = lambda * etrneg * etrneg / 2.0 + mu * nval;
 
   // Assign history variable and derivative
-  //if (G0_pos > _hist_old[_qp])
-    _hist[_qp] = G0_pos;
-  //else
+  // if (G0_pos > _hist_old[_qp])
+  _hist[_qp] = G0_pos;
+  // else
   //  _hist[_qp] = _hist_old[_qp];
 
   Real hist_variable = _hist_old[_qp];

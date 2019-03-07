@@ -49,6 +49,8 @@ protected:
   std::string _base_name;
 
   Real _pressure;
+
+  const VariableValue & _bubble;
 };
 
 #endif // COMPUTEMULTIPHASELINEARELASTICPFFRACTURESTRESS_H

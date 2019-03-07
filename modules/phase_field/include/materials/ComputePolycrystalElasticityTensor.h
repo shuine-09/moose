@@ -33,6 +33,9 @@ protected:
 
   Real _length_scale;
   Real _pressure_scale;
+  Real _factor;
+  Real _c_scale;
+  const VariableValue & _c;
 
   /// Grain tracker object
   const GrainDataTracker<RankFourTensor> & _grain_tracker;

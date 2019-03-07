@@ -22,6 +22,8 @@ validParams<ComputeLinearElasticPFFractureStress>()
   params.addParam<Real>("kdamage", 1e-6, "Stiffness of damaged matrix");
   params.addParam<bool>(
       "use_current_history_variable", true, "Use the current value of the history variable.");
+  params.addParam<bool>(
+      "decomp", true, "Use the current value of the history variable.");
   params.addParam<MaterialPropertyName>(
       "F_name", "E_el", "Name of material property storing the elastic energy");
   params.addParam<MaterialPropertyName>(
@@ -37,6 +39,7 @@ ComputeLinearElasticPFFractureStress::ComputeLinearElasticPFFractureStress(
     const InputParameters & parameters)
   : ComputeStressBase(parameters),
     _use_current_hist(getParam<bool>("use_current_history_variable")),
+    _decomp(getParam<bool>("decomp")),
     _c(coupledValue("c")),
     _gc_prop(getMaterialProperty<Real>("gc_prop")),
     _l(getMaterialProperty<Real>("l")),
@@ -114,9 +117,19 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
   Real d2hdc2 = 2.0 * cfactor * (1.0 - _kdamage);
 
   // Compute stress and its derivatives
+  if (_decomp)
+  {
   _stress[_qp] = stress0pos * h + stress0neg; // equivalent to (Ppos * h + Pneg) * uncracked_stress;
   _dstress_dc[_qp] = stress0pos * dhdc;
   _Jacobian_mult[_qp] = (Ppos * h + Pneg) * _elasticity_tensor[_qp];
+
+  }
+  else
+  {
+  _stress[_qp] = (stress0pos + stress0neg) * h; // equivalent to (Ppos * h + Pneg) * uncracked_stress;
+  _dstress_dc[_qp] = _stress[_qp] * dhdc;
+  _Jacobian_mult[_qp] = h * _elasticity_tensor[_qp];
+  }
 
   // Compute energy and its derivatives
   _F[_qp] = hist_variable * h - G0_neg + _gc_prop[_qp] * c * c / (2 * _l[_qp]);
