@@ -229,9 +229,9 @@ ElementPropertyReadFile::getVoxelData(const Elem * elem, unsigned int prop_num) 
 
   unsigned int jelem = id_z * (nelem_x * nelem_y) + id_y * (nelem_x) + id_x;
 
-  // std::cout << "elem centroid = " << centroid << ", id_x = " << id_x << ", id_y = " << id_y
-  //           << ", id_z = " << id_z << ", nelem_x = " << nelem_x << ", elem_size = " << elem_size
-  //           << ", elem_vol = " << elem->volume() << std::endl;
+//  std::cout << "elem centroid = " << centroid << ", id_x = " << id_x << ", id_y = " << id_y
+//             << ", id_z = " << id_z << ", nelem_x = " << nelem_x << ", elem_size = " << elem_size
+//             << ", elem_vol = " << elem->volume() << "data = " << _data[jelem * _nprop + prop_num] << std::endl;
 
   mooseAssert(jelem < _nelem,
               "Error ElementPropertyReadFile: Element "

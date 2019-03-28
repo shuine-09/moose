@@ -1,5 +1,5 @@
 import h5py
-dream3d = h5py.File('weld.dream3d', 'r')
+dream3d = h5py.File('base.dream3d', 'r')
 
 euler_angles_file = open('euler_angles.txt', 'w+')
 feature_ids_file = open('feature_ids.txt', 'w+')
