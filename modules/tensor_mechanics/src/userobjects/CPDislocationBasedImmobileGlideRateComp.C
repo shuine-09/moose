@@ -22,6 +22,9 @@ validParams<CPDislocationBasedImmobileGlideRateComp>()
   params.addParam<std::string>(
       "uo_glide_slip_rate_name",
       "Name of glide slip rate: Same as state variable user object specified in input file.");
+  params.addParam<std::string>(
+      "uo_climb_rate_name",
+      "Name of climb rate: Same as state variable user object specified in input file.");
   params.addRequiredParam<Real>("burgers_length", "Length of Burgers vector");
   params.addParam<Real>("rho_imm_factor", 0.36, "Immobilization factor due to dislocations");
   params.addClassDescription(
@@ -39,6 +42,8 @@ CPDislocationBasedImmobileGlideRateComp::CPDislocationBasedImmobileGlideRateComp
         parameters.get<std::string>("uo_immobile_dislocation_density_name"))),
     _mat_prop_glide_slip_rate(getMaterialProperty<std::vector<Real>>(
         parameters.get<std::string>("uo_glide_slip_rate_name"))),
+    _mat_prop_climb_rate(
+        getMaterialProperty<std::vector<Real>>(parameters.get<std::string>("uo_climb_rate_name"))),
     _b(getParam<Real>("burgers_length")),
     _beta_rho(getParam<Real>("rho_imm_factor"))
 {
@@ -56,7 +61,8 @@ CPDislocationBasedImmobileGlideRateComp::calcStateVariableEvolutionRateComponent
   {
     lambda_inv = _beta_rho * std::sqrt(_mat_prop_mobile_dislocation_density[qp][i] +
                                        _mat_prop_immobile_dislocation_density[qp][i]);
-    val[i] = std::abs(_mat_prop_glide_slip_rate[qp][i]) * lambda_inv / _b;
+    val[i] = (std::abs(_mat_prop_glide_slip_rate[qp][i]) + std::abs(_mat_prop_climb_rate[qp][i])) *
+             lambda_inv / _b;
   }
 
   return true;

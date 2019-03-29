@@ -33,6 +33,8 @@ protected:
 
   const MaterialProperty<std::vector<Real>> & _mat_prop_glide_slip_rate;
 
+  const MaterialProperty<std::vector<Real>> & _mat_prop_climb_rate;
+
   Real _b;
   Real _k_mul;
   Real _r_c;

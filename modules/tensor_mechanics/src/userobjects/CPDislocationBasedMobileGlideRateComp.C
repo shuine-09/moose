@@ -24,6 +24,9 @@ validParams<CPDislocationBasedMobileGlideRateComp>()
   params.addParam<std::string>("uo_glide_slip_rate_name",
                                "Name of glide slip rate: Same as state "
                                "variable user object specified in input file.");
+  params.addParam<std::string>("uo_climb_rate_name",
+                               "Name of climb rate: Same as state "
+                               "variable user object specified in input file.");
   params.addRequiredParam<Real>("burgers_length", "Length of Burgers vector");
   params.addParam<Real>("rho_mult_factor", 0.143, "Dislocation multiplication factor");
   params.addParam<Real>("rho_m_capture_radius",
@@ -58,6 +61,8 @@ CPDislocationBasedMobileGlideRateComp::CPDislocationBasedMobileGlideRateComp(
         parameters.get<std::string>("uo_immobile_dislocation_density_name"))),
     _mat_prop_glide_slip_rate(getMaterialProperty<std::vector<Real>>(
         parameters.get<std::string>("uo_glide_slip_rate_name"))),
+    _mat_prop_climb_rate(
+        getMaterialProperty<std::vector<Real>>(parameters.get<std::string>("uo_climb_rate_name"))),
     _b(getParam<Real>("burgers_length")),
     _k_mul(getParam<Real>("rho_mult_factor")),
     _r_c(getParam<Real>("rho_m_capture_radius")),
@@ -113,11 +118,13 @@ CPDislocationBasedMobileGlideRateComp::calcStateVariableEvolutionRateComponent(
   {
     d_self = _k_mul * std::sqrt(tot_rho_m) * std::abs(_mat_prop_glide_slip_rate[qp][i]) / _b;
     d_ann = 2.0 * effective_r * _mat_prop_mobile_dislocation_density[qp][i] *
-            std::abs(_mat_prop_glide_slip_rate[qp][i]) / _b;
+            (std::abs(_mat_prop_glide_slip_rate[qp][i]) + std::abs(_mat_prop_climb_rate[qp][i])) /
+            _b;
 
     lambda_inv = _beta_rho * std::sqrt(_mat_prop_mobile_dislocation_density[qp][i] +
                                        _mat_prop_immobile_dislocation_density[qp][i]);
-    d_imm = std::abs(_mat_prop_glide_slip_rate[qp][i]) * lambda_inv / _b;
+    d_imm = (std::abs(_mat_prop_glide_slip_rate[qp][i]) + std::abs(_mat_prop_climb_rate[qp][i])) *
+            lambda_inv / _b;
 
     val[i] = d_self - d_ann - d_imm;
   }

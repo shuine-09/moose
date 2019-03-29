@@ -13,7 +13,7 @@ InputParameters
 validParams<CPDislocationBasedClimbRate>()
 {
   InputParameters params = validParams<CrystalPlasticitySlipRate>();
-  params.addParam<std::string>("uo_concentration_name", "Name of concentration variable");
+  // params.addParam<std::string>("uo_concentration_name", "Name of concentration variable");
   params.addParam<std::string>("uo_mobile_dislocation_density_name",
                                "Name of mobile dislocation density: Same as "
                                "state variable user object specified in input "
@@ -35,7 +35,7 @@ validParams<CPDislocationBasedClimbRate>()
   params.addParam<Real>("stress_factor", 1.0, "Stress concentration factor due to precipitate.");
   params.addParam<Real>("diffusivity_factor", 1.0, "diffusivity factor.");
   params.addRequiredParam<Real>("activation_energy", "Activation energy J/mole");
-  params.addRequiredParam<Real>("precipitate_radius", "The radius of precipitate size.");
+  params.addParam<Real>("precipitate_radius", 0.0, "The radius of precipitate size.");
   params.addRequiredParam<Real>("precipitate_volume_fraction",
                                 "The precipitate_volume_fraction of precipitates.");
   params.addParam<Real>(
@@ -48,8 +48,8 @@ validParams<CPDislocationBasedClimbRate>()
 
 CPDislocationBasedClimbRate::CPDislocationBasedClimbRate(const InputParameters & parameters)
   : CrystalPlasticitySlipRate(parameters),
-    _cv(getMaterialProperty<std::vector<Real>>(
-        parameters.get<std::string>("uo_concentration_name"))),
+    // _cv(getMaterialProperty<std::vector<Real>>(
+    //     parameters.get<std::string>("uo_concentration_name"))),
     _rho_m(getMaterialProperty<std::vector<Real>>(
         parameters.get<std::string>("uo_mobile_dislocation_density_name"))),
     _rho_i(getMaterialProperty<std::vector<Real>>(
@@ -98,6 +98,8 @@ CPDislocationBasedClimbRate::calcSlipRate(unsigned int qp, Real dt, std::vector<
 {
   DenseVector<Real> tau(_variable_size);
 
+  const Real cv = 1.0;
+
   for (unsigned int i = 0; i < _variable_size; ++i)
     tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) * _b;
 
@@ -122,7 +124,7 @@ CPDislocationBasedClimbRate::calcSlipRate(unsigned int qp, Real dt, std::vector<
     Real vc = -pre_factor / std::sin(_theta) *
               (std::exp(-_stress_factor * tau(i) * _atom_volume / (_boltz_const * _b * _temp) /
                         std::sin(_theta)) -
-               1.0 * _cv[qp][0]);
+               1.0 * cv);
     // Real vc =
     //     pre_factor *
     //     (std::exp(-_stress_factor * tau(i) * _atom_volume / (_boltz_const * _b * _temp)) - 1.0);

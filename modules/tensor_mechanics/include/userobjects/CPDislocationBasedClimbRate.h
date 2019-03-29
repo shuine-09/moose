@@ -31,7 +31,7 @@ public:
                                  std::vector<RankTwoTensor> & flow_direction) const;
 
 protected:
-  const MaterialProperty<std::vector<Real>> & _cv;
+  // const MaterialProperty<std::vector<Real>> & _cv;
   const MaterialProperty<std::vector<Real>> & _rho_m;
   const MaterialProperty<std::vector<Real>> & _rho_i;
   const MaterialProperty<RankTwoTensor> & _pk2;
