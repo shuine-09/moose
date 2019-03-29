@@ -220,9 +220,9 @@ ElementPropertyReadFile::getVoxelData(const Elem * elem, unsigned int prop_num) 
 {
   Point centroid = elem->centroid();
   Real elem_size = cbrt(elem->volume());
-  unsigned int nelem_x = _range(0) / elem_size;
-  unsigned int nelem_y = _range(1) / elem_size;
-  unsigned int nelem_z = _range(2) / elem_size;
+  unsigned int nelem_x = _range(0) * 1.001 / elem_size;
+  unsigned int nelem_y = _range(1) * 1.001 / elem_size;
+  unsigned int nelem_z = _range(2) * 1.001 / elem_size;
   unsigned int id_x = centroid(0) / elem_size;
   unsigned int id_y = centroid(1) / elem_size;
   unsigned int id_z = centroid(2) / elem_size;
