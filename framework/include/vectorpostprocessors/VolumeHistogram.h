@@ -41,6 +41,8 @@ protected:
   /// compute the volume contribution at the current quadrature point
   virtual Real computeVolume();
 
+  const MaterialProperty<Real> & _weibull;
+
   /// number of histogram bins
   const unsigned int _nbins;
 

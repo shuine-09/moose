@@ -33,6 +33,7 @@ validParams<VolumeHistogram>()
 
 VolumeHistogram::VolumeHistogram(const InputParameters & parameters)
   : ElementVectorPostprocessor(parameters),
+    _weibull(getMaterialPropertyByName<Real>("weibull")),
     _nbins(getParam<unsigned int>("bin_number")),
     _min_value(getParam<Real>("min_value")),
     _max_value(getParam<Real>("max_value")),
@@ -64,11 +65,12 @@ VolumeHistogram::execute()
   for (_qp = 0; _qp < _qrule->n_points(); ++_qp)
   {
     // compute target bin
-    int bin = (_value[_qp] - _min_value) / _deltaV;
+    // int bin = (_value[_qp] - _min_value) / _deltaV;
+    int bin = (_weibull[_qp] - _min_value) / _deltaV;
 
     // add the volume contributed by the current quadrature point
     if (bin >= 0 && static_cast<unsigned int>(bin) < _nbins)
-      _volume[bin] += computeVolume();
+      _volume[bin] += 1; // computeVolume();
   }
 }
 
