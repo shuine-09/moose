@@ -23,7 +23,7 @@
 #include "libmesh/vector_value.h"
 #include "libmesh/elem.h"
 
-#include "SymmTensor.h"
+#include "RankTwoTensor.h"
 
 class XFEM;
 class RankTwoTensor;
@@ -54,24 +54,7 @@ protected:
 
   RealVectorValue rotateToCrackFrontCoords(const RealVectorValue vector) const;
   RealVectorValue rotateToCrackFrontCoords(const Point point) const;
-  ColumnMajorMatrix rotateToCrackFrontCoords(const SymmTensor tensor) const;
-  ColumnMajorMatrix rotateToCrackFrontCoords(const ColumnMajorMatrix tensor) const;
-
-  unsigned int _crack_front_point_index;
-
-  const MaterialProperty<RankTwoTensor> & _Eshelby_tensor;
-  const MaterialProperty<RealVectorValue> * _J_thermal_term_vec;
-  const MaterialProperty<SymmTensor> & _stress;
-  const MaterialProperty<SymmTensor> & _strain;
-  const VariableGradient & _grad_disp_x;
-  const VariableGradient & _grad_disp_y;
-  const VariableGradient & _grad_disp_z;
-  const VariableGradient & _temp_grad;
-
-  ColumnMajorMatrix _aux_stress;
-  ColumnMajorMatrix _aux_disp;
-  ColumnMajorMatrix _aux_grad_disp;
-  ColumnMajorMatrix _aux_strain;
+  RankTwoTensor rotateToCrackFrontCoords(const RankTwoTensor tensor) const;
 
   enum SIF_MODE
   {
@@ -79,13 +62,15 @@ protected:
     KII
   };
 
-  void computeAuxFields(const SIF_MODE sif_mode,
-                        ColumnMajorMatrix & stress,
-                        ColumnMajorMatrix & disp,
-                        ColumnMajorMatrix & grad_disp,
-                        ColumnMajorMatrix & strain);
+  void
+  computeAuxFields(const SIF_MODE sif_mode, RankTwoTensor & aux_stress, RankTwoTensor & grad_disp);
 
-private:
+  unsigned int _ndisp;
+  const MaterialProperty<RankTwoTensor> & _stress;
+  const MaterialProperty<RankTwoTensor> & _strain;
+  std::vector<const VariableGradient *> _grad_disp;
+  const bool _has_temp;
+  const VariableGradient & _grad_temp;
   unsigned int _qp;
   std::vector<Real> _integral_values;
   Real _radius_inner;
@@ -109,7 +94,7 @@ private:
   Real _r;
   Real _theta;
 
-  ColumnMajorMatrix _rot_mat;
+  RankTwoTensor _rot_matrix;
   RealVectorValue _crack_plane_normal;
   BoundaryName _intersecting_boundary_name;
   const PostprocessorValue * const _postprocessor;
@@ -117,7 +102,7 @@ private:
   Real _critical_k;
   bool _use_weibull;
   std::vector<Real> _weibull_at_tip;
-  const MaterialProperty<Real> & _weibull;
+  const MaterialProperty<Real> * _weibull;
 };
 
 template <>

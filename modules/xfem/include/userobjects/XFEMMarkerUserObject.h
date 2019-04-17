@@ -32,7 +32,7 @@ public:
   virtual void finalize();
 
 protected:
-  virtual bool doesElementCrack(RealVectorValue & direction);
+  virtual bool doesElementCrack(Point & direction);
 
 private:
   MooseMesh & _mesh;

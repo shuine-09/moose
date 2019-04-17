@@ -43,7 +43,7 @@ protected:
   const MooseArray<Real> & _JxW;
   const MooseArray<Real> & _coord;
 
-  virtual bool doesElementCrack(RealVectorValue & direction) override;
+  virtual bool doesElementCrack(Point & direction) override;
 };
 
 #endif // XFEMRANKTWOTENSORMARKERUSEROBJECT_H

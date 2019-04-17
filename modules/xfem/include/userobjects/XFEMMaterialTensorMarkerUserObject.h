@@ -9,7 +9,7 @@
 #define XFEMMATERIALTENSORMARKERUSEROBJECT_H
 
 #include "XFEMMarkerUserObject.h"
-#include "MaterialTensorCalculator.h"
+#include "RankTwoTensor.h"
 
 class XFEMMaterialTensorMarkerUserObject;
 
@@ -24,15 +24,19 @@ public:
 
 protected:
   bool _use_weibull;
-  MaterialTensorCalculator _material_tensor_calculator;
-  const MaterialProperty<SymmTensor> & _tensor;
+  const MaterialProperty<RankTwoTensor> & _tensor;
+
+  MooseEnum _scalar_type;
+  const Point _point1;
+  const Point _point2;
+
   Real _threshold;
   bool _average;
   Real _random_range;
 
   const MaterialProperty<Real> & _weibull;
-  
-  virtual bool doesElementCrack(RealVectorValue &direction);
+
+  virtual bool doesElementCrack(Point & direction);
 };
 
 #endif // XFEMMATERIALTENSORMARKERUSEROBJECT_H

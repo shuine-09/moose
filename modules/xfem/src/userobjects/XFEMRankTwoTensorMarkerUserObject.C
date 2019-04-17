@@ -54,7 +54,7 @@ XFEMRankTwoTensorMarkerUserObject::XFEMRankTwoTensorMarkerUserObject(
 }
 
 bool
-XFEMRankTwoTensorMarkerUserObject::doesElementCrack(RealVectorValue & direction)
+XFEMRankTwoTensorMarkerUserObject::doesElementCrack(Point & direction)
 {
   bool does_it_crack = false;
   unsigned int numqp = _qrule->n_points();

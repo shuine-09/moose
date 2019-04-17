@@ -12,6 +12,8 @@
 #include "MooseMesh.h"
 #include "XFEM.h"
 #include "RankTwoTensor.h"
+#include "DerivativeMaterialInterface.h"
+#include "libmesh/utility.h"
 
 template <>
 InputParameters
@@ -24,10 +26,12 @@ validParams<XFEMMaxHoopStress>()
   params.set<bool>("use_displaced_mesh") = false;
   params.addParam<Real>("poissons_ratio", "Poisson's ratio for the material.");
   params.addParam<Real>("youngs_modulus", "Young's modulus of the material.");
-  params.addCoupledVar("disp_x", "The x displacement");
-  params.addCoupledVar("disp_y", "The y displacement");
-  params.addCoupledVar("disp_z", "The z displacement");
-  params.addCoupledVar("temp", "Coupled Temperature");
+  params.addRequiredCoupledVar(
+      "displacements",
+      "The displacements appropriate for the simulation geometry and coordinate system");
+  params.addCoupledVar("temp",
+                       "The temperature (optional). Must be provided to correctly compute "
+                       "stress intensity factors in models with thermal strain gradients.");
   params.addParam<BoundaryName>("intersecting_boundary", "Boundary intersected by ends of crack.");
   params.addParam<PostprocessorName>("average_h", "Postprocessor that gives average element size");
   params.addParam<Real>("critical_k", 0.0, "Critical hoop stress.");
@@ -37,18 +41,18 @@ validParams<XFEMMaxHoopStress>()
 
 XFEMMaxHoopStress::XFEMMaxHoopStress(const InputParameters & parameters)
   : ElementUserObject(parameters),
-    _Eshelby_tensor(getMaterialProperty<RankTwoTensor>("Eshelby_tensor")),
-    _J_thermal_term_vec(hasMaterialProperty<RealVectorValue>("J_thermal_term_vec")
-                            ? &getMaterialProperty<RealVectorValue>("J_thermal_term_vec")
-                            : NULL),
-    _stress(getMaterialPropertyByName<SymmTensor>("stress")),
-    _strain(getMaterialPropertyByName<SymmTensor>("elastic_strain")),
-    _grad_disp_x(coupledGradient("disp_x")),
-    _grad_disp_y(coupledGradient("disp_y")),
-    _grad_disp_z(parameters.get<SubProblem *>("_subproblem")->mesh().dimension() == 3
-                     ? coupledGradient("disp_z")
-                     : _grad_zero),
-    _temp_grad(coupledGradient("temp")),
+    _ndisp(coupledComponents("displacements")),
+    // _stress(hasMaterialProperty<RankTwoTensor>("stress")
+    //             ? &getMaterialPropertyByName<RankTwoTensor>("stress")
+    //             : nullptr),
+    // _strain(hasMaterialProperty<RankTwoTensor>("elastic_strain")
+    //             ? &getMaterialPropertyByName<RankTwoTensor>("elastic_strain")
+    //             : nullptr),
+    _stress(getMaterialPropertyByName<RankTwoTensor>("stress")),
+    _strain(getMaterialPropertyByName<RankTwoTensor>("elastic_strain")),
+    _grad_disp(3),
+    _has_temp(isCoupled("temp")),
+    _grad_temp(_has_temp ? coupledGradient("temp") : _grad_zero),
     _qp(0),
     _thermal_expansion(getParam<Real>("thermal_expansion")),
     _mesh(_subproblem.mesh()),
@@ -57,8 +61,23 @@ XFEMMaxHoopStress::XFEMMaxHoopStress(const InputParameters & parameters)
     _postprocessor(isParamValid("average_h") ? &getPostprocessorValue("average_h") : NULL),
     _critical_k(getParam<Real>("critical_k")),
     _use_weibull(getParam<bool>("use_weibull")),
-    _weibull(getMaterialProperty<Real>("weibull"))
+    _weibull(_use_weibull ? &getMaterialProperty<Real>("weibull") : nullptr)
 {
+  // if (!hasMaterialProperty<RankTwoTensor>("stress"))
+  //   mooseError("InteractionIntegral Error: RankTwoTensor material property 'stress' not found. "
+  //              "This may be because solid mechanics system is being used to calculate a
+  //              SymmTensor "
+  //              "'stress' material property. To use interaction integral calculation with solid "
+  //              "mechanics application, please set 'solid_mechanics = true' in the DomainIntegral
+  //              " "block.");
+
+  // if (!hasMaterialProperty<RankTwoTensor>("elastic_strain"))
+  //   mooseError("InteractionIntegral Error: RankTwoTensor material property 'elastic_strain' not "
+  //              "found. This may be because solid mechanics system is being used to calculate a "
+  //              "SymmTensor 'elastic_strain' material property. To use interaction integral "
+  //              "calculation with solid mechanics application, please set 'solid_mechanics = true'
+  //              " "in the DomainIntegral block.");
+
   _fe_problem = dynamic_cast<FEProblemBase *>(&_subproblem);
   if (_fe_problem == NULL)
     mooseError("Problem casting _subproblem to FEProblem in XFEMMaxHoopStress");
@@ -84,169 +103,81 @@ XFEMMaxHoopStress::XFEMMaxHoopStress(const InputParameters & parameters)
 
   _sif_mode.push_back(SIF_MODE(0));
   _sif_mode.push_back(SIF_MODE(1));
+
+  // Checking for consistency between mesh size and length of the provided displacements vector
+  if (_ndisp != _mesh.dimension())
+    mooseError("InteractionIntegral Error: number of variables supplied in 'displacements' must "
+               "match the mesh dimension.");
+
+  // fetch gradients of coupled variables
+  for (unsigned int i = 0; i < _ndisp; ++i)
+    _grad_disp[i] = &coupledGradient("displacements", i);
+
+  // set unused dimensions to zero
+  for (unsigned i = _ndisp; i < 3; ++i)
+    _grad_disp[i] = &_grad_zero;
 }
 
 void
 XFEMMaxHoopStress::computeAuxFields(const SIF_MODE sif_mode,
-                                    ColumnMajorMatrix & stress,
-                                    ColumnMajorMatrix & disp,
-                                    ColumnMajorMatrix & grad_disp,
-                                    ColumnMajorMatrix & strain)
+                                    RankTwoTensor & aux_stress,
+                                    RankTwoTensor & grad_disp)
 {
-
-  RealVectorValue k(0);
+  RealVectorValue k(0.0);
   if (sif_mode == KI)
-    k(0) = 1;
-
+    k(0) = 1.0;
   else if (sif_mode == KII)
-    k(1) = 1;
+    k(1) = 1.0;
 
   Real t = _theta;
-  Real t2 = _theta / 2;
-  Real tt2 = 3 * _theta / 2;
+  Real t2 = _theta / 2.0;
+  Real tt2 = 3.0 * _theta / 2.0;
   Real st = std::sin(t);
   Real ct = std::cos(t);
   Real st2 = std::sin(t2);
   Real ct2 = std::cos(t2);
   Real stt2 = std::sin(tt2);
   Real ctt2 = std::cos(tt2);
-  Real ctsq = std::pow(ct, 2);
-  Real ct2sq = std::pow(ct2, 2);
-  Real ct2cu = std::pow(ct2, 3);
-  Real sqrt2PiR = std::sqrt(2 * libMesh::pi * _r);
+  Real ct2sq = Utility::pow<2>(ct2);
+  Real ct2cu = Utility::pow<3>(ct2);
+  Real sqrt2PiR = std::sqrt(2.0 * libMesh::pi * _r);
 
   // Calculate auxiliary stress tensor
-  Real s11 = 1 / sqrt2PiR * (k(0) * ct2 * (1 - st2 * stt2) - k(1) * st2 * (2 + ct2 * ctt2));
-  Real s22 = 1 / sqrt2PiR * (k(0) * ct2 * (1 + st2 * stt2) + k(1) * st2 * ct2 * ctt2);
-  Real s12 = 1 / sqrt2PiR * (k(0) * ct2 * st2 * ctt2 + k(1) * ct2 * (1 - st2 * stt2));
-  Real s13 = -1 / sqrt2PiR * k(2) * st2;
-  Real s23 = 1 / sqrt2PiR * k(2) * ct2;
-  // plain stress
+  aux_stress.zero();
+
+  aux_stress(0, 0) =
+      1.0 / sqrt2PiR * (k(0) * ct2 * (1.0 - st2 * stt2) - k(1) * st2 * (2.0 + ct2 * ctt2));
+  aux_stress(1, 1) = 1.0 / sqrt2PiR * (k(0) * ct2 * (1.0 + st2 * stt2) + k(1) * st2 * ct2 * ctt2);
+  aux_stress(0, 1) = 1.0 / sqrt2PiR * (k(0) * ct2 * st2 * ctt2 + k(1) * ct2 * (1.0 - st2 * stt2));
+  aux_stress(0, 2) = -1.0 / sqrt2PiR * k(2) * st2;
+  aux_stress(1, 2) = 1.0 / sqrt2PiR * k(2) * ct2;
+  // plane stress
   // Real s33 = 0;
-  // plain strain
-  Real s33 = _poissons_ratio * (s11 + s22);
+  // plane strain
+  aux_stress(2, 2) = _poissons_ratio * (aux_stress(0, 0) + aux_stress(1, 1));
 
-  stress(0, 0) = s11;
-  stress(0, 1) = s12;
-  stress(0, 2) = s13;
-  stress(1, 0) = s12;
-  stress(1, 1) = s22;
-  stress(1, 2) = s23;
-  stress(2, 0) = s13;
-  stress(2, 1) = s23;
-  stress(2, 2) = s33;
-
-  // Calculate x1 derivative of auxiliary stress tensor
-  Real ds111 = k(0) / (2 * _r * sqrt2PiR) *
-                   (-ct * ct2 + ct * ct2 * st2 * stt2 + st * st2 - st * stt2 +
-                    2 * st * ct2 * ct2 * stt2 + 3 * st * ct2 * st2 * ctt2) +
-               k(1) / (2 * _r * sqrt2PiR) *
-                   (2 * st2 * ct + ct * st2 * ct2 * ctt2 + 2 * st * ct2 - st * ctt2 +
-                    2 * st * ct2 * ct2 * ctt2 - 3 * st * st2 * ct2 * stt2);
-  Real ds121 = k(0) / (2 * _r * sqrt2PiR) *
-                   (-ct * ct2 * st2 * ctt2 + st * ctt2 - 2 * st * ct2 * ct2 * ctt2 +
-                    3 * st * st2 * ct2 * stt2) +
-               k(1) / (2 * _r * sqrt2PiR) *
-                   (-ct * ct2 + ct * ct2 * st2 * stt2 + st * st2 - st * stt2 +
-                    2 * st * ct2 * ct2 * stt2 + 3 * st * ct2 * st2 * ctt2);
-  Real ds131 = k(2) / (2 * _r * sqrt2PiR) * (st2 * ct + ct2 * st);
-  Real ds221 = k(0) / (2 * _r * sqrt2PiR) *
-                   (-ct * ct2 - ct * ct2 * st2 * stt2 + st * st2 + st * stt2 -
-                    2 * st * ct2 * ct2 * stt2 - 3 * st * ct2 * st2 * ctt2) +
-               k(1) / (2 * _r * sqrt2PiR) *
-                   (-ct * ct2 * st2 * ctt2 + st * ctt2 - 2 * st * ct2 * ct2 * ctt2 +
-                    3 * st * st2 * ct2 * stt2);
-  Real ds231 = k(2) / (2 * _r * sqrt2PiR) * (-ct2 * ct + st2 * st);
-  Real ds331 = _poissons_ratio * (ds111 + ds221);
-
-  // Calculate auxiliary displacements
-  disp(0, 0) =
-      1 / (2 * _shear_modulus) * std::sqrt(_r / (2 * libMesh::pi)) *
-      (k(0) * ct2 * (_kappa - 1 + 2 * st2 * st2) + k(1) * st2 * (_kappa + 1 + 2 * ct2 * ct2));
-  disp(0, 1) =
-      1 / (2 * _shear_modulus) * std::sqrt(_r / (2 * libMesh::pi)) *
-      (k(0) * st2 * (_kappa + 1 - 2 * ct2 * ct2) - k(1) * ct2 * (_kappa - 1 - 2 * st2 * st2));
-  disp(0, 2) = 1 / _shear_modulus * std::sqrt(_r / (2 * libMesh::pi)) * k(2) * st2 * st2;
+  aux_stress(1, 0) = aux_stress(0, 1);
+  aux_stress(2, 0) = aux_stress(0, 2);
+  aux_stress(2, 1) = aux_stress(1, 2);
 
   // Calculate x1 derivative of auxiliary displacements
-  Real du11 = k(0) / (4 * _shear_modulus * sqrt2PiR) *
-                  (ct * ct2 * _kappa + ct * ct2 - 2 * ct * ct2cu + st * st2 * _kappa + st * st2 -
-                   6 * st * st2 * ct2sq) +
-              k(1) / (4 * _shear_modulus * sqrt2PiR) *
-                  (ct * st2 * _kappa + ct * st2 + 2 * ct * st2 * ct2sq - st * ct2 * _kappa +
-                   3 * st * ct2 - 6 * st * ct2cu);
+  grad_disp.zero();
 
-  Real du21 = k(0) / (4 * _shear_modulus * sqrt2PiR) *
-                  (ct * st2 * _kappa + ct * st2 - 2 * ct * st2 * ct2sq - st * ct2 * _kappa -
-                   5 * st * ct2 + 6 * st * ct2cu) +
-              k(1) / (4 * _shear_modulus * sqrt2PiR) *
-                  (-ct * ct2 * _kappa + 3 * ct * ct2 - 2 * ct * ct2cu - st * st2 * _kappa +
-                   3 * st * st2 - 6 * st * st2 * ct2sq);
+  grad_disp(0, 0) = k(0) / (4.0 * _shear_modulus * sqrt2PiR) *
+                        (ct * ct2 * _kappa + ct * ct2 - 2.0 * ct * ct2cu + st * st2 * _kappa +
+                         st * st2 - 6.0 * st * st2 * ct2sq) +
+                    k(1) / (4.0 * _shear_modulus * sqrt2PiR) *
+                        (ct * st2 * _kappa + ct * st2 + 2.0 * ct * st2 * ct2sq - st * ct2 * _kappa +
+                         3.0 * st * ct2 - 6.0 * st * ct2cu);
 
-  Real du31 = k(2) / (_shear_modulus * sqrt2PiR) * (st2 * ct - ct2 * st);
+  grad_disp(0, 1) = k(0) / (4.0 * _shear_modulus * sqrt2PiR) *
+                        (ct * st2 * _kappa + ct * st2 - 2.0 * ct * st2 * ct2sq - st * ct2 * _kappa -
+                         5.0 * st * ct2 + 6.0 * st * ct2cu) +
+                    k(1) / (4.0 * _shear_modulus * sqrt2PiR) *
+                        (-ct * ct2 * _kappa + 3.0 * ct * ct2 - 2.0 * ct * ct2cu -
+                         st * st2 * _kappa + 3.0 * st * st2 - 6.0 * st * st2 * ct2sq);
 
-  grad_disp(0, 0) = du11;
-  grad_disp(0, 1) = du21;
-  grad_disp(0, 2) = du31;
-
-  // Calculate second derivatives of displacements (u,1i)
-  // only needed for inhomogenous materials
-  Real du111 = k(0) / (8 * _shear_modulus * _r * sqrt2PiR) *
-                   (-2 * ctsq * ct2 * _kappa + ct2 * _kappa + 10 * ctsq * ct2 - 11 * ct2 -
-                    12 * ctsq * ct2cu + 14 * ct2cu - 2 * ct * st2 * st * _kappa -
-                    2 * ct * st2 * st + 12 * ct * st2 * st * ct2sq) +
-               k(1) / (8 * _shear_modulus * _r * sqrt2PiR) *
-                   (-2 * ctsq * st2 * _kappa - 6 * ctsq * st2 + 12 * ctsq * st2 * ct2sq +
-                    2 * ct * ct2 * st * _kappa - 6 * ct * ct2 * st + 12 * ct * ct2cu * st +
-                    st2 * _kappa + 5 * st2 - 14 * st2 * ct2sq);
-  Real du112 = k(0) / (8 * _shear_modulus * _r * sqrt2PiR) *
-                   (-2 * ct * ct2 * st * _kappa + 10 * ct * ct2 * st - 12 * st * ct * ct2cu -
-                    st2 * _kappa + 2 * ctsq * st2 * _kappa - st2 + 2 * ctsq * st2 +
-                    6 * st2 * ct2sq - 12 * ctsq * st2 * ct2sq) +
-               k(2) / (8 * _shear_modulus * _r * sqrt2PiR) *
-                   (-2 * ct * st2 * st * _kappa - 6 * ct * st2 * st + 12 * ct * st2 * st * ct2sq +
-                    ct2 * _kappa + 6 * ctsq * ct2 - 2 * ctsq * ct2 * _kappa - 3 * ct2 + 6 * ct2cu -
-                    12 * ctsq * ct2cu);
-  Real du113 = 0.0;
-
-  Real du211 = k(0) / (8 * _shear_modulus * _r * sqrt2PiR) *
-                   (-2 * ctsq * ct2 * _kappa + ct2 * _kappa + 10 * ctsq * ct2 - 11 * ct2 -
-                    12 * ctsq * ct2cu + 14 * ct2cu - 2 * ct * st2 * st * _kappa -
-                    2 * ct * st2 * st + 12 * ct * st2 * st * ct2sq) +
-               k(1) / (8 * _shear_modulus * _r * sqrt2PiR) *
-                   (-2 * ctsq * st2 * _kappa - 6 * ctsq * st2 + 12 * ctsq * st2 * ct2sq +
-                    2 * ct * ct2 * st * _kappa - 6 * ct * ct2 * st + 12 * ct * ct2cu * st +
-                    st2 * _kappa + 5 * st2 - 14 * st2 * ct2sq);
-
-  Real du212 = k(0) / (8 * _shear_modulus * _r * sqrt2PiR) *
-                   (-2 * ct * st2 * st * _kappa + 2 * ct * st2 * st - 6 * ct2cu -
-                    12 * ct * st2 * st * ct2sq + ct2 * _kappa - 2 * ctsq * ct2 * _kappa + 5 * ct2 -
-                    10 * ctsq * ct2 + 12 * ctsq * ct2cu) +
-               k(2) / (8 * _shear_modulus * _r * sqrt2PiR) *
-                   (2 * ct * ct2 * st * _kappa + 6 * ct * ct2 * st + st2 * _kappa -
-                    2 * ctsq * st2 * _kappa - 3 * st2 + 6 * ctsq * st2 + 6 * st2 * ct2sq -
-                    12 * ctsq * st2 * ct2sq - 12 * ct * ct2cu * st);
-
-  Real du213 = 0.0;
-
-  Real du311 =
-      k(2) / (2 * _shear_modulus * _r * sqrt2PiR) * (-2 * ctsq * st2 + st2 + 2 * ct * ct2 * st);
-
-  Real du312 =
-      k(2) / (2 * _shear_modulus * _r * sqrt2PiR) * (-2 * ct * st2 * st + ct2 - 2 * ctsq * ct2);
-
-  Real du313 = 0.0;
-
-  // Calculate auxiliary strains
-  strain(0, 0) = (1 / _youngs_modulus) * (s11 - _poissons_ratio * (s22 + s33));
-  strain(1, 1) = (1 / _youngs_modulus) * (s22 - _poissons_ratio * (s11 + s33));
-  strain(2, 2) = (1 / _youngs_modulus) * (s33 - _poissons_ratio * (s11 + s22));
-  strain(0, 1) = (1 / _shear_modulus) * s12;
-  strain(1, 0) = (1 / _shear_modulus) * s12;
-  strain(1, 2) = (1 / _shear_modulus) * s23;
-  strain(2, 1) = (1 / _shear_modulus) * s23;
-  strain(0, 2) = (1 / _shear_modulus) * s13;
-  strain(2, 0) = (1 / _shear_modulus) * s13;
+  grad_disp(0, 2) = k(2) / (_shear_modulus * sqrt2PiR) * (st2 * ct - ct2 * st);
 }
 
 void
@@ -330,57 +261,22 @@ XFEMMaxHoopStress::calcQValue(Point & node, Point & crack_front)
 RealVectorValue
 XFEMMaxHoopStress::rotateToCrackFrontCoords(const RealVectorValue vector) const
 {
-  ColumnMajorMatrix vec3x1;
-  vec3x1 = _rot_mat * vector;
-  RealVectorValue vec;
-  vec(0) = vec3x1(0, 0);
-  vec(1) = vec3x1(1, 0);
-  vec(2) = vec3x1(2, 0);
-  return vec;
+  return _rot_matrix * vector;
 }
 
 RealVectorValue
 XFEMMaxHoopStress::rotateToCrackFrontCoords(const Point point) const
 {
   RealVectorValue vector(point(0), point(1), point(2));
-  ColumnMajorMatrix vec3x1;
-  vec3x1 = _rot_mat * vector;
-  RealVectorValue vec;
-  vec(0) = vec3x1(0, 0);
-  vec(1) = vec3x1(1, 0);
-  vec(2) = vec3x1(2, 0);
-  return vec;
+  return _rot_matrix * vector;
 }
 
-ColumnMajorMatrix
-XFEMMaxHoopStress::rotateToCrackFrontCoords(const SymmTensor tensor) const
+RankTwoTensor
+XFEMMaxHoopStress::rotateToCrackFrontCoords(const RankTwoTensor tensor) const
 {
-  ColumnMajorMatrix tensor_CMM;
-  tensor_CMM(0, 0) = tensor.xx();
-  tensor_CMM(0, 1) = tensor.xy();
-  tensor_CMM(0, 2) = tensor.xz();
-  tensor_CMM(1, 0) = tensor.xy();
-  tensor_CMM(1, 1) = tensor.yy();
-  tensor_CMM(1, 2) = tensor.yz();
-  tensor_CMM(2, 0) = tensor.xz();
-  tensor_CMM(2, 1) = tensor.yz();
-  tensor_CMM(2, 2) = tensor.zz();
-
-  ColumnMajorMatrix tmp = _rot_mat * tensor_CMM;
-  ColumnMajorMatrix rotT = _rot_mat.transpose();
-  ColumnMajorMatrix rotated_tensor = tmp * rotT;
-
-  return rotated_tensor;
-}
-
-ColumnMajorMatrix
-XFEMMaxHoopStress::rotateToCrackFrontCoords(const ColumnMajorMatrix tensor) const
-{
-  ColumnMajorMatrix tmp = _rot_mat * tensor;
-  ColumnMajorMatrix rotT = _rot_mat.transpose();
-  ColumnMajorMatrix rotated_tensor = tmp * rotT;
-
-  return rotated_tensor;
+  RankTwoTensor tmp_tensor(tensor);
+  tmp_tensor.rotate(_rot_matrix);
+  return tmp_tensor;
 }
 
 void
@@ -389,16 +285,9 @@ XFEMMaxHoopStress::calcRTheta(Point & p, Point & crack_front_point, Point & crac
   RealVectorValue tangent_direction;
   tangent_direction(2) = 1.0;
   _crack_plane_normal = tangent_direction.cross(crack_direction);
-  _rot_mat(0, 0) = crack_direction(0);
-  _rot_mat(0, 1) = crack_direction(1);
-  _rot_mat(0, 2) = crack_direction(2);
-  _rot_mat(1, 0) = _crack_plane_normal(0);
-  _rot_mat(1, 1) = _crack_plane_normal(1);
-  _rot_mat(1, 2) = _crack_plane_normal(2);
-  _rot_mat(2, 0) = 0.0;
-  _rot_mat(2, 1) = 0.0;
-  _rot_mat(2, 2) = 0.0;
-  _rot_mat(2, 2) = 1.0;
+  _rot_matrix.fillRow(0, crack_direction);
+  _rot_matrix.fillRow(1, _crack_plane_normal);
+  _rot_matrix(2, 2) = 1.0;
 
   Point closest_point(0.0);
   RealVectorValue crack_front_point_rot = rotateToCrackFrontCoords(crack_front_point);
@@ -511,61 +400,28 @@ XFEMMaxHoopStress::computeQpIntegrals(const std::vector<std::vector<Real>> & N_s
     // Calculate auxiliary stress tensor at current qp
     for (std::vector<SIF_MODE>::iterator it = _sif_mode.begin(); it != _sif_mode.end(); ++it)
     {
+      RankTwoTensor aux_stress;
+      RankTwoTensor aux_du;
+
       if (*it == KI)
-        computeAuxFields(*it, _aux_stress, _aux_disp, _aux_grad_disp, _aux_strain);
+        computeAuxFields(*it, aux_stress, aux_du);
 
       else if (*it == KII)
-        computeAuxFields(*it, _aux_stress, _aux_disp, _aux_grad_disp, _aux_strain);
+        computeAuxFields(*it, aux_stress, aux_du);
 
       // In the crack front coordinate system, the crack direction is (1,0,0)
       RealVectorValue crack_direction_local(0.0);
       crack_direction_local(0) = 1.0;
 
-      ColumnMajorMatrix aux_du;
-      aux_du(0, 0) = _aux_grad_disp(0, 0);
-      aux_du(0, 1) = _aux_grad_disp(0, 1);
-      aux_du(0, 2) = _aux_grad_disp(0, 2);
-
-      ColumnMajorMatrix stress;
-      stress(0, 0) = _stress[_qp].xx();
-      stress(0, 1) = _stress[_qp].xy();
-      stress(0, 2) = _stress[_qp].xz();
-      stress(1, 0) = _stress[_qp].xy();
-      stress(1, 1) = _stress[_qp].yy();
-      stress(1, 2) = _stress[_qp].yz();
-      stress(2, 0) = _stress[_qp].xz();
-      stress(2, 1) = _stress[_qp].yz();
-      stress(2, 2) = _stress[_qp].zz();
-
-      ColumnMajorMatrix strain;
-      strain(0, 0) = _strain[_qp].xx();
-      strain(0, 1) = _strain[_qp].xy();
-      strain(0, 2) = _strain[_qp].xz();
-      strain(1, 0) = _strain[_qp].xy();
-      strain(1, 1) = _strain[_qp].yy();
-      strain(1, 2) = _strain[_qp].yz();
-      strain(2, 0) = _strain[_qp].xz();
-      strain(2, 1) = _strain[_qp].yz();
-      strain(2, 2) = _strain[_qp].zz();
-
-      ColumnMajorMatrix grad_disp;
-      grad_disp(0, 0) = _grad_disp_x[_qp](0);
-      grad_disp(0, 1) = _grad_disp_x[_qp](1);
-      grad_disp(0, 2) = _grad_disp_x[_qp](2);
-      grad_disp(1, 0) = _grad_disp_y[_qp](0);
-      grad_disp(1, 1) = _grad_disp_y[_qp](1);
-      grad_disp(1, 2) = _grad_disp_y[_qp](2);
-      grad_disp(2, 0) = _grad_disp_z[_qp](0);
-      grad_disp(2, 1) = _grad_disp_z[_qp](1);
-      grad_disp(2, 2) = _grad_disp_z[_qp](2);
+      RankTwoTensor grad_disp((*_grad_disp[0])[_qp], (*_grad_disp[1])[_qp], (*_grad_disp[2])[_qp]);
 
       // Rotate stress, strain, and displacement to crack front coordinate system
       RealVectorValue grad_q_cf = rotateToCrackFrontCoords(grad_q);
-      ColumnMajorMatrix grad_disp_cf = rotateToCrackFrontCoords(grad_disp);
-      ColumnMajorMatrix stress_cf = rotateToCrackFrontCoords(stress);
-      ColumnMajorMatrix strain_cf = rotateToCrackFrontCoords(strain);
+      RankTwoTensor grad_disp_cf = rotateToCrackFrontCoords(grad_disp);
+      RankTwoTensor stress_cf = rotateToCrackFrontCoords((_stress)[_qp]);
+      RankTwoTensor strain_cf = rotateToCrackFrontCoords((_strain)[_qp]);
 
-      ColumnMajorMatrix dq;
+      RankTwoTensor dq;
       dq(0, 0) = crack_direction_local(0) * grad_q_cf(0);
       dq(0, 1) = crack_direction_local(0) * grad_q_cf(1);
       dq(0, 2) = crack_direction_local(0) * grad_q_cf(2);
@@ -573,16 +429,16 @@ XFEMMaxHoopStress::computeQpIntegrals(const std::vector<std::vector<Real>> & N_s
       // Calculate interaction integral terms
 
       // Term1 = stress * x1-derivative of aux disp * dq
-      ColumnMajorMatrix tmp1 = dq * stress_cf;
+      RankTwoTensor tmp1 = dq * stress_cf;
       Real term1 = aux_du.doubleContraction(tmp1);
 
       // Term2 = aux stress * x1-derivative of disp * dq
-      ColumnMajorMatrix tmp2 = dq * _aux_stress;
+      RankTwoTensor tmp2 = dq * aux_stress;
       Real term2 = grad_disp_cf(0, 0) * tmp2(0, 0) + grad_disp_cf(1, 0) * tmp2(0, 1) +
                    grad_disp_cf(2, 0) * tmp2(0, 2);
 
       // Term3 = aux stress * strain * dq_x   (= stress * aux strain * dq_x)
-      Real term3 = dq(0, 0) * _aux_stress.doubleContraction(strain_cf);
+      Real term3 = dq(0, 0) * aux_stress.doubleContraction(strain_cf);
 
       /*
       RealVectorValue J_vec(0);
@@ -600,10 +456,10 @@ XFEMMaxHoopStress::computeQpIntegrals(const std::vector<std::vector<Real>> & N_s
 
       */
 
-      RealVectorValue grad_temp_cf = rotateToCrackFrontCoords(_temp_grad[_qp]);
+      RealVectorValue grad_temp_cf = rotateToCrackFrontCoords(_grad_temp[_qp]);
 
       Real eq_thermal = 0.0;
-      Real aux_stress_trace = _aux_stress(0, 0) + _aux_stress(1, 1) + _aux_stress(2, 2);
+      Real aux_stress_trace = aux_stress(0, 0) + aux_stress(1, 1) + aux_stress(2, 2);
       eq_thermal = scalar_q * aux_stress_trace * _thermal_expansion * grad_temp_cf(0);
 
       Real eq = term1 + term2 - term3 + eq_thermal;
@@ -617,11 +473,11 @@ XFEMMaxHoopStress::computeQpIntegrals(const std::vector<std::vector<Real>> & N_s
 void
 XFEMMaxHoopStress::execute()
 {
-  if (_postprocessor)
-  {
-    _radius_inner = 1.5 * *_postprocessor;
-    _radius_outer = 3.5 * *_postprocessor;
-  }
+  // if (_postprocessor)
+  // {
+  //   _radius_inner = 1.5 * *_postprocessor;
+  //   _radius_outer = 3.5 * *_postprocessor;
+  // }
 
   std::vector<Real> comp_integ = computeIntegrals();
   for (unsigned int i = 0; i < _num_crack_front_points * 2; i++)
@@ -631,7 +487,10 @@ XFEMMaxHoopStress::execute()
   {
     if (_current_elem == _elem_id_crack_tip[i])
     {
-      _weibull_at_tip[i] = _weibull[0];
+      if (_use_weibull)
+        _weibull_at_tip[i] = (*_weibull)[0];
+      else
+        _weibull_at_tip[i] = 1.0;
       break;
     }
   }

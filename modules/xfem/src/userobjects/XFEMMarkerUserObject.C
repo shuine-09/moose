@@ -59,7 +59,7 @@ XFEMMarkerUserObject::initialize()
 void
 XFEMMarkerUserObject::execute()
 {
-  RealVectorValue direction;
+  Point direction;
   bool isCut = _xfem->isElemCut(_current_elem);
   bool isCTE = _xfem->isElemAtCrackTip(_current_elem);
   bool isOnBoundary = false;
@@ -162,7 +162,7 @@ XFEMMarkerUserObject::finalize()
 }
 
 bool
-XFEMMarkerUserObject::doesElementCrack(RealVectorValue & direction)
+XFEMMarkerUserObject::doesElementCrack(Point & direction)
 {
   direction(1) = 1.0;
   return true;
