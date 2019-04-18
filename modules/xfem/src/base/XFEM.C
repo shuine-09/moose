@@ -1011,7 +1011,8 @@ XFEM::markCutEdgesByState(Real time)
         Real x0 = crack_tip_origin(0);
         Real y0 = crack_tip_origin(1);
 
-        Real crack_growth_increment = 0.0002; //0.00025;
+        Real crack_growth_increment = 0.0002; 
+        //0.0002; //0.00025;
         //_crack_growth_increment; // 0.0002; //0.00025; // !!!!! 0.0001 TEST ONLY
 
         Real x1 = x0 + crack_growth_increment * growth_direction(0);
