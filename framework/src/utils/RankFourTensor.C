@@ -23,6 +23,8 @@
 #include "libmesh/utility.h"
 #include "libmesh/tensor_value.h"
 #include "libmesh/vector_value.h"
+#include "libmesh/dense_matrix.h"
+#include "libmesh/dense_vector.h"
 
 // C++ includes
 #include <iomanip>
@@ -383,8 +385,250 @@ template <>
 RankFourTensorTempl<DualReal>
 RankFourTensorTempl<DualReal>::invSymm() const
 {
-  mooseError("The invSymm operation calls to LAPACK, so AD is not supported.");
-  return {};
+  unsigned int ntens = N * (N + 1) / 2;
+  int nskip = N - 1;
+
+  RankFourTensorTempl<DualReal> result;
+  std::vector<DualReal> mat;
+  mat.assign(ntens * ntens, 0);
+
+  // We use the LAPACK matrix inversion routine here.  Form the matrix
+  //
+  // mat[0]  mat[1]  mat[2]  mat[3]  mat[4]  mat[5]
+  // mat[6]  mat[7]  mat[8]  mat[9]  mat[10] mat[11]
+  // mat[12] mat[13] mat[14] mat[15] mat[16] mat[17]
+  // mat[18] mat[19] mat[20] mat[21] mat[22] mat[23]
+  // mat[24] mat[25] mat[26] mat[27] mat[28] mat[29]
+  // mat[30] mat[31] mat[32] mat[33] mat[34] mat[35]
+  //
+  // This is filled from the indpendent components of C assuming
+  // the symmetry C_ijkl = C_ijlk = C_jikl.
+  //
+  // If there are two rank-four tensors X and Y then the reason for
+  // this filling becomes apparent if we want to calculate
+  // X_ijkl*Y_klmn = Z_ijmn
+  // For denote the "mat" versions of X, Y and Z by x, y and z.
+  // Then
+  // z_ab = x_ac*y_cb
+  // Eg
+  // z_00 = Z_0000 = X_0000*Y_0000 + X_0011*Y_1111 + X_0022*Y_2200 + 2*X_0001*Y_0100 +
+  // 2*X_0002*Y_0200 + 2*X_0012*Y_1200   (the factors of 2 come from the assumed symmetries)
+  // z_03 = 2*Z_0001 = X_0000*2*Y_0001 + X_0011*2*Y_1101 + X_0022*2*Y_2201 + 2*X_0001*2*Y_0101 +
+  // 2*X_0002*2*Y_0201 + 2*X_0012*2*Y_1201
+  // z_22 = 2*Z_0102 = X_0100*2*Y_0002 + X_0111*2*X_1102 + X_0122*2*Y_2202 + 2*X_0101*2*Y_0102 +
+  // 2*X_0102*2*Y_0202 + 2*X_0112*2*Y_1202
+  // Finally, we use LAPACK to find x^-1, and put it back into rank-4 tensor form
+  //
+  // mat[0] = C(0,0,0,0)
+  // mat[1] = C(0,0,1,1)
+  // mat[2] = C(0,0,2,2)
+  // mat[3] = C(0,0,0,1)*2
+  // mat[4] = C(0,0,0,2)*2
+  // mat[5] = C(0,0,1,2)*2
+
+  // mat[6] = C(1,1,0,0)
+  // mat[7] = C(1,1,1,1)
+  // mat[8] = C(1,1,2,2)
+  // mat[9] = C(1,1,0,1)*2
+  // mat[10] = C(1,1,0,2)*2
+  // mat[11] = C(1,1,1,2)*2
+
+  // mat[12] = C(2,2,0,0)
+  // mat[13] = C(2,2,1,1)
+  // mat[14] = C(2,2,2,2)
+  // mat[15] = C(2,2,0,1)*2
+  // mat[16] = C(2,2,0,2)*2
+  // mat[17] = C(2,2,1,2)*2
+
+  // mat[18] = C(0,1,0,0)
+  // mat[19] = C(0,1,1,1)
+  // mat[20] = C(0,1,2,2)
+  // mat[21] = C(0,1,0,1)*2
+  // mat[22] = C(0,1,0,2)*2
+  // mat[23] = C(0,1,1,2)*2
+
+  // mat[24] = C(0,2,0,0)
+  // mat[25] = C(0,2,1,1)
+  // mat[26] = C(0,2,2,2)
+  // mat[27] = C(0,2,0,1)*2
+  // mat[28] = C(0,2,0,2)*2
+  // mat[29] = C(0,2,1,2)*2
+
+  // mat[30] = C(1,2,0,0)
+  // mat[31] = C(1,2,1,1)
+  // mat[32] = C(1,2,2,2)
+  // mat[33] = C(1,2,0,1)*2
+  // mat[34] = C(1,2,0,2)*2
+  // mat[35] = C(1,2,1,2)*2
+
+  unsigned int index = 0;
+  for (unsigned int i = 0; i < N; ++i)
+    for (unsigned int j = 0; j < N; ++j)
+      for (unsigned int k = 0; k < N; ++k)
+        for (unsigned int l = 0; l < N; ++l)
+        {
+          if (i == j)
+            mat[k == l ? i * ntens + k : i * ntens + k + nskip + l] += _vals[index];
+          else // i!=j
+            mat[k == l ? (nskip + i + j) * ntens + k : (nskip + i + j) * ntens + k + nskip + l] +=
+                _vals[index]; // note the +=, which results in double-counting and is rectified
+                              // below
+          index++;
+        }
+
+  for (unsigned int i = 3; i < ntens; ++i)
+    for (unsigned int j = 0; j < ntens; ++j)
+      mat[i * ntens + j] /= 2.0; // because of double-counting above
+
+  // use LAPACK to find the inverse
+  // MatrixTools::inverse(mat, ntens);
+
+  DenseMatrix<DualReal> A(ntens + 1, ntens + 1);
+  DenseVector<unsigned int> P(ntens + 1);
+
+  for (unsigned int i = 1; i < ntens + 1; ++i)
+    for (unsigned int j = 1; j < ntens + 1; ++j)
+      A(i, j) = mat[(i - 1) * ntens + j - 1];
+
+  // std::cout << "mat A = " << std::endl;
+  // for (unsigned int i = 1; i < ntens + 1; ++i)
+  // {
+  //   for (unsigned int j = 1; j < ntens + 1; ++j)
+  //     std::cout << MetaPhysicL::raw_value(A(i, j)) << " ";
+  //
+  //   std::cout << std::endl;
+  // }
+
+  unsigned int i, j, k, kd = 0, T;
+  DualReal p, t;
+
+  /* Finding the pivot of the LUP decomposition. */
+  for (i = 1; i < ntens + 1; i++)
+    P(i) = i; // Initializing.
+
+  for (k = 1; k < ntens; k++)
+  {
+    p = 0;
+    for (i = k; i < ntens + 1; i++)
+    {
+      t = A(i, k);
+      if (t < 0)
+        t *= -1; // Abosolute value of 't'.
+      if (t > p)
+      {
+        p = t;
+        kd = i;
+      }
+    }
+
+    if (p == 0)
+      mooseError("RankFourTensorTempl<DualReal>::invSymm(): ERROR: A singular matrix is supplied");
+
+    /* Exchanging the rows according to the pivot determined above. */
+    T = P(kd);
+    P(kd) = P(k);
+    P(k) = T;
+    for (i = 1; i < ntens + 1; i++)
+    {
+      t = A(kd, i);
+      A(kd, i) = A(k, i);
+      A(k, i) = t;
+    }
+
+    for (i = k + 1; i < ntens + 1; i++) // Performing substraction to decompose A as LU.
+    {
+      A(i, k) = A(i, k) / A(k, k);
+      for (j = k + 1; j < ntens + 1; j++)
+        A(i, j) -= A(i, k) * A(k, j);
+    }
+  } // Now, 'A' contains the L (without the diagonal elements, which are all 1)
+  // and the U.
+
+  // std::cout << "LU = " << std::endl;
+  // for (unsigned int i = 1; i < ntens + 1; ++i)
+  // {
+  //   for (unsigned int j = 1; j < ntens + 1; ++j)
+  //     std::cout << MetaPhysicL::raw_value(A(i, j)) << " ";
+  //
+  //   std::cout << std::endl;
+  // }
+
+  unsigned int n, m;
+  DenseVector<DualReal> X(ntens + 1);
+  DenseVector<DualReal> Y(ntens + 1);
+  DenseMatrix<DualReal> B(ntens + 1, ntens + 1);
+
+  // Initializing X and Y.
+  for (n = 1; n < ntens + 1; n++)
+    X(n) = Y(n) = 0;
+
+  /* Solving LUX = Pe, in order to calculate the inverse of 'A'. Here, 'e' is a column
+   * vector of the identity matrix of size 'size-1'. Solving for all 'e'. */
+  for (i = 1; i < ntens + 1; i++)
+  {
+    // Storing elements of the i-th column of the identity matrix in i-th row of 'B'.
+    for (j = 1; j < ntens + 1; j++)
+      B(i, j) = 0;
+    B(i, i) = 1;
+
+    // Solving Ly = Pb.
+    for (n = 1; n < ntens + 1; n++)
+    {
+      t = 0;
+      for (m = 1; m <= n - 1; m++)
+        t += A(n, m) * Y(m);
+      Y(n) = B(i, int(MetaPhysicL::raw_value(P(n)))) - t;
+    }
+
+    // Solving Ux = y.
+    for (n = ntens; n >= 1; n--)
+    {
+      t = 0;
+      for (m = n + 1; m < ntens + 1; m++)
+        t += A(n, m) * X(m);
+      X(n) = (Y(n) - t) / A(n, n);
+    } // Now, X contains the solution.
+
+    for (j = 1; j < ntens + 1; j++)
+      B(i, j) = X(j); // Copying 'X' into the same row of 'B'.
+  }                   // Now, 'B' the transpose of the inverse of 'A'.
+
+  /* Copying transpose of 'B' into 'LU', which would the inverse of 'A'. */
+  for (i = 1; i < ntens + 1; i++)
+    for (j = 1; j < ntens + 1; j++)
+      A(i, j) = B(j, i);
+
+  // std::cout << "inv A = " << std::endl;
+  // for (unsigned int i = 1; i < ntens + 1; ++i)
+  // {
+  //   for (unsigned int j = 1; j < ntens + 1; ++j)
+  //     std::cout << MetaPhysicL::raw_value(A(i, j)) << " ";
+  //
+  //   std::cout << std::endl;
+  // }
+
+  for (i = 1; i < ntens + 1; i++)
+    for (j = 1; j < ntens + 1; j++)
+      mat[(i - 1) * ntens + j - 1] = A(i, j);
+
+  // build the resulting rank-four tensor
+  // using the inverse of the above algorithm
+  index = 0;
+  for (unsigned int i = 0; i < N; ++i)
+    for (unsigned int j = 0; j < N; ++j)
+      for (unsigned int k = 0; k < N; ++k)
+        for (unsigned int l = 0; l < N; ++l)
+        {
+          if (i == j)
+            result._vals[index] =
+                k == l ? mat[i * ntens + k] : mat[i * ntens + k + nskip + l] / 2.0;
+          else // i!=j
+            result._vals[index] = k == l ? mat[(nskip + i + j) * ntens + k]
+                                         : mat[(nskip + i + j) * ntens + k + nskip + l] / 2.0;
+          index++;
+        }
+
+  return result;
 }
 
 template <typename T>

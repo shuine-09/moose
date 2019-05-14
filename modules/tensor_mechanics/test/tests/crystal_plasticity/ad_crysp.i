@@ -55,16 +55,19 @@
     type = ADStressDivergenceTensors
     component = 0
     variable = disp_x
+    use_displaced_mesh = true
   [../]
   [./stress_y]
     type = ADStressDivergenceTensors
     component = 1
     variable = disp_y
+    use_displaced_mesh = true
   [../]
   [./stress_z]
     type = ADStressDivergenceTensors
     component = 1
     variable = disp_z
+    use_displaced_mesh = true
   [../]
 []
 
@@ -178,7 +181,7 @@
   type = Transient
 
   #Preconditioned JFNK (default)
-  solve_type = 'PJFNK'
+  solve_type = 'NEWTON'
 
   petsc_options_iname = '-pc_type'
   petsc_options_value = 'lu'
@@ -188,7 +191,7 @@
 
   dt = 0.05
   dtmax = 10.0
-  dtmin = 0.05
+  dtmin = 0.001
 
   num_steps = 10
 []

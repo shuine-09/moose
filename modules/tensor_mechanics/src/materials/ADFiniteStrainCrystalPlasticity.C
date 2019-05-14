@@ -10,6 +10,7 @@
 #include "ADFiniteStrainCrystalPlasticity.h"
 #include "petscblaslapack.h"
 #include "libmesh/utility.h"
+#include "MooseException.h"
 
 #include <fstream>
 #include <cmath>
@@ -566,24 +567,6 @@ template <ComputeStage compute_stage>
 void
 ADFiniteStrainCrystalPlasticity<compute_stage>::computeQpStress()
 {
-  // {
-  //   ADRankTwoTensor fe = _deformation_gradient[_qp]; // _fp_inv  ==> _fp_prev_inv
-  //
-  //   // ADRankce = fe.transpose() * fe;
-  //   // ce_pk2 = ce * _pk2_tmp;
-  //   // ce_pk2 = ce_pk2 / _fe.det();
-  //
-  //   DenseVector<ADReal> tau(_nss);
-  //   // Calculate Schmid tensor and resolved shear stresses
-  //   for (unsigned int i = 0; i < _nss; ++i)
-  //   {
-  //     tau(i) = fe.doubleContraction(fe);
-  //     std::cout << "tau(i) = " << tau(i) << std::endl;
-  //   }
-  //
-  //   _deformation_gradient[_qp].print();
-  // }
-
   unsigned int substep_iter = 1; // Depth of substepping; Limited to maximum substep iteration
   unsigned int num_substep = 1;  // Calculated from substep_iter as 2^substep_iter
   Real dt_original = _dt;        // Stores original _dt; Reset at the end of solve
@@ -692,7 +675,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::postSolveQp()
       _stress[_qp] = RankTwoTensor::genRandomSymmTensor(_rndm_scale_var, 1.0);
     }
     else
-      mooseError("ADFiniteStrainCrystalPlasticity: Constitutive failure");
+      throw MooseException("ADFiniteStrainCrystalPlasticity: Constitutive failure");
   }
   else
   {
@@ -1014,14 +997,14 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::calcResidual(ADRankTwoTensor & r
   ce_pk2 = ce * _pk2_tmp;
   ce_pk2 = ce_pk2 / _fe.det();
 
-  std::cout << "ce" << std::endl;
-  ce.print();
-
-  std::cout << "ce_pk2" << std::endl;
-  ce_pk2.print();
-
-  std::cout << "_pk2_tmp" << std::endl;
-  _pk2_tmp.print();
+  // std::cout << "ce" << std::endl;
+  // ce.print();
+  //
+  // std::cout << "ce_pk2" << std::endl;
+  // ce_pk2.print();
+  //
+  // std::cout << "_pk2_tmp" << std::endl;
+  // _pk2_tmp.print();
 
   // Calculate Schmid tensor and resolved shear stresses
   for (unsigned int i = 0; i < _nss; ++i)
@@ -1091,18 +1074,19 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::getSlipIncrements()
   // getFlowRateParams();
   for (unsigned int i = 0; i < _nss; ++i)
   {
-    std::cout << "_gss_tmp(" << i << ") = " << _gss_tmp(i) << std::endl;
-    std::cout << "_tau(" << i << ") = " << _tau(i) << std::endl;
-    std::cout << "_a0.size() = " << _a0.size() << std::endl;
-    std::cout << "_a0(" << i << ") = " << _a0(i) << std::endl;
-    std::cout << "_xm(" << i << ") = " << _xm(i) << std::endl;
+    // std::cout << "_gss_tmp(" << i << ") = " << _gss_tmp(i) << std::endl;
+    // std::cout << "_tau(" << i << ") = " << _tau(i) << std::endl;
+    // std::cout << "_a0(" << i << ") = " << _a0(i) << std::endl;
+    // std::cout << "_xm(" << i << ") = " << _xm(i) << std::endl;
 
-    if (_tau(i) >= 0)
+    if (_tau(i) == 0)
+      _slip_incr(i) = 0.0;
+    else if (_tau(i) > 0)
       _slip_incr(i) = _a0(i) * std::pow(std::abs(_tau(i) / _gss_tmp(i)), 1.0 / _xm(i)) * _dt;
-    else
+    else if (_tau(i) < 0)
       _slip_incr(i) = -_a0(i) * std::pow(std::abs(_tau(i) / _gss_tmp(i)), 1.0 / _xm(i)) * _dt;
 
-    std::cout << "_slip_incr(i) = " << _slip_incr(i) << std::endl;
+    // std::cout << "_slip_incr(i) = " << _slip_incr(i) << std::endl;
 
     if (std::abs(_slip_incr(i)) > _slip_incr_tol)
     {
@@ -1115,9 +1099,12 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::getSlipIncrements()
   }
 
   for (unsigned int i = 0; i < _nss; ++i)
-    _dslipdtau(i) = _a0(i) / _xm(i) *
-                    std::pow(std::abs(_tau(i) / _gss_tmp(i)), 1.0 / _xm(i) - 1.0) / _gss_tmp(i) *
-                    _dt;
+    if (_tau(i) == 0)
+      _dslipdtau(i) = 0.0;
+    else
+      _dslipdtau(i) = _a0(i) / _xm(i) *
+                      std::pow(std::abs(_tau(i) / _gss_tmp(i)), 1.0 / _xm(i) - 1.0) / _gss_tmp(i) *
+                      _dt;
 }
 
 // // Calls getMatRot to perform RU factorization of a tensor.
