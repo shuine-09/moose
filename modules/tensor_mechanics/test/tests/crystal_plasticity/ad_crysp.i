@@ -41,11 +41,6 @@
     family = MONOMIAL
     block = 0
   [../]
-  [./gss1]
-    order = CONSTANT
-    family = MONOMIAL
-    block = 0
-  [../]
 []
 
 [Functions]
@@ -98,14 +93,6 @@
     rank_two_tensor = lage
     index_j = 2
     index_i = 2
-    execute_on = timestep_end
-    block = 0
-  [../]
-  [./gss1]
-    type = MaterialStdVectorAux
-    variable = gss1
-    property = gss
-    index = 0
     execute_on = timestep_end
     block = 0
   [../]
@@ -176,11 +163,6 @@
   [./e_zz]
     type = ElementAverageValue
     variable = e_zz
-    block = 'ANY_BLOCK_ID 0'
-  [../]
-  [./gss1]
-    type = ElementAverageValue
-    variable = gss1
     block = 'ANY_BLOCK_ID 0'
   [../]
 []

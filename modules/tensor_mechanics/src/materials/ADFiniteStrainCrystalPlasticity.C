@@ -139,21 +139,22 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::ADFiniteStrainCrystalPlasticity(
     _lag_e(adDeclareADProperty<RankTwoTensor>("lage")), // Lagrangian strain
     _lag_e_old(
         adGetMaterialPropertyOld<RankTwoTensor>("lage")), // Lagrangian strain of previous increment
-    _gss(adDeclareADProperty<std::vector<ADReal>>("gss")), // Slip system resistances
-    _gss_old(adGetMaterialPropertyOld<std::vector<ADReal>>(
-        "gss")), // Slip system resistances of previous increment
+    _gss(adDeclareADProperty<DenseVector<Real>>("gss")),  // Slip system resistances
+    _gss_old(adGetMaterialPropertyOld<DenseVector<Real>>("gss")),
     _acc_slip(adDeclareADProperty<Real>("acc_slip")), // Accumulated slip
     _acc_slip_old(
         adGetMaterialPropertyOld<Real>("acc_slip")), // Accumulated alip of previous increment
     _update_rot(adDeclareADProperty<RankTwoTensor>(
         "update_rot")), // Rotation tensor considering material rotation and crystal orientation
-    _deformation_gradient(adGetMaterialProperty<RankTwoTensor>("deformation_gradient")),
+    _deformation_gradient(adGetADMaterialProperty<RankTwoTensor>("deformation_gradient")),
     _deformation_gradient_old(adGetMaterialPropertyOld<RankTwoTensor>("deformation_gradient")),
     _elasticity_tensor_name(_base_name + "elasticity_tensor"),
     _elasticity_tensor(adGetADMaterialProperty<RankFourTensor>(_elasticity_tensor_name)),
     _crysrot(adGetMaterialProperty<RankTwoTensor>("crysrot")),
     _mo(_nss * LIBMESH_DIM),
     _no(_nss * LIBMESH_DIM),
+    _a0(_nss),
+    _xm(_nss),
     _slip_incr(_nss),
     _tau(_nss),
     _dslipdtau(_nss),
@@ -167,8 +168,8 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::ADFiniteStrainCrystalPlasticity(
   if (_num_slip_sys_props > 0)
     _slip_sys_props.resize(_nss * _num_slip_sys_props);
 
-  _pk2_tmp.zero();
-  _delta_dfgrd.zero();
+  //_pk2_tmp.zero();
+  //_delta_dfgrd.zero();
 
   _first_step_iter = false;
   _last_step_iter = false;
@@ -183,7 +184,69 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::ADFiniteStrainCrystalPlasticity(
     mooseError("Crystal Plasticity Error: Specify number of internal variable's initial values to "
                "be read from slip system file");
 
-  getSlipSystems();
+  // getSlipSystems();
+  {
+    Real vec[LIBMESH_DIM];
+    std::ifstream fileslipsys;
+
+    MooseUtils::checkFileReadable(_slip_sys_file_name);
+
+    fileslipsys.open(_slip_sys_file_name.c_str());
+
+    for (unsigned int i = 0; i < _nss; ++i)
+    {
+      // Read the slip normal
+      for (unsigned int j = 0; j < LIBMESH_DIM; ++j)
+        if (!(fileslipsys >> vec[j]))
+          mooseError("Crystal Plasticity Error: Premature end of file reading slip system file \n");
+
+      // Normalize the vectors
+      Real mag;
+      mag = Utility::pow<2>(vec[0]) + Utility::pow<2>(vec[1]) + Utility::pow<2>(vec[2]);
+      mag = std::sqrt(mag);
+
+      for (unsigned j = 0; j < LIBMESH_DIM; ++j)
+        _no(i * LIBMESH_DIM + j) = vec[j] / mag;
+
+      // Read the slip direction
+      for (unsigned int j = 0; j < LIBMESH_DIM; ++j)
+        if (!(fileslipsys >> vec[j]))
+          mooseError("Crystal Plasticity Error: Premature end of file reading slip system file\n");
+
+      // Normalize the vectors
+      mag = Utility::pow<2>(vec[0]) + Utility::pow<2>(vec[1]) + Utility::pow<2>(vec[2]);
+      mag = std::sqrt(mag);
+
+      for (unsigned int j = 0; j < LIBMESH_DIM; ++j)
+        _mo(i * LIBMESH_DIM + j) = vec[j] / mag;
+
+      mag = 0.0;
+      for (unsigned int j = 0; j < LIBMESH_DIM; ++j)
+        mag += _mo(i * LIBMESH_DIM + j) * _no(i * LIBMESH_DIM + j);
+
+      if (std::abs(mag) > 1e-8)
+        mooseError("Crystal Plasicity Error: Slip direction and normal not orthonormal");
+
+      if (_read_from_slip_sys_file)
+        for (unsigned int j = 0; j < _num_slip_sys_props; ++j)
+          if (!(fileslipsys >> _slip_sys_props(i * _num_slip_sys_props + j)))
+            mooseError("Crystal Plasticity Error: Premature end of file reading slip system file");
+    }
+
+    fileslipsys.close();
+  }
+
+  {
+    for (unsigned int i = 0; i < _nss; ++i)
+    {
+      _a0(i) = 0.001;
+      _xm(i) = 0.1;
+    }
+    _r = 1.0;
+    _h0 = 541.5;
+    _tau_init = 60.8;
+    _tau_sat = 109.8;
+  }
 
   RankTwoTensor::initRandom(_rndm_seed);
 }
@@ -192,18 +255,21 @@ template <ComputeStage compute_stage>
 void
 ADFiniteStrainCrystalPlasticity<compute_stage>::initQpStatefulProperties()
 {
-  _stress[_qp].zero();
+  //_stress[_qp].zero();
 
   _fp[_qp].setToIdentity();
 
-  _pk2[_qp].zero();
+  //_pk2[_qp].zero();
   _acc_slip[_qp] = 0.0;
-  _lag_e[_qp].zero();
+  //_lag_e[_qp].zero();
 
   _update_rot[_qp].setToIdentity();
 
-  initSlipSysProps(); // Initializes slip system related properties
-  initAdditionalProps();
+  _gss[_qp].resize(_nss);
+  for (unsigned int i = 0; i < _nss; ++i)
+    _gss[_qp](i) = 60.8;
+  // initSlipSysProps(); // Initializes slip system related properties
+  // initAdditionalProps();
 }
 
 template <ComputeStage compute_stage>
@@ -240,7 +306,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::assignSlipSysRes()
   _gss[_qp].resize(_nss);
 
   for (unsigned int i = 0; i < _nss; ++i)
-    _gss[_qp][i] = _slip_sys_props(i);
+    _gss[_qp](i) = _slip_sys_props(i);
 }
 
 // Read initial slip system resistances  from .txt file. See test.
@@ -257,7 +323,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::readFileInitSlipSysRes()
 
   for (unsigned int i = 0; i < _nss; ++i)
   {
-    Real v = MetaPhysicL::raw_value(_gss[_qp][i]);
+    Real v = MetaPhysicL::raw_value(_gss[_qp](i));
     if (!(file >> v))
       mooseError("Error ADFiniteStrainCrystalPlasticity: Premature end of slip_sys_res_prop file");
   }
@@ -274,7 +340,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::getInitSlipSysRes()
     mooseError("FiniteStrainCrystalPLasticity: Error in reading slip system resistance properties "
                ": Specify input in .i file or in slip_sys_res_prop_file or in slip_sys_file");
 
-  _gss[_qp].resize(_nss, 0.0);
+  _gss[_qp].resize(_nss);
 
   unsigned int num_data_grp = 3; // Number of data per group e.g. start_slip_sys, end_slip_sys,
                                  // value
@@ -303,11 +369,11 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::getInitSlipSysRes()
                  "in slip system resistance property read");
 
     for (unsigned int j = is; j <= ie; ++j)
-      _gss[_qp][j - 1] = _gprops[i * num_data_grp + 2];
+      _gss[_qp](j - 1) = _gprops[i * num_data_grp + 2];
   }
 
   for (unsigned int i = 0; i < _nss; ++i)
-    if (_gss[_qp][i] <= 0.0)
+    if (_gss[_qp](i) <= 0.0)
       mooseError("FiniteStrainCrystalPLasticity: Value of resistance for slip system ",
                  i + 1,
                  " non positive");
@@ -318,8 +384,8 @@ template <ComputeStage compute_stage>
 void
 ADFiniteStrainCrystalPlasticity<compute_stage>::readFileFlowRateParams()
 {
-  _a0.resize(_nss);
-  _xm.resize(_nss);
+  // _a0.resize(_nss);
+  // _xm.resize(_nss);
 
   MooseUtils::checkFileReadable(_slip_sys_flow_prop_file_name);
 
@@ -392,6 +458,8 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::getFlowRateParams()
       _xm(j - 1) = _flowprops[i * num_data_grp + 3];
     }
   }
+
+  std::cout << "DEBUG : getFlowRateParams " << _a0.size() << std::endl;
 
   for (unsigned int i = 0; i < _nss; ++i)
   {
@@ -498,6 +566,24 @@ template <ComputeStage compute_stage>
 void
 ADFiniteStrainCrystalPlasticity<compute_stage>::computeQpStress()
 {
+  // {
+  //   ADRankTwoTensor fe = _deformation_gradient[_qp]; // _fp_inv  ==> _fp_prev_inv
+  //
+  //   // ADRankce = fe.transpose() * fe;
+  //   // ce_pk2 = ce * _pk2_tmp;
+  //   // ce_pk2 = ce_pk2 / _fe.det();
+  //
+  //   DenseVector<ADReal> tau(_nss);
+  //   // Calculate Schmid tensor and resolved shear stresses
+  //   for (unsigned int i = 0; i < _nss; ++i)
+  //   {
+  //     tau(i) = fe.doubleContraction(fe);
+  //     std::cout << "tau(i) = " << tau(i) << std::endl;
+  //   }
+  //
+  //   _deformation_gradient[_qp].print();
+  // }
+
   unsigned int substep_iter = 1; // Depth of substepping; Limited to maximum substep iteration
   unsigned int num_substep = 1;  // Calculated from substep_iter as 2^substep_iter
   Real dt_original = _dt;        // Stores original _dt; Reset at the end of solve
@@ -652,7 +738,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::solveStatevar()
 {
   ADReal gmax, gdiff;
   unsigned int iterg;
-  std::vector<ADReal> gss_prev(_nss);
+  DenseVector<ADReal> gss_prev(_nss);
 
   gmax = 1.1 * _gtol;
   iterg = 0;
@@ -672,7 +758,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::solveStatevar()
     gmax = 0.0;
     for (unsigned i = 0; i < _nss; ++i)
     {
-      gdiff = std::abs(gss_prev[i] - _gss_tmp[i]); // Calculate increment size
+      gdiff = std::abs(gss_prev(i) - _gss_tmp(i)); // Calculate increment size
 
       if (gdiff > gmax)
         gmax = gdiff;
@@ -854,7 +940,8 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::updateGss()
   DenseVector<ADReal> hb(_nss);
   Real qab;
 
-  Real a = _hprops[4]; // Kalidindi
+  // DEBUG Real a = _hprops[4]; // Kalidindi
+  Real a = 2.5;
 
   _accslip_tmp = _accslip_tmp_old;
   for (unsigned int i = 0; i < _nss; ++i)
@@ -865,16 +952,17 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::updateGss()
 
   for (unsigned int i = 0; i < _nss; ++i)
     // hb(i)=val;
-    hb(i) = _h0 * std::pow(std::abs(1.0 - _gss_tmp[i] / _tau_sat), a) *
-            std::copysign(
-                1.0, 1.0 - MetaPhysicL::raw_value(_gss_tmp[i]) / MetaPhysicL::raw_value(_tau_sat));
+    if ((1.0 - _gss_tmp(i) / _tau_sat) > 0.0)
+      hb(i) = _h0 * std::pow(std::abs(1.0 - _gss_tmp(i) / _tau_sat), a);
+    else
+      hb(i) = -_h0 * std::pow(std::abs(1.0 - _gss_tmp(i) / _tau_sat), a);
 
   for (unsigned int i = 0; i < _nss; ++i)
   {
     if (_max_substep_iter == 1) // No substepping
-      _gss_tmp[i] = _gss_old[_qp][i];
+      _gss_tmp(i) = _gss_old[_qp](i);
     else
-      _gss_tmp[i] = _gss_tmp_old[i];
+      _gss_tmp(i) = _gss_tmp_old(i);
 
     for (unsigned int j = 0; j < _nss; ++j)
     {
@@ -887,7 +975,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::updateGss()
       else
         qab = _r;
 
-      _gss_tmp[i] += qab * hb(j) * std::abs(_slip_incr(j));
+      _gss_tmp(i) += qab * hb(j) * std::abs(_slip_incr(j));
       // _dgss_dsliprate(i, j) =
       //     qab * hb(j) * std::copysign(1.0, MetaPhysicL::raw_value(_slip_incr(j))) * _dt;
     }
@@ -916,9 +1004,24 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::calcResidual(ADRankTwoTensor & r
 
   _fe = _dfgrd_tmp * _fp_prev_inv; // _fp_inv  ==> _fp_prev_inv
 
+  // std::cout << "_dfgrd_tmp" << std::endl;
+  // _dfgrd_tmp.print();
+  //
+  // std::cout << "_fe" << std::endl;
+  // _fe.print();
+
   ce = _fe.transpose() * _fe;
   ce_pk2 = ce * _pk2_tmp;
   ce_pk2 = ce_pk2 / _fe.det();
+
+  std::cout << "ce" << std::endl;
+  ce.print();
+
+  std::cout << "ce_pk2" << std::endl;
+  ce_pk2.print();
+
+  std::cout << "_pk2_tmp" << std::endl;
+  _pk2_tmp.print();
 
   // Calculate Schmid tensor and resolved shear stresses
   for (unsigned int i = 0; i < _nss; ++i)
@@ -985,10 +1088,22 @@ template <ComputeStage compute_stage>
 void
 ADFiniteStrainCrystalPlasticity<compute_stage>::getSlipIncrements()
 {
+  // getFlowRateParams();
   for (unsigned int i = 0; i < _nss; ++i)
   {
-    _slip_incr(i) = _a0(i) * std::pow(std::abs(_tau(i) / _gss_tmp[i]), 1.0 / _xm(i)) *
-                    std::copysign(1.0, MetaPhysicL::raw_value(_tau(i))) * _dt;
+    std::cout << "_gss_tmp(" << i << ") = " << _gss_tmp(i) << std::endl;
+    std::cout << "_tau(" << i << ") = " << _tau(i) << std::endl;
+    std::cout << "_a0.size() = " << _a0.size() << std::endl;
+    std::cout << "_a0(" << i << ") = " << _a0(i) << std::endl;
+    std::cout << "_xm(" << i << ") = " << _xm(i) << std::endl;
+
+    if (_tau(i) >= 0)
+      _slip_incr(i) = _a0(i) * std::pow(std::abs(_tau(i) / _gss_tmp(i)), 1.0 / _xm(i)) * _dt;
+    else
+      _slip_incr(i) = -_a0(i) * std::pow(std::abs(_tau(i) / _gss_tmp(i)), 1.0 / _xm(i)) * _dt;
+
+    std::cout << "_slip_incr(i) = " << _slip_incr(i) << std::endl;
+
     if (std::abs(_slip_incr(i)) > _slip_incr_tol)
     {
       _err_tol = true;
@@ -1001,7 +1116,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::getSlipIncrements()
 
   for (unsigned int i = 0; i < _nss; ++i)
     _dslipdtau(i) = _a0(i) / _xm(i) *
-                    std::pow(std::abs(_tau(i) / _gss_tmp[i]), 1.0 / _xm(i) - 1.0) / _gss_tmp[i] *
+                    std::pow(std::abs(_tau(i) / _gss_tmp(i)), 1.0 / _xm(i) - 1.0) / _gss_tmp(i) *
                     _dt;
 }
 

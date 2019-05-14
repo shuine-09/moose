@@ -289,13 +289,13 @@ protected:
   const MaterialProperty<RankTwoTensor> & _pk2_old;
   ADMaterialProperty(RankTwoTensor) & _lag_e;
   const MaterialProperty<RankTwoTensor> & _lag_e_old;
-  ADMaterialProperty(std::vector<ADReal>) & _gss;
-  const MaterialProperty<std::vector<ADReal>> & _gss_old;
+  ADMaterialProperty(DenseVector<Real>) & _gss;
+  const MaterialProperty<DenseVector<Real>> & _gss_old;
   ADMaterialProperty(Real) & _acc_slip;
   const MaterialProperty<Real> & _acc_slip_old;
   ADMaterialProperty(RankTwoTensor) & _update_rot;
 
-  const MaterialProperty<RankTwoTensor> & _deformation_gradient;
+  const ADMaterialProperty(RankTwoTensor) & _deformation_gradient;
   const MaterialProperty<RankTwoTensor> & _deformation_gradient_old;
   /// Name of the elasticity tensor material property
   const std::string _elasticity_tensor_name;
@@ -322,8 +322,8 @@ protected:
   ADRankTwoTensor _pk2_tmp, _pk2_tmp_old;
   ADReal _accslip_tmp;
   ADReal _accslip_tmp_old;
-  std::vector<ADReal> _gss_tmp;
-  std::vector<ADReal> _gss_tmp_old;
+  DenseVector<ADReal> _gss_tmp;
+  DenseVector<ADReal> _gss_tmp_old;
 
   DenseVector<Real> _slip_sys_props;
 

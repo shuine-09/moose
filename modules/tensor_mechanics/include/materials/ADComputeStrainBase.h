@@ -24,7 +24,7 @@
   using ADComputeStrainBase<compute_stage>::_eigenstrain_names;                                    \
   using ADComputeStrainBase<compute_stage>::_eigenstrains;                                         \
   using ADComputeStrainBase<compute_stage>::_total_strain;                                         \
-  using ADComputeStrainBase<compute_stage>::_deformation_gradient;
+  using ADComputeStrainBase<compute_stage>::_deformation_gradient
 
 // Forward Declarations
 template <ComputeStage>
@@ -73,4 +73,3 @@ protected:
 
   usingMaterialMembers;
 };
-
