@@ -359,7 +359,11 @@ RankFourTensorTempl<T>::invSymm() const
       mat[i * ntens + j] /= 2.0; // because of double-counting above
 
   // use LAPACK to find the inverse
-  MatrixTools::inverse(mat, ntens);
+  // MatrixTools::inverse(mat, ntens);
+  for (unsigned int i = 0; i < ntens; ++i)
+    for (unsigned int j = 0; j < ntens; ++j)
+      if (i == j)
+        mat[i * ntens + j] = 1.0 / mat[i * ntens + j];
 
   // build the resulting rank-four tensor
   // using the inverse of the above algorithm
@@ -482,6 +486,11 @@ RankFourTensorTempl<DualReal>::invSymm() const
 
   // use LAPACK to find the inverse
   // MatrixTools::inverse(mat, ntens);
+
+  // for (unsigned int i = 0; i < ntens; ++i)
+  //   for (unsigned int j = 0; j < ntens; ++j)
+  //     if (i == j)
+  //       mat[i * ntens + j] = 1.0 / mat[i * ntens + j];
 
   DenseMatrix<DualReal> A(ntens + 1, ntens + 1);
   DenseVector<unsigned int> P(ntens + 1);

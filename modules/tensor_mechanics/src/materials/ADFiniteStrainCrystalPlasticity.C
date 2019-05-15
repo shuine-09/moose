@@ -169,8 +169,8 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::ADFiniteStrainCrystalPlasticity(
   if (_num_slip_sys_props > 0)
     _slip_sys_props.resize(_nss * _num_slip_sys_props);
 
-  //_pk2_tmp.zero();
-  //_delta_dfgrd.zero();
+  _pk2_tmp.zero();
+  _delta_dfgrd.zero();
 
   _first_step_iter = false;
   _last_step_iter = false;
@@ -256,13 +256,13 @@ template <ComputeStage compute_stage>
 void
 ADFiniteStrainCrystalPlasticity<compute_stage>::initQpStatefulProperties()
 {
-  //_stress[_qp].zero();
+  _stress[_qp].zero();
 
   _fp[_qp].setToIdentity();
 
-  //_pk2[_qp].zero();
+  _pk2[_qp].zero();
   _acc_slip[_qp] = 0.0;
-  //_lag_e[_qp].zero();
+  _lag_e[_qp].zero();
 
   _update_rot[_qp].setToIdentity();
 
@@ -460,8 +460,6 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::getFlowRateParams()
     }
   }
 
-  std::cout << "DEBUG : getFlowRateParams " << _a0.size() << std::endl;
-
   for (unsigned int i = 0; i < _nss; ++i)
   {
     if (!(_a0(i) > 0.0 && _xm(i) > 0.0))
@@ -583,9 +581,12 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::computeQpStress()
   }
 
   // Substepping loop
-  while (_err_tol && _max_substep_iter > 1)
+  for (substep_iter = 1; substep_iter <= _max_substep_iter; substep_iter++)
+  // while (_err_tol && _max_substep_iter > 1)
   {
     _dt = dt_original / num_substep;
+
+    // std::cout << "num_substep = " << num_substep << std::endl;
 
     for (unsigned int istep = 0; istep < num_substep; ++istep)
     {
@@ -602,9 +603,14 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::computeQpStress()
       preSolveQp();
       solveQp();
 
+      // if (substep_iter < 4)
+      //   _err_tol = true;
+
       if (_err_tol)
       {
-        substep_iter++;
+        // substep_iter++;
+        // num_substep *= 2;
+        // break;
         num_substep *= 2;
         break;
       }
@@ -619,9 +625,211 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::computeQpStress()
 #endif
 
     if (!_err_tol || substep_iter > _max_substep_iter)
+    {
       postSolveQp(); // Evaluate variables after successful solve or indicate failure
+      break;
+    }
   }
 
+  // for (unsigned int i = 0; i < _max_substep_iter; ++i)
+  // {
+  //   bool conv = true;
+  //   for (unsigned int istep = 0; istep < num_substep; ++istep)
+  //   {
+  //     _dt = dt_original / num_substep;
+  //
+  //     _first_step_iter = false;
+  //     if (istep == 0)
+  //       _first_step_iter = true;
+  //
+  //     _last_step_iter = false;
+  //     if (istep == num_substep - 1)
+  //       _last_step_iter = true;
+  //
+  //     _dfgrd_scale_factor = (static_cast<Real>(istep) + 1) / num_substep;
+  //
+  //     preSolveQp();
+  //     solveQp();
+  //
+  //     if (_err_tol)
+  //     {
+  //       num_substep *= 2;
+  //       conv = false;
+  //       break;
+  //     }
+  //     _first_substep = false;
+  //   }
+  //
+  //   if (conv)
+  //   {
+  //     postSolveQp();
+  //     _dt = dt_original;
+  //     break;
+  //   }
+  // }
+
+  // num_substep = 1;
+  // _dt = dt_original / num_substep;
+  // for (unsigned int istep = 0; istep < num_substep; ++istep)
+  // {
+  //   _first_step_iter = false;
+  //   if (istep == 0)
+  //     _first_step_iter = true;
+  //
+  //   _last_step_iter = false;
+  //   if (istep == num_substep - 1)
+  //     _last_step_iter = true;
+  //
+  //   _dfgrd_scale_factor = (static_cast<Real>(istep) + 1) / num_substep;
+  //
+  //   preSolveQp();
+  //   solveQp();
+  //
+  //   if (_err_tol)
+  //   {
+  //     break;
+  //   }
+  // }
+  //
+  // if (!_err_tol)
+  // {
+  //   _dt = dt_original;
+  //   postSolveQp();
+  //   return;
+  // }
+  // else
+  //   num_substep = 2;
+  //
+
+  // num_substep = 2;
+  // _first_substep = false;
+  // _dt = dt_original / num_substep;
+  // for (unsigned int istep = 0; istep < num_substep; ++istep)
+  // {
+  //   _first_step_iter = false;
+  //   if (istep == 0)
+  //     _first_step_iter = true;
+  //
+  //   _last_step_iter = false;
+  //   if (istep == num_substep - 1)
+  //     _last_step_iter = true;
+  //
+  //   _dfgrd_scale_factor = (static_cast<Real>(istep) + 1) / num_substep;
+  //
+  //   preSolveQp();
+  //   solveQp();
+  //   if (_err_tol)
+  //   {
+  //     break;
+  //   }
+  // }
+  //
+  // if (!_err_tol)
+  // {
+  //   _dt = dt_original;
+  //   postSolveQp();
+  //   return;
+  // }
+  // else
+  //   num_substep = 4;
+
+  // if (_current_elem->id() < 4 || _qp < 6)
+  // {
+  //   num_substep = 8;
+  //   _first_substep = true;
+  //   _dt = dt_original / num_substep;
+  //   for (unsigned int istep = 0; istep < num_substep; ++istep)
+  //   {
+  //     _first_step_iter = false;
+  //     if (istep == 0)
+  //       _first_step_iter = true;
+  //
+  //     _last_step_iter = false;
+  //     if (istep == num_substep - 1)
+  //       _last_step_iter = true;
+  //
+  //     _dfgrd_scale_factor = (static_cast<Real>(istep) + 1) / num_substep;
+  //
+  //     preSolveQp();
+  //     solveQp();
+  //   }
+  //
+  //   _dt = dt_original;
+  //   postSolveQp();
+  // }
+  // else
+  // {
+  //   num_substep = 16;
+  //   _first_substep = true;
+  //   _dt = dt_original / num_substep;
+  //   for (unsigned int istep = 0; istep < num_substep; ++istep)
+  //   {
+  //     _first_step_iter = false;
+  //     if (istep == 0)
+  //       _first_step_iter = true;
+  //
+  //     _last_step_iter = false;
+  //     if (istep == num_substep - 1)
+  //       _last_step_iter = true;
+  //
+  //     _dfgrd_scale_factor = (static_cast<Real>(istep) + 1) / num_substep;
+  //
+  //     preSolveQp();
+  //     solveQp();
+  //   }
+  //
+  //   _dt = dt_original;
+  //   postSolveQp();
+  // }
+
+  // mooseWarning("STOP");
+  // num_substep = 8;
+
+  // _fe.zero();
+  // _dfgrd_tmp.zero();
+  // _gss_tmp = _gss_tmp_old = _gss_old[_qp];
+  // _accslip_tmp_old = _acc_slip_old[_qp];
+  // _gss[_qp] = _gss_tmp;
+  // _acc_slip[_qp] = _accslip_tmp;
+  // _pk2_tmp = _pk2_old[_qp];
+  // _fp_old_inv = _fp_old[_qp].inverse();
+  // _fp_inv = _fp_old_inv;
+  // _fp_prev_inv = _fp_inv;
+  // _stress[_qp].zero();
+  // _dfgrd_tmp_old = _deformation_gradient_old[_qp];
+  // if (_dfgrd_tmp_old.det() == 0)
+  //   _dfgrd_tmp_old.addIa(1.0);
+  // _delta_dfgrd = _deformation_gradient[_qp] - _dfgrd_tmp_old;
+  // _err_tol = true; // Indicator to continue substepping
+
+  // num_substep = 8;
+  // _first_substep = true;
+  // _dt = dt_original / num_substep;
+  // for (unsigned int istep = 0; istep < num_substep; ++istep)
+  // {
+  //   _first_step_iter = false;
+  //   if (istep == 0)
+  //     _first_step_iter = true;
+  //
+  //   _last_step_iter = false;
+  //   if (istep == num_substep - 1)
+  //     _last_step_iter = true;
+  //
+  //   _dfgrd_scale_factor = (static_cast<Real>(istep) + 1) / num_substep;
+  //
+  //   preSolveQp();
+  //   solveQp();
+  //
+  //   // if (_err_tol)
+  //   // {
+  //   //   mooseError("STOP2");
+  //   // }
+  // }
+  //
+  // _dt = dt_original;
+  // postSolveQp();
+
+  //
   // No substepping
   if (_max_substep_iter == 1)
   {
@@ -641,10 +849,15 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::preSolveQp()
     calc_schmid_tensor();
   }
 
+  // std::cout << "elem id = " << _current_elem->id() << ", qp = " << _qp
+  //           << ", preSolveQp() is called " << std::endl;
+
   if (_max_substep_iter == 1)
     _dfgrd_tmp = _deformation_gradient[_qp]; // Without substepping
   else
     _dfgrd_tmp = _dfgrd_scale_factor * _delta_dfgrd + _dfgrd_tmp_old;
+
+  //_dfgrd_tmp.print();
 
   _err_tol = false;
 }
@@ -680,6 +893,11 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::postSolveQp()
   else
   {
     _stress[_qp] = _fe * _pk2[_qp] * _fe.transpose() / _fe.det();
+
+    // std::cout << "_fe" << std::endl;
+    // _fe.print();
+    // std::cout << "_pk2[_qp]" << std::endl;
+    // _pk2[_qp].print();
 
     ADRankTwoTensor iden;
     iden.zero();
@@ -815,7 +1033,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::solveStress()
   unsigned int iter = 0;
   ADRankTwoTensor resid, dpk2;
   ADRankFourTensor jac;
-  ADReal rnorm, rnorm0, rnorm_prev;
+  Real rnorm, rnorm0, rnorm_prev;
 
   calc_resid_jacob(resid, jac); // Calculate stress residual
   if (_err_tol)
@@ -830,46 +1048,62 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::solveStress()
     return;
   }
 
-  rnorm = resid.L2norm();
+  rnorm = MetaPhysicL::raw_value(resid.L2norm());
   rnorm0 = rnorm;
 
-  while (rnorm > _rtol * rnorm0 && rnorm0 > _abs_tol &&
-         iter < _maxiter) // Check for stress residual tolerance
+  for (iter = 0; iter < _maxiter; ++iter)
   {
-    dpk2 = -jac.invSymm() * resid; // Calculate stress increment
-    _pk2_tmp = _pk2_tmp + dpk2;    // Update stress
+    // if (_current_elem->id() == 0 && _qp == 0)
+    //   std::cout << "iter = " << iter << std::endl;
+    dpk2 = -jac.invSymm() * resid;
+    _pk2_tmp = _pk2_tmp + dpk2;
     calc_resid_jacob(resid, jac);
     internalVariableUpdateNRiteration(); // update _fp_prev_inv
-
-    if (_err_tol)
-    {
-#ifdef DEBUG
-      mooseWarning(
-          "FiniteStrainCrystalPLasticity: Slip increment exceeds tolerance - Element number ",
-          _current_elem->id(),
-          " Gauss point = ",
-          _qp);
-#endif
-      return;
-    }
-
-    rnorm_prev = rnorm;
-    rnorm = resid.L2norm();
-
-    if (_use_line_search && rnorm > rnorm_prev && !line_search_update(rnorm_prev, dpk2))
-    {
-#ifdef DEBUG
-      mooseWarning("FiniteStrainCrystalPLasticity: Failed with line search");
-#endif
-      _err_tol = true;
-      return;
-    }
-
-    if (_use_line_search)
-      rnorm = resid.L2norm();
-
-    iter++;
+    rnorm = MetaPhysicL::raw_value(resid.L2norm());
+    if (rnorm < _rtol * rnorm0 || rnorm0 < _abs_tol)
+      break;
   }
+
+  // while (rnorm > _rtol * rnorm0 && rnorm0 > _abs_tol &&
+  //        iter < _maxiter) // Check for stress residual tolerance
+  // {
+  // std::cout << "iter = " << iter << std::endl;
+  // std::cout << "rnorm = " << rnorm << std::endl;
+  // dpk2 = -jac.invSymm() * resid; // Calculate stress increment
+  //                                //_pk2_tmp = _pk2_tmp + dpk2;    // Update stress
+  //
+  // _pk2[_qp] = dpk2;
+
+  // calc_resid_jacob(resid, jac);
+  // internalVariableUpdateNRiteration(); // update _fp_prev_inv
+
+  //     if (_err_tol)
+  //     {
+  // #ifdef DEBUG
+  //       mooseWarning(
+  //           "FiniteStrainCrystalPLasticity: Slip increment exceeds tolerance - Element number
+  //           ", _current_elem->id(), " Gauss point = ", _qp);
+  // #endif
+  //       return;
+  //     }
+  //
+  //     rnorm_prev = rnorm;
+  //     rnorm = MetaPhysicL::raw_value(resid.L2norm());
+  //
+  //     if (_use_line_search && rnorm > rnorm_prev && !line_search_update(rnorm_prev, dpk2))
+  //     {
+  // #ifdef DEBUG
+  //       mooseWarning("FiniteStrainCrystalPLasticity: Failed with line search");
+  // #endif
+  //       _err_tol = true;
+  //       return;
+  //     }
+  //
+  //     if (_use_line_search)
+  //       rnorm = MetaPhysicL::raw_value(resid.L2norm());
+  //
+  //     iter++;
+  // }
 
   if (iter >= _maxiter)
   {
@@ -989,7 +1223,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::calcResidual(ADRankTwoTensor & r
 
   // std::cout << "_dfgrd_tmp" << std::endl;
   // _dfgrd_tmp.print();
-  //
+
   // std::cout << "_fe" << std::endl;
   // _fe.print();
 
@@ -1074,12 +1308,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::getSlipIncrements()
   // getFlowRateParams();
   for (unsigned int i = 0; i < _nss; ++i)
   {
-    // std::cout << "_gss_tmp(" << i << ") = " << _gss_tmp(i) << std::endl;
-    // std::cout << "_tau(" << i << ") = " << _tau(i) << std::endl;
-    // std::cout << "_a0(" << i << ") = " << _a0(i) << std::endl;
-    // std::cout << "_xm(" << i << ") = " << _xm(i) << std::endl;
-
-    if (_tau(i) == 0)
+    if (std::abs(_tau(i)) < 1.0e-10)
       _slip_incr(i) = 0.0;
     else if (_tau(i) > 0)
       _slip_incr(i) = _a0(i) * std::pow(std::abs(_tau(i) / _gss_tmp(i)), 1.0 / _xm(i)) * _dt;
@@ -1099,12 +1328,18 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::getSlipIncrements()
   }
 
   for (unsigned int i = 0; i < _nss; ++i)
-    if (_tau(i) == 0)
+    if (std::abs(_tau(i)) < 1.0e-10)
       _dslipdtau(i) = 0.0;
     else
       _dslipdtau(i) = _a0(i) / _xm(i) *
                       std::pow(std::abs(_tau(i) / _gss_tmp(i)), 1.0 / _xm(i) - 1.0) / _gss_tmp(i) *
                       _dt;
+
+  // for (unsigned int i = 0; i < _nss; ++i)
+  // {
+  //   _dslipdtau(i) = 0.0;
+  //   _slip_incr(i) = 0.0;
+  // }
 }
 
 // // Calls getMatRot to perform RU factorization of a tensor.

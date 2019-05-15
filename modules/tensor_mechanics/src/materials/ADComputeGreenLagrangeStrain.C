@@ -46,5 +46,16 @@ ADComputeGreenLagrangeStrain<compute_stage>::computeProperties()
 
     _deformation_gradient[_qp] = dxu;
     _deformation_gradient[_qp].addIa(1.0);
+
+    // std::cout << "_disp[i] = " << (*_disp[0])[_qp] << std::endl;
+    // std::cout << "_disp[i] = " << (*_disp[1])[_qp] << std::endl;
+    // std::cout << "_disp[i] = " << (*_disp[2])[_qp] << std::endl;
+    //
+    // std::cout << "_grad_disp[0])[_qp] = " << (*_grad_disp[0])[_qp](0) << std::endl;
+    // std::cout << "_grad_disp[0])[_qp] = " << (*_grad_disp[0])[_qp](1) << std::endl;
+    // std::cout << "_grad_disp[0])[_qp] = " << (*_grad_disp[0])[_qp](2) << std::endl;
+    //
+    // std::cout << "def_grad = " << std::endl;
+    // _deformation_gradient[_qp].print();
   }
 }

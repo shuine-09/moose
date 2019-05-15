@@ -564,10 +564,15 @@ FiniteStrainCrystalPlasticity::preSolveQp()
     calc_schmid_tensor();
   }
 
+  // std::cout << "elem id = " << _current_elem->id() << ", qp = " << _qp
+  //           << ", preSolveQp() is called " << std::endl;
+
   if (_max_substep_iter == 1)
     _dfgrd_tmp = _deformation_gradient[_qp]; // Without substepping
   else
     _dfgrd_tmp = _dfgrd_scale_factor * _delta_dfgrd + _dfgrd_tmp_old;
+
+  //_dfgrd_tmp.print();
 
   _err_tol = false;
 }
@@ -601,6 +606,11 @@ FiniteStrainCrystalPlasticity::postSolveQp()
   else
   {
     _stress[_qp] = _fe * _pk2[_qp] * _fe.transpose() / _fe.det();
+
+    // std::cout << "_fe" << std::endl;
+    // _fe.print();
+    // std::cout << "_pk2[_qp]" << std::endl;
+    // _pk2[_qp].print();
 
     _Jacobian_mult[_qp] += calcTangentModuli(); // Calculate jacobian for preconditioner
 
@@ -960,6 +970,9 @@ FiniteStrainCrystalPlasticity::getSlipIncrements()
 {
   for (unsigned int i = 0; i < _nss; ++i)
   {
+    // std::cout << "_gss_tmp(" << i << ") = " << _gss_tmp[i] << std::endl;
+    // std::cout << "_tau(" << i << ") = " << _tau(i) << std::endl;
+
     _slip_incr(i) = _a0(i) * std::pow(std::abs(_tau(i) / _gss_tmp[i]), 1.0 / _xm(i)) *
                     std::copysign(1.0, _tau(i)) * _dt;
     if (std::abs(_slip_incr(i)) > _slip_incr_tol)

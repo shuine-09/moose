@@ -2,6 +2,9 @@
   type = GeneratedMesh
   dim = 3
   elem_type = HEX8
+  nx = 4
+  ny = 4
+  nz = 4
 []
 
 [GlobalParams]
@@ -65,7 +68,7 @@
   [../]
   [./stress_z]
     type = ADStressDivergenceTensors
-    component = 1
+    component = 2
     variable = disp_z
     use_displaced_mesh = true
   [../]
@@ -139,6 +142,7 @@
     flowprops = '1 4 0.001 0.1 5 8 0.001 0.1 9 12 0.001 0.1'
     hprops = '1.0 541.5 60.8 109.8 2.5'
     gprops = '1 4 60.8 5 8 60.8 9 12 60.8'
+    maximum_substep_iteration = 1
   [../]
   [./elasticity_tensor]
     type = ComputeElasticityTensorCP
@@ -183,15 +187,19 @@
   #Preconditioned JFNK (default)
   solve_type = 'NEWTON'
 
-  petsc_options_iname = '-pc_type'
-  petsc_options_value = 'lu'
+  petsc_options_iname = '-pc_type -ksp_type'
+  petsc_options_value = 'lu preonly'
 
-  nl_rel_tol = 1e-10
-  nl_abs_tol = 1e-10
+  line_search = 'none'
 
-  dt = 0.05
+  nl_rel_tol = 1e-11
+  nl_abs_tol = 1e-11
+
+  nl_max_its = 10
+
+  dt = 0.1
   dtmax = 10.0
-  dtmin = 0.001
+  dtmin = 0.01
 
   num_steps = 10
 []
@@ -199,4 +207,5 @@
 [Outputs]
   file_base = out
   exodus = true
+  perf_graph = true
 []
