@@ -31,5 +31,8 @@ template <ComputeStage compute_stage>
 ADReal
 ADMatHeatSource<compute_stage>::computeQpResidual()
 {
-  return -_scalar * _material_property[_qp] * _test[_i][_qp];
+  if (_ad_q_point[0](0) <= _t)
+    return -_scalar * _material_property[_qp] * _test[_i][_qp];
+  else
+    return 0.0;
 }
