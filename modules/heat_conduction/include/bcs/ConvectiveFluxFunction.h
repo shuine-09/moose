@@ -10,6 +10,7 @@
 #pragma once
 
 #include "IntegratedBC.h"
+#include "ActivatedElementsMarkerUO.h"
 
 class ConvectiveFluxFunction : public IntegratedBC
 {
@@ -38,4 +39,7 @@ protected:
 
   /// Type of function used for the heat transfer coefficient
   const CoefFuncType _coef_func_type;
+
+  const ActivatedElementsMarkerUO * _marker_uo;
+  const std::map<dof_id_type, Real> * _marker_map;
 };

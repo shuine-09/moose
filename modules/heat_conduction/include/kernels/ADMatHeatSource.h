@@ -23,4 +23,5 @@ protected:
 
   const Real _scalar;
   const ADMaterialProperty<Real> & _material_property;
+  const VariableValue & _activated_elem;
 };

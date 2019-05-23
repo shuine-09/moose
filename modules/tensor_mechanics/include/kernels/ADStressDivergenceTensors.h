@@ -54,4 +54,6 @@ protected:
 
   /// Flag for volumetric locking correction
   const bool _volumetric_locking_correction;
+
+  const VariableValue & _activated_elem;
 };

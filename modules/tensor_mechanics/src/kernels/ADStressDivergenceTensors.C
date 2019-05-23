@@ -17,6 +17,8 @@ InputParameters
 ADStressDivergenceTensors::validParams()
 {
   InputParameters params = ADKernel::validParams();
+  params.addCoupledVar(
+      "activated_elem_aux", 1, "Temperature aux variable used to determine activated elements.");
   params.addClassDescription("Stress divergence kernel with automatic differentiation for the "
                              "Cartesian coordinate system");
   params.addRequiredParam<unsigned int>("component",
@@ -47,7 +49,8 @@ ADStressDivergenceTensors::ADStressDivergenceTensors(const InputParameters & par
     _out_of_plane_strain_coupled(isCoupled("out_of_plane_strain")),
     _out_of_plane_strain(_out_of_plane_strain_coupled ? &adCoupledValue("out_of_plane_strain")
                                                       : nullptr),
-    _volumetric_locking_correction(getParam<bool>("volumetric_locking_correction"))
+    _volumetric_locking_correction(getParam<bool>("volumetric_locking_correction")),
+    _activated_elem(coupledValue("activated_elem_aux"))
 {
   for (unsigned int i = 0; i < _ndisp; ++i)
     // the next line should be _disp_var[i] = coupled("displacements", i);
@@ -76,13 +79,10 @@ ADStressDivergenceTensors::computeQpResidual()
   if (_volumetric_locking_correction)
     residual += (_avg_grad_test[_i] - _grad_test[_i][_qp](_component)) / 3.0 * _stress[_qp].trace();
 
-  if (_ndisp != 3 && _out_of_plane_strain_coupled && _use_displaced_mesh)
-  {
-    const ADReal out_of_plane_thickness = std::exp((*_out_of_plane_strain)[_qp]);
-    residual *= out_of_plane_thickness;
-  }
-
-  return residual;
+  if (_activated_elem[_qp] >= 1.0 || _current_elem->subdomain_id() != 1)
+    return residual;
+  else
+    return 0.0;
 }
 
 void

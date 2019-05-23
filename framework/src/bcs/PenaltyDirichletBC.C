@@ -8,6 +8,8 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "PenaltyDirichletBC.h"
+#include "Function.h"
+#include "libmesh/elem.h"
 
 registerMooseObject("MooseApp", PenaltyDirichletBC);
 
@@ -34,11 +36,21 @@ PenaltyDirichletBC::PenaltyDirichletBC(const InputParameters & parameters)
 Real
 PenaltyDirichletBC::computeQpResidual()
 {
-  return _p * _test[_i][_qp] * (-_v + _u[_qp]);
+  if (_q_point[0](0) < _t * 1.02 && _q_point[0](0) > 0.98 * _t)
+  {
+    // std::cout << "side = " << _current_side << std::endl;
+    // std::cout << *_current_elem << std::endl;
+    return _p * _test[_i][_qp] * (-_v + _u[_qp]);
+  }
+  else
+    return 0;
 }
 
 Real
 PenaltyDirichletBC::computeQpJacobian()
 {
-  return _p * _phi[_j][_qp] * _test[_i][_qp];
+  if (_q_point[0](0) < _t * 1.02 && _q_point[0](0) > 0.98 * _t)
+    return _p * _phi[_j][_qp] * _test[_i][_qp];
+  else
+    return 0;
 }
