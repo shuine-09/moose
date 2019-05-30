@@ -8,7 +8,7 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "ConvectiveFluxFunction.h"
-
+#include "libmesh/elem.h"
 #include "Function.h"
 
 registerMooseObject("HeatConductionApp", ConvectiveFluxFunction);
@@ -21,6 +21,7 @@ validParams<ConvectiveFluxFunction>()
   params.addRequiredParam<FunctionName>("T_infinity", "Function describing far-field temperature");
   params.addRequiredParam<Real>("coefficient", "Heat transfer coefficient");
   params.addParam<FunctionName>("coefficient_function", "Heat transfer coefficient function");
+  params.addParam<UserObjectName>("marker_uo", "Marker UserObject");
   params.addClassDescription(
       "Determines boundary value by fluid heat transfer coefficient and far-field temperature");
 
@@ -31,20 +32,62 @@ ConvectiveFluxFunction::ConvectiveFluxFunction(const InputParameters & parameter
   : IntegratedBC(parameters),
     _T_infinity(getFunction("T_infinity")),
     _coefficient(getParam<Real>("coefficient")),
-    _coef_func(isParamValid("coefficient_function") ? &getFunction("coefficient_function") : NULL)
+    _coef_func(isParamValid("coefficient_function") ? &getFunction("coefficient_function")
+                                                    : nullptr),
+    _marker_uo(isParamValid("marker_uo") ? &getUserObjectByName<ActivatedElementsMarkerUO>(
+                                               getParam<UserObjectName>("marker_uo"))
+                                         : nullptr)
 {
+  if (_marker_uo)
+    _marker_map = &(_marker_uo->getActivatedElementsMap());
+  else
+    _marker_map = nullptr;
 }
 
 Real
 ConvectiveFluxFunction::computeQpResidual()
 {
+  bool apply = false;
+  if (_marker_map)
+  {
+    dof_id_type elem_id = _current_elem->id();
+    Real activate_elem = _marker_map->find(elem_id)->second;
+    const Elem * neighbor_elem = _current_elem->neighbor_ptr(_current_side);
+    if (neighbor_elem == nullptr && activate_elem > 0.5)
+      apply = true;
+    else if (neighbor_elem != nullptr && (activate_elem > 0.5) &&
+             ((_marker_map->find(neighbor_elem->id())->second) < 0.5))
+      apply = true;
+  }
+
   const Real coef(_coefficient * (_coef_func ? _coef_func->value(_t, _q_point[_qp]) : 1));
-  return _test[_i][_qp] * coef * (_u[_qp] - _T_infinity.value(_t, _q_point[_qp]));
+
+  if (apply)
+    return _test[_i][_qp] * coef * (_u[_qp] - _T_infinity.value(_t, _q_point[_qp]));
+  else
+    return 0.0;
 }
 
 Real
 ConvectiveFluxFunction::computeQpJacobian()
 {
+  bool apply = false;
+  if (_marker_map)
+  {
+    dof_id_type elem_id = _current_elem->id();
+    Real activate_elem = _marker_map->find(elem_id)->second;
+    const Elem * neighbor_elem = _current_elem->neighbor_ptr(_current_side);
+    if (neighbor_elem == nullptr && activate_elem > 0.5)
+      apply = true;
+    else if (neighbor_elem != nullptr && (activate_elem > 0.5) &&
+             ((_marker_map->find(neighbor_elem->id())->second) < 0.5))
+      apply = true;
+  }
+
   const Real coef(_coefficient * (_coef_func ? _coef_func->value(_t, _q_point[_qp]) : 1));
-  return _test[_i][_qp] * coef * _phi[_j][_qp];
+
+  if (apply)
+    return _test[_i][_qp] * coef * _phi[_j][_qp];
+  else
+    return 0.0;
 }

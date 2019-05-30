@@ -27,5 +27,7 @@ protected:
 
   const ADMaterialProperty(Real) & _thermal_conductivity;
 
+  const VariableValue & _activated_elem;
+
   usingKernelGradMembers;
 };

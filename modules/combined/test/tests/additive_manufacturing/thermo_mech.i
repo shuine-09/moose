@@ -1,43 +1,32 @@
-# ---------------------------------------------------------------------------
-# This test is designed to verify the variable elasticity tensor functionality in the
-# ADComputeFiniteStrainElasticStress class with the elasticity_tensor_has_changed flag
-# by varying the young's modulus with temperature. A constant strain is applied
-# to the mesh in this case, and the stress varies with the changing elastic constants.
-#
-# Geometry: A single element cube in symmetry boundary conditions and pulled
-#           at a constant displacement to create a constant strain in the x-direction.
-#
-# Temperature:  The temperature varies from 400K to 700K in this simulation by
-#           100K each time step. The temperature is held constant in the last
-#           timestep to ensure that the elasticity tensor components are constant
-#           under constant temperature.
-#
-# Results: Because Poisson's ratio is set to zero, only the stress along the x
-#          axis is non-zero.  The stress changes with temperature.
-#
-#    Temperature(K)   strain_{xx}(m/m)     Young's Modulus(Pa)   stress_{xx}(Pa)
-#          400              0.001             10.0e6               1.0e4
-#          500              0.001             10.0e6               1.0e4
-#          600              0.001              9.94e6              9.94e3
-#          700              0.001              9.93e6              9.93e3
-#
-#    The tensor mechanics results align exactly with the analytical results above
-#    when this test is run with ComputeIncrementalSmallStrain.  When the test is
-#    run with ComputeFiniteStrain, a 0.05% discrepancy between the analytical
-#    strains and the simulation strain results is observed, and this discrepancy
-#    is carried over into the calculation of the elastic stress.
-#-------------------------------------------------------------------------
-
 [GlobalParams]
   displacements = 'disp_x disp_y disp_z'
 []
 
 [Mesh]
-  type = GeneratedMesh
-  dim = 3
-  nx = 1
-  ny = 1
-  nz = 1
+  type = MeshGeneratorMesh
+  uniform_refine = 0
+[]
+
+[MeshGenerators]
+  [./mesh]
+    type = GeneratedMeshGenerator
+    nx = 6
+    ny = 6
+    nz = 76
+    xmin = -1.5
+    xmax = 1.5
+    ymin = -1.5
+    ymax = 1.5
+    zmin = 0
+    zmax = 38
+    dim = 3
+  [../]
+  [./add_bnd]
+    type = SideSetsFromAllElementFaces
+    input = mesh
+    block = '0'
+    new_boundary = 'moving_boundary'
+  [../]
 []
 
 [Variables]
@@ -48,7 +37,7 @@
   [./disp_z]
   [../]
   [./temp]
-    initial_condition = 400
+    initial_condition = 300
   [../]
 []
 
@@ -61,29 +50,61 @@
     order = CONSTANT
     family = MONOMIAL
   [../]
-[]
-
-[Functions]
-  [./temperature_function]
-    type = PiecewiseLinear
-    x = '1       4'
-    y = '400   700'
+  [./temp_aux]
+  [../]
+  [./activated_elem]
+    order = CONSTANT
+    family = MONOMIAL
   [../]
 []
 
 [Kernels]
-  [./heat]
-    type = ADDiffusion
+  [./time]
+    type = HeatConductionTimeDerivative
     variable = temp
   [../]
-  [./TensorMechanics]
+  [./heat_conduct]
+    type = ADHeatConduction
+    variable = temp
     use_displaced_mesh = true
-    use_automatic_differentiation = true
+  [../]
+  [./heat_source]
+    type = ADMatHeatSource
+    material_property = volumetric_heat
+    variable = temp
+    scalar = 1
+    use_displaced_mesh = true
+  [../]
+  [./disp_x]
+    type = ADStressDivergenceTensors
+    component = 0
+    variable = disp_x
+    use_displaced_mesh = true
+  [../]
+  [./disp_y]
+    type = ADStressDivergenceTensors
+    component = 1
+    variable = disp_y
+    use_displaced_mesh = true
+  [../]
+  [./disp_z]
+    type = ADStressDivergenceTensors
+    component = 2
+    variable = disp_z
+    use_displaced_mesh = true
   [../]
 []
 
 
 [AuxKernels]
+  [./activated_elem]
+    type = ActivatedElementsMarker
+    melt_temperature = 600
+    temp_aux = temp_aux
+    variable = activated_elem
+    execute_on = timestep_begin
+    #marker_uo = activated_elem_uo
+  [../]
   [./stress_xx]
     type = RankTwoAux
     rank_two_tensor = stress
@@ -102,37 +123,42 @@
   [../]
 []
 
+[UserObjects]
+  [./activated_elem_uo]
+    type = ActivatedElementsMarkerUO
+    melt_temperature = 600
+    temp_aux = temp_aux
+    execute_on = timestep_begin
+  [../]
+[]
+
 [BCs]
-  [./u_left_fix]
+  [./bottom_fix_x]
     type = PresetBC
     variable = disp_x
-    boundary = left
+    boundary = back
     value = 0.0
   [../]
-  [./u_bottom_fix]
+  [./bottom_fix_y]
     type = PresetBC
     variable = disp_y
-    boundary = bottom
+    boundary = back
     value = 0.0
   [../]
-  [./u_back_fix]
+  [./bottom_fix_z]
     type = PresetBC
     variable = disp_z
     boundary = back
     value = 0.0
   [../]
-  [./u_pull_right]
-    type = PresetBC
-    variable = disp_x
-    boundary = right
-    value = 0.001
-  [../]
 
-  [./temp_bc_1]
-    type = ADFunctionDirichletBC
+  [./convective]
+    type = ConvectiveFluxFunction # Convective flux, e.g. q'' = h*(Tw - Tf)
     variable = temp
-    boundary = '1 2 3 4'
-    function = temperature_function
+    boundary = 'moving_boundary'
+    coefficient = 100
+    T_infinity = 300
+    marker_uo = activated_elem_uo
   [../]
 []
 
@@ -150,13 +176,40 @@
   [./elasticity_tensor]
     type = ADComputeVariableIsotropicElasticityTensor
     youngs_modulus = youngs_modulus
-    poissons_ratio = 0.0
+    poissons_ratio = 0.3
   [../]
   [./strain]
-    type = ADComputeIncrementalSmallStrain
+    type = ADComputeFiniteStrain
+#eigenstrain_names = eigenstrain
   [../]
   [./stress]
     type = ADComputeFiniteStrainElasticStress
+  [../]
+  [./thermal]
+    type = ADComputeThermalExpansionEigenstrain
+    stress_free_temperature = 300
+    thermal_expansion_coeff = 1.3e-5
+    temperature = temp
+    eigenstrain_name = eigenstrain
+  [../]
+  [./heat]
+    type = HeatConductionMaterial
+    specific_heat = 603
+    thermal_conductivity = 10e-3
+  [../]
+  [./volumetric_heat]
+    type = DoubleEllipsoidHeatSource
+    a = 1.5
+    b = 1.5
+    c = 1.5
+    power = 425
+    efficienty = 0.45
+    factor = 1
+    velocity = -8.47
+  [../]
+  [./density]
+    type = Density
+    density = 4.43e-6
   [../]
 []
 
@@ -170,7 +223,16 @@
 [Executioner]
   type = Transient
 
-  end_time = 5
+  solve_type = NEWTON
+
+  nl_rel_tol = 1e-8
+  nl_abs_tol = 1e-8
+  l_tol = 1e-3
+
+  petsc_options_iname = '-ksp_type -pc_type -pc_factor_mat_solver_package'
+  petsc_options_value = 'preonly lu       superlu_dist'
+
+  l_max_its = 100
 []
 
 [Postprocessors]

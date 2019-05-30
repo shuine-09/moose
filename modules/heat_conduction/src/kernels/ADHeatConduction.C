@@ -17,12 +17,16 @@ defineADValidParams(
     params.addParam<MaterialPropertyName>("thermal_conductivity",
                                           "thermal_conductivity",
                                           "the name of the thermal conductivity material property");
+    params.addCoupledVar("activated_elem_aux",
+                         1,
+                         "Temperature aux variable used to determine activated elements.");
     params.set<bool>("use_displaced_mesh") = true;);
 
 template <ComputeStage compute_stage>
 ADHeatConduction<compute_stage>::ADHeatConduction(const InputParameters & parameters)
   : ADDiffusion<compute_stage>(parameters),
-    _thermal_conductivity(getADMaterialProperty<Real>("thermal_conductivity"))
+    _thermal_conductivity(getADMaterialProperty<Real>("thermal_conductivity")),
+    _activated_elem(coupledValue("activated_elem_aux"))
 {
 }
 
@@ -30,5 +34,8 @@ template <ComputeStage compute_stage>
 ADRealVectorValue
 ADHeatConduction<compute_stage>::precomputeQpResidual()
 {
-  return _thermal_conductivity[_qp] * ADDiffusion<compute_stage>::precomputeQpResidual();
+  if (_activated_elem[_qp] >= 1.0)
+    return _thermal_conductivity[_qp] * ADDiffusion<compute_stage>::precomputeQpResidual();
+  else
+    return 0.0;
 }

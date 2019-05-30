@@ -10,6 +10,7 @@
 #pragma once
 
 #include "IntegratedBC.h"
+#include "ActivatedElementsMarkerUO.h"
 
 class ConvectiveFluxFunction : public IntegratedBC
 {
@@ -24,6 +25,8 @@ protected:
   const Function & _T_infinity;
   const Real _coefficient;
   const Function * const _coef_func;
+  const ActivatedElementsMarkerUO * _marker_uo;
+  const std::map<dof_id_type, Real> * _marker_map;
 };
 
 template <>

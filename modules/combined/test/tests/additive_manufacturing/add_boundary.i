@@ -5,9 +5,9 @@
 [MeshGenerators]
   [./mesh]
     type = GeneratedMeshGenerator
-    nx = 10
-    ny = 4
-    nz = 4
+    nx = 2
+    ny = 2
+    nz = 2
     xmax = 10
     ymax = 4
     zmax = 4

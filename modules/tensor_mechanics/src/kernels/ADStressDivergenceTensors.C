@@ -18,6 +18,9 @@ defineADValidParams(
     ADKernel,
     params.addClassDescription("Stress divergence kernel with automatic differentiation for the "
                                "Cartesian coordinate system");
+    params.addCoupledVar("activated_elem_aux",
+                         1,
+                         "Temperature aux variable used to determine activated elements.");
     params.addRequiredParam<unsigned int>("component",
                                           "An integer corresponding to the direction "
                                           "the variable this kernel acts in. (0 for x, "
@@ -40,7 +43,8 @@ ADStressDivergenceTensors<compute_stage>::ADStressDivergenceTensors(
     _ndisp(coupledComponents("displacements")),
     _disp_var(_ndisp),
     _avg_grad_test(),
-    _volumetric_locking_correction(getParam<bool>("volumetric_locking_correction"))
+    _volumetric_locking_correction(getParam<bool>("volumetric_locking_correction")),
+    _activated_elem(coupledValue("activated_elem_aux"))
 {
   for (unsigned int i = 0; i < _ndisp; ++i)
     // the next line should be _disp_var[i] = coupled("displacements", i);
@@ -71,7 +75,10 @@ ADStressDivergenceTensors<compute_stage>::computeQpResidual()
   if (_volumetric_locking_correction)
     residual += (_avg_grad_test[_i] - _grad_test[_i][_qp](_component)) / 3.0 * _stress[_qp].trace();
 
-  return residual;
+  if (_activated_elem[_qp] >= 1.0)
+    return residual;
+  else
+    return 0.0;
 }
 
 template <ComputeStage compute_stage>
