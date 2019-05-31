@@ -59,7 +59,10 @@ VesicleTotalEnergyPostprocessor::computeQpIntegral()
   if (_rz)
     lap_u += _grad_u[_qp](0) / rz_coord;
 
-  Real value =
-      0.5 * pow(lap_u - 1.0 / (_epsilon * _epsilon) * (_u[_qp] * _u[_qp] - 1) * _u[_qp] - _C, 2.0);
+//  Real value =
+//      0.5 * pow(lap_u - 1.0 / (_epsilon * _epsilon) * (_u[_qp] * _u[_qp] - 1) * _u[_qp] - _C, 2.0);
+    Real value =
+      0.5 * pow(lap_u - 1.0 / (_epsilon * _epsilon) * (_u[_qp] * _u[_qp] - 1) * (_u[_qp] + _C * _epsilon), 2.0);
+
   return value;
 }

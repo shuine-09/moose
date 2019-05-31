@@ -60,7 +60,7 @@ VesicleVolumeAreaPenalty::~VesicleVolumeAreaPenalty() {}
 void
 VesicleVolumeAreaPenalty::timestepSetup()
 {
-  if (_t_step <= 2)
+  if (_t_step <= 5)
   {
     _volume_0 = _vesicle_volume;
     _area_0 = _vesicle_area;
