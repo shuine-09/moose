@@ -102,10 +102,14 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
   Real G0_neg = (stress0neg).doubleContraction(_mechanical_strain[_qp]) / 2.0;
 
   // Update the history variable
-  // if (G0_pos > _hist_old[_qp])
+  //_hist[_qp] = G0_pos;
+
+  // Update the history variable
+  if (G0_pos > _hist_old[_qp])
   _hist[_qp] = G0_pos;
-  // else
-  //   _hist[_qp] = _hist_old[_qp];
+   else
+  _hist[_qp] = _hist_old[_qp];
+
 
   Real hist_variable = _hist_old[_qp];
   if (_use_current_hist)

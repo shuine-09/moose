@@ -43,6 +43,8 @@ protected:
   /// Use current value of history variable
   bool _use_current_hist;
 
+  bool _decomp;
+
   /// Material property defining crack width, declared elsewhere
   const MaterialProperty<Real> & _l;
 
