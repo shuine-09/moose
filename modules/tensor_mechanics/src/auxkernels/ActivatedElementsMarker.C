@@ -51,7 +51,7 @@ ActivatedElementsMarker::computeValue()
 
   temp /= _q_point.size();
 
-  if (temp > _melt_temperature || marker_old >= 1)
+  if (temp > _melt_temperature || marker_old >= 1 || _current_elem->subdomain_id() != 1)
     return 1;
   else
     return 0;

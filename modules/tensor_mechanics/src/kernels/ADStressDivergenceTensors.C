@@ -75,7 +75,7 @@ ADStressDivergenceTensors<compute_stage>::computeQpResidual()
   if (_volumetric_locking_correction)
     residual += (_avg_grad_test[_i] - _grad_test[_i][_qp](_component)) / 3.0 * _stress[_qp].trace();
 
-  if (_activated_elem[_qp] >= 1.0)
+  if (_activated_elem[_qp] >= 1.0 || _current_elem->subdomain_id() != 1)
     return residual;
   else
     return 0.0;

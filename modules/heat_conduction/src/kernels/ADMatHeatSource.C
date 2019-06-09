@@ -35,7 +35,7 @@ template <ComputeStage compute_stage>
 ADReal
 ADMatHeatSource<compute_stage>::computeQpResidual()
 {
-  if (_activated_elem[_qp] >= 1.0)
+  if (_activated_elem[_qp] >= 1.0 || _current_elem->subdomain_id() != 1)
     return -_scalar * _material_property[_qp] * _test[_i][_qp];
   else
     return 0.0;

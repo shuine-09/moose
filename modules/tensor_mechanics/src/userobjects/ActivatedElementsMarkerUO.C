@@ -48,7 +48,7 @@ ActivatedElementsMarkerUO::execute()
 
   temp /= _qrule->n_points();
 
-  if (temp > _melt_temperature || marker_old >= 1.0)
+  if (temp > _melt_temperature || marker_old >= 1.0 || _current_elem->subdomain_id() != 1)
     _activated_elem_map[_current_elem->id()] = 1.0;
   else
     _activated_elem_map[_current_elem->id()] = 0.0;

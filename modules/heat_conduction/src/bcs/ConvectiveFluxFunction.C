@@ -62,7 +62,7 @@ ConvectiveFluxFunction::computeQpResidual()
 
   const Real coef(_coefficient * (_coef_func ? _coef_func->value(_t, _q_point[_qp]) : 1));
 
-  if (apply)
+  if (apply || _current_elem->subdomain_id() != 1)
     return _test[_i][_qp] * coef * (_u[_qp] - _T_infinity.value(_t, _q_point[_qp]));
   else
     return 0.0;
@@ -86,7 +86,7 @@ ConvectiveFluxFunction::computeQpJacobian()
 
   const Real coef(_coefficient * (_coef_func ? _coef_func->value(_t, _q_point[_qp]) : 1));
 
-  if (apply)
+  if (apply || _current_elem->subdomain_id() != 1)
     return _test[_i][_qp] * coef * _phi[_j][_qp];
   else
     return 0.0;

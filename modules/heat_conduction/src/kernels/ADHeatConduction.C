@@ -34,7 +34,7 @@ template <ComputeStage compute_stage>
 ADRealVectorValue
 ADHeatConduction<compute_stage>::precomputeQpResidual()
 {
-  if (_activated_elem[_qp] >= 1.0)
+  if (_activated_elem[_qp] >= 1.0 || _current_elem->subdomain_id() != 1)
     return _thermal_conductivity[_qp] * ADDiffusion<compute_stage>::precomputeQpResidual();
   else
     return 0.0;

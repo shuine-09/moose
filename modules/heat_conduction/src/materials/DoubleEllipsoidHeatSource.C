@@ -45,12 +45,25 @@ DoubleEllipsoidHeatSource::DoubleEllipsoidHeatSource(const InputParameters & par
 void
 DoubleEllipsoidHeatSource::computeQpProperties()
 {
+  // const Real & x = _q_point[_qp](0);
+  // const Real & y = _q_point[_qp](1);
+  // const Real & z = _q_point[_qp](2);
+  // _volumetric_heat[_qp] = 6.0 * std::sqrt(3.0) * _P * _eta * _f /
+  //                         (_a * _b * _c * std::pow(libMesh::pi, 1.5)) *
+  //                         std::exp(-(3.0 * std::pow(x, 2.0) / std::pow(_a, 2.0) +
+  //                                    3.0 * std::pow(y, 2.0) / std::pow(_b, 2.0) +
+  //                                    3.0 * std::pow(z + _v * _t, 2.0) / pow(_c, 2.0)));
   const Real & x = _q_point[_qp](0);
   const Real & y = _q_point[_qp](1);
   const Real & z = _q_point[_qp](2);
+
+  Real x_t = 9 * std::cos(2 * libMesh::pi * _t);
+  Real y_t = 9 * std::sin(2 * libMesh::pi * _t);
+  Real z_t = std::floor(_t) * 1 + 5;
+
   _volumetric_heat[_qp] = 6.0 * std::sqrt(3.0) * _P * _eta * _f /
                           (_a * _b * _c * std::pow(libMesh::pi, 1.5)) *
-                          std::exp(-(3.0 * std::pow(x, 2.0) / std::pow(_a, 2.0) +
-                                     3.0 * std::pow(y, 2.0) / std::pow(_b, 2.0) +
-                                     3.0 * std::pow(z + _v * _t, 2.0) / pow(_c, 2.0)));
+                          std::exp(-(3.0 * std::pow(x - x_t, 2.0) / std::pow(_a, 2.0) +
+                                     3.0 * std::pow(y - y_t, 2.0) / std::pow(_b, 2.0) +
+                                     3.0 * std::pow(z - z_t, 2.0) / std::pow(_c, 2.0)));
 }
