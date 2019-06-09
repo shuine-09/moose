@@ -22,7 +22,11 @@ validParams<ComputeIsotropicLinearElasticPFFractureStress>()
   params.addRequiredCoupledVar("c", "Order parameter for damage");
   params.addParam<Real>("kdamage", 0.0, "Stiffness of damaged matrix");
   params.addParam<bool>(
-      "decomp", true, "Use the current value of the history variable.");
+      "decomp", true, "decompose strain energy.");
+  params.addParam<bool>(
+      "linear", false, "Use linear fracture energy.");
+  params.addParam<bool>(
+      "use_vi", false, "Use vi solver.");
   params.addParam<bool>(
       "use_current_history_variable", false, "Use the current value of the history variable.");
   params.addParam<MaterialPropertyName>(
@@ -37,7 +41,9 @@ ComputeIsotropicLinearElasticPFFractureStress::ComputeIsotropicLinearElasticPFFr
     _kdamage(getParam<Real>("kdamage")),
     _use_current_hist(getParam<bool>("use_current_history_variable")),
      _decomp(getParam<bool>("decomp")),
-    _l(getMaterialProperty<Real>("l")),
+     _linear(getParam<bool>("linear")),
+      _use_vi(getParam<bool>("use_vi")),
+     _l(getMaterialProperty<Real>("l")),
     _gc(getMaterialProperty<Real>("gc_prop")),
     _F(declareProperty<Real>(getParam<MaterialPropertyName>("F_name"))),
     _dFdc(declarePropertyDerivative<Real>(getParam<MaterialPropertyName>("F_name"),
@@ -55,7 +61,8 @@ ComputeIsotropicLinearElasticPFFractureStress::ComputeIsotropicLinearElasticPFFr
 void
 ComputeIsotropicLinearElasticPFFractureStress::initQpStatefulProperties()
 {
-  _hist[_qp] = 0.0;
+  if (!_use_vi && _linear)
+    _hist[_qp] = 3 * _gc[_qp] / 16 / _l[_qp];
 }
 
 void
@@ -115,75 +122,103 @@ ComputeIsotropicLinearElasticPFFractureStress::computeQpStress()
     nval += eneg[i] * eneg[i];
   }
 
-  // Energy with positive principal strains
   const Real G0_pos = lambda * etrpos * etrpos / 2.0 + mu * pval;
   const Real G0_neg = lambda * etrneg * etrneg / 2.0 + mu * nval;
 
-  // Assign history variable and derivative
-  //_hist[_qp] = G0_pos;
-
-   if (G0_pos > _hist_old[_qp])
-  _hist[_qp] = G0_pos;
-   else
-    _hist[_qp] = _hist_old[_qp];
-
-
-  Real hist_variable = _hist_old[_qp];
-  if (_use_current_hist)
-    hist_variable = _hist[_qp];
-
-
-  // Elastic free energy density
-  _F[_qp] = hist_variable * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - G0_neg +
-            _gc[_qp] / (2 * _l[_qp]) * c * c;
-
-  // derivative of elastic free energy density wrt c
-  _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + _gc[_qp] / _l[_qp] * c;
-
-  // 2nd derivative of elastic free energy density wrt c
-  _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage) + _gc[_qp] / _l[_qp];
-
-  // 2nd derivative wrt c and strain = 0.0 if we used the previous step's history varible
-  if (_use_current_hist)
-    _d2Fdcdstrain[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
-
-  if (_decomp)
+  if (_linear)
   {
-  // Damage associated with positive component of stress
-  _stress[_qp] = stress0pos * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - stress0neg;
+    if (_use_vi)
+      _hist[_qp] = G0_pos;
+    else 
+    {
+      if (G0_pos > _hist_old[_qp])
+        _hist[_qp] = G0_pos;
+      else
+        _hist[_qp] = _hist_old[_qp];
+    }
 
 
-  // Used in StressDivergencePFFracTensors off-diagonal Jacobian
-  _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
+    Real hist_variable = _hist_old[_qp];
+    if (_use_current_hist)
+      hist_variable = _hist[_qp];
 
-  // Calculate dstress/dstrain
-  // dstress/dstrain = dstress_pos/dstrain_pos * dstrain_pos/dstrain
-  //                 + dstress_neg/dstrain_neg * dstrain_neg/dstrain
-  // dstrain_pos/dstrain = proj_pos (fourth order projection tensor)
-  // dstrain_neg/dstrain = proj_neg (fourth order projection tensor)
-  // Note that proj_pos + proj_neg = symmetric identify fourth order tensor
 
-  // d trace(A) / dA
-  RankTwoTensor I(RankTwoTensor::initIdentity);
-  RankFourTensor dtraceAdA = I.outerProduct(I);
+    _F[_qp] = hist_variable * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) + G0_neg +
+      3 * _gc[_qp] / (8 * _l[_qp]) * c;
 
-  _Jacobian_mult[_qp] = ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) *
-                            (lambda * dtraceAdA * MathUtils::heavyside(etr) + 2 * mu * proj_pos) +
-                        (lambda * dtraceAdA * MathUtils::heavyside(-etr) + 2 * mu * proj_neg);
+    _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + 3 * _gc[_qp] / (8 * _l[_qp]);
+
+    _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage);
+
+    if (_use_current_hist)
+      _d2Fdcdstrain[_qp] = -stress0pos * (1.0 - c) * (1 - _kdamage);
+
+
+    if (_use_current_hist)
+      _d2Fdcdstrain[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
+
+    if (_decomp)
+    {
+      _stress[_qp] = stress0pos * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - stress0neg;
+      _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
+
+      RankTwoTensor I(RankTwoTensor::initIdentity);
+      RankFourTensor dtraceAdA = I.outerProduct(I);
+
+      _Jacobian_mult[_qp] = ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) *
+        (lambda * dtraceAdA * MathUtils::heavyside(etr) + 2 * mu * proj_pos) +
+        (lambda * dtraceAdA * MathUtils::heavyside(-etr) + 2 * mu * proj_neg);
+    }
+    else 
+    {
+      _stress[_qp] = (stress0pos-stress0neg) * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage);
+      _dstress_dc[_qp] = -(stress0pos-stress0neg) * 2.0 * (1.0 - c) * (1 - _kdamage);
+      _Jacobian_mult[_qp] = ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) * _elasticity_tensor[_qp];
+    }
   }
-  else 
+  else
   {
-      // Damage associated with positive component of stress
-  _stress[_qp] = (stress0pos-stress0neg) * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage);
+    if (_use_vi)
+      _hist[_qp] = G0_pos;
+    else 
+    {
+      if (G0_pos > _hist_old[_qp])
+        _hist[_qp] = G0_pos;
+      else
+        _hist[_qp] = _hist_old[_qp];
+    }
 
 
-  // Used in StressDivergencePFFracTensors off-diagonal Jacobian
-  _dstress_dc[_qp] = -(stress0pos-stress0neg) * 2.0 * (1.0 - c) * (1 - _kdamage);
+    Real hist_variable = _hist_old[_qp];
+    if (_use_current_hist)
+      hist_variable = _hist[_qp];
 
-  RankTwoTensor I(RankTwoTensor::initIdentity);
-  RankFourTensor dtraceAdA = I.outerProduct(I);
 
-  _Jacobian_mult[_qp] = ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) * _elasticity_tensor[_qp];
+    _F[_qp] = hist_variable * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - G0_neg +
+      _gc[_qp] / (2 * _l[_qp]) * c * c;
 
+    _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + _gc[_qp] / _l[_qp] * c;
+
+    _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage) + _gc[_qp] / _l[_qp];
+
+    if (_use_current_hist)
+      _d2Fdcdstrain[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
+
+    if (_decomp)
+    {
+      _stress[_qp] = stress0pos * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) - stress0neg;
+      _dstress_dc[_qp] = -stress0pos * 2.0 * (1.0 - c) * (1 - _kdamage);
+      RankTwoTensor I(RankTwoTensor::initIdentity);
+      RankFourTensor dtraceAdA = I.outerProduct(I);
+      _Jacobian_mult[_qp] = ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) *
+        (lambda * dtraceAdA * MathUtils::heavyside(etr) + 2 * mu * proj_pos) +
+        (lambda * dtraceAdA * MathUtils::heavyside(-etr) + 2 * mu * proj_neg);
+    }
+    else 
+    {
+      _stress[_qp] = (stress0pos-stress0neg) * ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage);
+      _dstress_dc[_qp] = -(stress0pos-stress0neg) * 2.0 * (1.0 - c) * (1 - _kdamage);
+      _Jacobian_mult[_qp] = ((1.0 - c) * (1.0 - c) * (1 - _kdamage) + _kdamage) * _elasticity_tensor[_qp];
+    }
   }
 }

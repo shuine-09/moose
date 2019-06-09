@@ -45,6 +45,10 @@ protected:
 
   bool _decomp;
 
+  bool _linear;
+
+  bool _use_vi;
+
   /// Material property defining crack width, declared elsewhere
   const MaterialProperty<Real> & _l;
 
