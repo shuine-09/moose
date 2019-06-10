@@ -24,6 +24,10 @@ validParams<ComputeLinearElasticPFFractureStress>()
       "use_current_history_variable", true, "Use the current value of the history variable.");
   params.addParam<bool>(
       "decomp", true, "Use the current value of the history variable.");
+  params.addParam<bool>(
+      "linear", false, "Use linear fracture energy.");
+  params.addParam<bool>(
+      "use_vi", false, "Use vi solver.");
   params.addParam<MaterialPropertyName>(
       "F_name", "E_el", "Name of material property storing the elastic energy");
   params.addParam<MaterialPropertyName>(
@@ -40,6 +44,8 @@ ComputeLinearElasticPFFractureStress::ComputeLinearElasticPFFractureStress(
   : ComputeStressBase(parameters),
     _use_current_hist(getParam<bool>("use_current_history_variable")),
     _decomp(getParam<bool>("decomp")),
+     _linear(getParam<bool>("linear")),
+    _use_vi(getParam<bool>("use_vi")),
     _c(coupledValue("c")),
     _gc_prop(getMaterialProperty<Real>("gc_prop")),
     _l(getMaterialProperty<Real>("l")),
@@ -84,12 +90,8 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
 
   _proj[_qp] = Ppos;
 
-  // Ppos = _proj_old[_qp] + (_proj_old[_qp] - _proj_older[_qp]) / _dt_old * _dt;
-
-  // Ppos = _proj_old[_qp];
-
-  if (c > 0.9)
-    Ppos = _proj_old[_qp];
+  //if (c > 0.9)
+  //  Ppos = _proj_old[_qp];
 
   Pneg = I4sym - Ppos;
 
@@ -101,15 +103,15 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
   Real G0_pos = (stress0pos).doubleContraction(_mechanical_strain[_qp]) / 2.0;
   Real G0_neg = (stress0neg).doubleContraction(_mechanical_strain[_qp]) / 2.0;
 
-  // Update the history variable
-  //_hist[_qp] = G0_pos;
-
-  // Update the history variable
-  if (G0_pos > _hist_old[_qp])
-  _hist[_qp] = G0_pos;
-   else
-  _hist[_qp] = _hist_old[_qp];
-
+  if (_use_vi)
+    _hist[_qp] = G0_pos;
+  else 
+  {
+    if (G0_pos > _hist_old[_qp])
+      _hist[_qp] = G0_pos;
+    else
+      _hist[_qp] = _hist_old[_qp];
+  }
 
   Real hist_variable = _hist_old[_qp];
   if (_use_current_hist)
@@ -123,22 +125,30 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
   // Compute stress and its derivatives
   if (_decomp)
   {
-  _stress[_qp] = stress0pos * h + stress0neg; // equivalent to (Ppos * h + Pneg) * uncracked_stress;
-  _dstress_dc[_qp] = stress0pos * dhdc;
-  _Jacobian_mult[_qp] = (Ppos * h + Pneg) * _elasticity_tensor[_qp];
+    _stress[_qp] = stress0pos * h + stress0neg; // equivalent to (Ppos * h + Pneg) * uncracked_stress;
+    _dstress_dc[_qp] = stress0pos * dhdc;
+    _Jacobian_mult[_qp] = (Ppos * h + Pneg) * _elasticity_tensor[_qp];
 
   }
   else
   {
-  _stress[_qp] = (stress0pos + stress0neg) * h; // equivalent to (Ppos * h + Pneg) * uncracked_stress;
-  _dstress_dc[_qp] = _stress[_qp] * dhdc;
-  _Jacobian_mult[_qp] = h * _elasticity_tensor[_qp];
+    _stress[_qp] = (stress0pos + stress0neg) * h; // equivalent to (Ppos * h + Pneg) * uncracked_stress;
+    _dstress_dc[_qp] = _stress[_qp] * dhdc;
+    _Jacobian_mult[_qp] = h * _elasticity_tensor[_qp];
   }
 
   // Compute energy and its derivatives
-  _F[_qp] = hist_variable * h - G0_neg + _gc_prop[_qp] * c * c / (2 * _l[_qp]);
-  _dFdc[_qp] = hist_variable * dhdc + _gc_prop[_qp] * c / _l[_qp];
-  _d2Fdc2[_qp] = hist_variable * d2hdc2 + _gc_prop[_qp] / _l[_qp];
+  if (_linear)
+  {
+    _F[_qp] = hist_variable * h - G0_neg + 3 * _gc_prop[_qp] * c / (8 * _l[_qp]);
+    _dFdc[_qp] = hist_variable * dhdc + 3 * _gc_prop[_qp] / (8*_l[_qp]);
+    _d2Fdc2[_qp] = hist_variable * d2hdc2;
+  }
+  else
+  {  _F[_qp] = hist_variable * h - G0_neg + _gc_prop[_qp] * c * c / (2 * _l[_qp]);
+    _dFdc[_qp] = hist_variable * dhdc + _gc_prop[_qp] * c / _l[_qp];
+    _d2Fdc2[_qp] = hist_variable * d2hdc2 + _gc_prop[_qp] / _l[_qp];
+  }
 
   // 2nd derivative wrt c and strain = 0.0 if we used the previous step's history varible
   if (_use_current_hist)
