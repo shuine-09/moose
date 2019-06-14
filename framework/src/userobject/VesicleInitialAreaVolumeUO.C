@@ -6,15 +6,18 @@
 /****************************************************************/
 #include "VesicleInitialAreaVolumeUO.h"
 
-template<>
-InputParameters validParams<VesicleInitialAreaVolumeUO>()
+registerMooseObject("MooseApp", VesicleInitialAreaVolumeUO);
+
+template <>
+InputParameters
+validParams<VesicleInitialAreaVolumeUO>()
 {
   InputParameters params = validParams<DiscreteElementUserObject>();
   return params;
 }
 
-VesicleInitialAreaVolumeUO::VesicleInitialAreaVolumeUO(const InputParameters & parameters) :
-    DiscreteElementUserObject(parameters)
+VesicleInitialAreaVolumeUO::VesicleInitialAreaVolumeUO(const InputParameters & parameters)
+  : DiscreteElementUserObject(parameters)
 {
 }
 

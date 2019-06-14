@@ -14,6 +14,8 @@
 
 #include "VesicleVolumePostprocessor.h"
 
+registerMooseObject("MooseApp", VesicleVolumePostprocessor);
+
 template <>
 InputParameters
 validParams<VesicleVolumePostprocessor>()

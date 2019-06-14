@@ -14,6 +14,8 @@
 
 #include "VesicleAreaPostprocessor.h"
 
+registerMooseObject("MooseApp", VesicleAreaPostprocessor);
+
 template <>
 InputParameters
 validParams<VesicleAreaPostprocessor>()

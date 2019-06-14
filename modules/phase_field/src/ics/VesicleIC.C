@@ -6,6 +6,8 @@
 /****************************************************************/
 #include "VesicleIC.h"
 
+registerMooseObject("PhaseFieldApp", VesicleIC);
+
 template <>
 InputParameters
 validParams<VesicleIC>()

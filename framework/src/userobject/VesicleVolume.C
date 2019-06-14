@@ -17,6 +17,8 @@
 // libmesh includes
 #include "libmesh/quadrature.h"
 
+registerMooseObject("MooseApp", VesicleVolume);
+
 template <>
 InputParameters
 validParams<VesicleVolume>()

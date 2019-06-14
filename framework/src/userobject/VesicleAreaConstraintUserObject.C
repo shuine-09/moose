@@ -15,8 +15,11 @@
 #include "VesicleAreaConstraintUserObject.h"
 #include "libmesh/quadrature.h"
 
-template<>
-InputParameters validParams<VesicleAreaConstraintUserObject>()
+registerMooseObject("MooseApp", VesicleAreaConstraintUserObject);
+
+template <>
+InputParameters
+validParams<VesicleAreaConstraintUserObject>()
 {
   InputParameters params = validParams<ShapeElementUserObject>();
   params.addRequiredCoupledVar("u", "intergral variable");
@@ -24,8 +27,8 @@ InputParameters validParams<VesicleAreaConstraintUserObject>()
   return params;
 }
 
-VesicleAreaConstraintUserObject::VesicleAreaConstraintUserObject(const InputParameters & parameters) :
-    ShapeElementUserObject(parameters),
+VesicleAreaConstraintUserObject::VesicleAreaConstraintUserObject(const InputParameters & parameters)
+  : ShapeElementUserObject(parameters),
     _u_value(coupledValue("u")),
     _grad_u(coupledGradient("u")),
     _u_var(coupled("u")),
@@ -52,7 +55,8 @@ VesicleAreaConstraintUserObject::execute()
   // integrate u over the simulation domain
   //
   for (unsigned int qp = 0; qp < _qrule->n_points(); ++qp)
-    _integral += _JxW[qp] * _coord[qp] * ( 3.0 / 2.0 / std::sqrt(2.0) * _epsilon * _grad_u[qp] * _grad_u[qp]);
+    _integral +=
+        _JxW[qp] * _coord[qp] * (3.0 / 2.0 / std::sqrt(2.0) * _epsilon * _grad_u[qp] * _grad_u[qp]);
 }
 
 void
@@ -64,7 +68,8 @@ VesicleAreaConstraintUserObject::executeJacobian(unsigned int jvar)
     // sum jacobian contributions over quadrature points
     Real sum = 0.0;
     for (unsigned int qp = 0; qp < _qrule->n_points(); ++qp)
-      sum += _JxW[qp] * _coord[qp] * (3.0 / std::sqrt(2.0) * _epsilon * _grad_u[qp] * _grad_phi[_j][qp]);
+      sum += _JxW[qp] * _coord[qp] *
+             (3.0 / std::sqrt(2.0) * _epsilon * _grad_u[qp] * _grad_phi[_j][qp]);
 
     // the user has to store the value of sum in a storage object indexed by global DOF _j_global
     _jacobian_storage[_j_global] += sum;
@@ -82,13 +87,15 @@ VesicleAreaConstraintUserObject::finalize()
 void
 VesicleAreaConstraintUserObject::threadJoin(const UserObject & y)
 {
-  const VesicleAreaConstraintUserObject & shp_uo = dynamic_cast<const VesicleAreaConstraintUserObject &>(y);
+  const VesicleAreaConstraintUserObject & shp_uo =
+      dynamic_cast<const VesicleAreaConstraintUserObject &>(y);
 
   _integral += shp_uo._integral;
 
   if (_fe_problem.currentlyComputingJacobian())
   {
-    mooseAssert(_jacobian_storage.size() == shp_uo._jacobian_storage.size(), "Jacobian storage size is inconsistent across threads");
+    mooseAssert(_jacobian_storage.size() == shp_uo._jacobian_storage.size(),
+                "Jacobian storage size is inconsistent across threads");
     for (unsigned int i = 0; i < _jacobian_storage.size(); ++i)
       _jacobian_storage[i] += shp_uo._jacobian_storage[i];
   }

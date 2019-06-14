@@ -14,6 +14,8 @@
 
 #include "VesicleShapeDeformation.h"
 
+registerMooseObject("MooseApp", VesicleShapeDeformation);
+
 template <>
 InputParameters
 validParams<VesicleShapeDeformation>()

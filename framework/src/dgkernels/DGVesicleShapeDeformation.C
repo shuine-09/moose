@@ -17,6 +17,8 @@
 #include "MooseVariable.h"
 #include <cmath>
 
+registerMooseObject("MooseApp", DGVesicleShapeDeformation);
+
 template <>
 InputParameters
 validParams<DGVesicleShapeDeformation>()
@@ -40,7 +42,7 @@ DGVesicleShapeDeformation::DGVesicleShapeDeformation(const InputParameters & par
     _second_u(second()),
     _second_phi_neighbor(neighborSecondPhi()),
     _second_test_neighbor(neighborSecondTest()),
-    _second_u_neighbor(neighborSecond()) 
+    _second_u_neighbor(neighborSecond())
 {
 }
 
@@ -53,7 +55,8 @@ DGVesicleShapeDeformation::computeQpResidual(Moose::DGResidualType type)
   if (_h_elem < 0.0)
   {
     const unsigned int elem_b_order = static_cast<unsigned int>(_var.order());
-    h_elem = _current_elem->volume() / _current_side_elem->volume() * 1. / std::pow(elem_b_order, 2.);
+    h_elem =
+        _current_elem->volume() / _current_side_elem->volume() * 1. / std::pow(elem_b_order, 2.);
   }
   else
     h_elem = _h_elem;
@@ -103,12 +106,13 @@ Real
 DGVesicleShapeDeformation::computeQpJacobian(Moose::DGJacobianType type)
 {
   Real r = 0;
- 
+
   double h_elem = 0.0;
   if (_h_elem < 0.0)
   {
     const unsigned int elem_b_order = static_cast<unsigned int>(_var.order());
-    h_elem = _current_elem->volume() / _current_side_elem->volume() * 1. / std::pow(elem_b_order, 2.);
+    h_elem =
+        _current_elem->volume() / _current_side_elem->volume() * 1. / std::pow(elem_b_order, 2.);
   }
   else
     h_elem = _h_elem;

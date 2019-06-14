@@ -15,18 +15,20 @@
 #include "VesicleVolumeConstraintUserObject.h"
 #include "libmesh/quadrature.h"
 
-template<>
-InputParameters validParams<VesicleVolumeConstraintUserObject>()
+registerMooseObject("MooseApp", VesicleVolumeConstraintUserObject);
+
+template <>
+InputParameters
+validParams<VesicleVolumeConstraintUserObject>()
 {
   InputParameters params = validParams<ShapeElementUserObject>();
   params.addRequiredCoupledVar("u", "intergral variable");
   return params;
 }
 
-VesicleVolumeConstraintUserObject::VesicleVolumeConstraintUserObject(const InputParameters & parameters) :
-    ShapeElementUserObject(parameters),
-    _u_value(coupledValue("u")),
-    _u_var(coupled("u"))
+VesicleVolumeConstraintUserObject::VesicleVolumeConstraintUserObject(
+    const InputParameters & parameters)
+  : ShapeElementUserObject(parameters), _u_value(coupledValue("u")), _u_var(coupled("u"))
 {
 }
 
@@ -79,13 +81,15 @@ VesicleVolumeConstraintUserObject::finalize()
 void
 VesicleVolumeConstraintUserObject::threadJoin(const UserObject & y)
 {
-  const VesicleVolumeConstraintUserObject & shp_uo = dynamic_cast<const VesicleVolumeConstraintUserObject &>(y);
+  const VesicleVolumeConstraintUserObject & shp_uo =
+      dynamic_cast<const VesicleVolumeConstraintUserObject &>(y);
 
   _integral += shp_uo._integral;
 
   if (_fe_problem.currentlyComputingJacobian())
   {
-    mooseAssert(_jacobian_storage.size() == shp_uo._jacobian_storage.size(), "Jacobian storage size is inconsistent across threads");
+    mooseAssert(_jacobian_storage.size() == shp_uo._jacobian_storage.size(),
+                "Jacobian storage size is inconsistent across threads");
     for (unsigned int i = 0; i < _jacobian_storage.size(); ++i)
       _jacobian_storage[i] += shp_uo._jacobian_storage[i];
   }

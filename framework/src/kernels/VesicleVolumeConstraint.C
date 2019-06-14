@@ -14,17 +14,21 @@
 
 #include "VesicleVolumeConstraint.h"
 
-template<>
-InputParameters validParams<VesicleVolumeConstraint>()
+registerMooseObject("MooseApp", VesicleVolumeConstraint);
+
+template <>
+InputParameters
+validParams<VesicleVolumeConstraint>()
 {
   InputParameters params = validParams<NonlocalKernel>();
-  params.addRequiredParam<UserObjectName>("user_object", "Name of a SimpleTestShapeElementUserObject");
+  params.addRequiredParam<UserObjectName>("user_object",
+                                          "Name of a SimpleTestShapeElementUserObject");
   params.addParam<Real>("alpha_v", 1000, "The penalty parameter of vesicle volume.");
   return params;
 }
 
-VesicleVolumeConstraint::VesicleVolumeConstraint(const InputParameters & parameters) :
-    NonlocalKernel(parameters),
+VesicleVolumeConstraint::VesicleVolumeConstraint(const InputParameters & parameters)
+  : NonlocalKernel(parameters),
     _shp(getUserObject<VesicleVolumeConstraintUserObject>("user_object")),
     _shp_integral(_shp.getIntegral()),
     _shp_jacobian(_shp.getJacobian()),

@@ -14,6 +14,8 @@
 
 #include "VesicleVolumeAreaPenalty.h"
 
+registerMooseObject("MooseApp", VesicleVolumeAreaPenalty);
+
 template <>
 InputParameters
 validParams<VesicleVolumeAreaPenalty>()
