@@ -1,3 +1,6 @@
+# test for an oxide growing on top of a ziroconium nuclear fuel cladding
+# using the Cathcart-Pawel model to compute the growth rate
+
 [GlobalParams]
   order = FIRST
   family = LAGRANGE
@@ -22,7 +25,6 @@
 
 [UserObjects]
   [./velocity]
-#    type = XFEMPhaseTransitionMovingInterfaceVelocity
     type = XFEMCathcartPawelOxideVelocity
     diffusivity_at_positive_level_set = 1e-5
     diffusivity_at_negative_level_set = 1e-11
