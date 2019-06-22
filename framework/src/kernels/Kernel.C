@@ -35,13 +35,16 @@ Kernel::Kernel(const InputParameters & parameters)
                                  "variable",
                                  Moose::VarKindType::VAR_NONLINEAR,
                                  Moose::VarFieldType::VAR_FIELD_STANDARD),
+    PerfGraphInterface(this),
     _var(*mooseVariable()),
     _test(_var.phi()),
     _grad_test(_var.gradPhi()),
     _phi(_assembly.phi(_var)),
     _grad_phi(_assembly.gradPhi(_var)),
     _u(_is_implicit ? _var.sln() : _var.slnOld()),
-    _grad_u(_is_implicit ? _var.gradSln() : _var.gradSlnOld())
+    _grad_u(_is_implicit ? _var.gradSln() : _var.gradSlnOld()),
+    _kn_residual_timer(registerTimedSection("KernelResidual", 2)),
+    _kn_jacobian_timer(registerTimedSection("KernelJacobian", 2))
 {
   addMooseVariableDependency(mooseVariable());
   _save_in.resize(_save_in_strings.size());
@@ -91,6 +94,7 @@ Kernel::Kernel(const InputParameters & parameters)
 void
 Kernel::computeResidual()
 {
+  TIME_SECTION(_kn_residual_timer);
   prepareVectorTag(_assembly, _var.number());
 
   precalculateResidual();
@@ -111,6 +115,7 @@ Kernel::computeResidual()
 void
 Kernel::computeJacobian()
 {
+  TIME_SECTION(_kn_jacobian_timer);
   prepareMatrixTag(_assembly, _var.number(), _var.number());
 
   precalculateJacobian();

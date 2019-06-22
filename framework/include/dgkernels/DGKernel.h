@@ -10,6 +10,7 @@
 #pragma once
 
 #include "DGKernelBase.h"
+#include "PerfGraphInterface.h"
 
 class DGKernel;
 
@@ -20,7 +21,7 @@ InputParameters validParams<DGKernel>();
  * The DGKernel class is responsible for calculating the residuals for various
  * physics on internal sides (edges/faces).
  */
-class DGKernel : public DGKernelBase
+class DGKernel : public DGKernelBase, public PerfGraphInterface
 {
 public:
   /**
@@ -67,5 +68,8 @@ protected:
    * This is the virtual that derived classes should override for computing the off-diag Jacobian.
    */
   virtual Real computeQpOffDiagJacobian(Moose::DGJacobianType type, unsigned int jvar);
-};
 
+  /// Timers
+  PerfID _dg_residual_timer;
+  PerfID _dg_jacobian_timer;
+};

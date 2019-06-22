@@ -31,13 +31,20 @@ validParams<DGKernel>()
   return params;
 }
 
-DGKernel::DGKernel(const InputParameters & parameters) : DGKernelBase(parameters) {}
+DGKernel::DGKernel(const InputParameters & parameters)
+  : DGKernelBase(parameters),
+    PerfGraphInterface(this),
+    _dg_residual_timer(registerTimedSection("DGResidual", 2)),
+    _dg_jacobian_timer(registerTimedSection("DGJacobian", 2))
+{
+}
 
 DGKernel::~DGKernel() {}
 
 void
 DGKernel::computeElemNeighResidual(Moose::DGResidualType type)
 {
+  TIME_SECTION(_dg_residual_timer);
   bool is_elem;
   if (type == Moose::Element)
     is_elem = true;
@@ -72,6 +79,7 @@ DGKernel::computeElemNeighResidual(Moose::DGResidualType type)
 void
 DGKernel::computeElemNeighJacobian(Moose::DGJacobianType type)
 {
+  TIME_SECTION(_dg_jacobian_timer);
   const VariableTestValue & test_space =
       (type == Moose::ElementElement || type == Moose::ElementNeighbor) ? _test : _test_neighbor;
   const VariableTestValue & loc_phi =

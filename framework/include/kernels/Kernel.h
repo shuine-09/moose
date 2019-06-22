@@ -11,13 +11,14 @@
 
 #include "KernelBase.h"
 #include "MooseVariableInterface.h"
+#include "PerfGraphInterface.h"
 
 class Kernel;
 
 template <>
 InputParameters validParams<Kernel>();
 
-class Kernel : public KernelBase, public MooseVariableInterface<Real>
+class Kernel : public KernelBase, public MooseVariableInterface<Real>, public PerfGraphInterface
 {
 public:
   Kernel(const InputParameters & parameters);
@@ -70,5 +71,7 @@ protected:
 
   /// Holds the solution gradient at the current quadrature points
   const VariableGradient & _grad_u;
+  /// Timers
+  PerfID _kn_residual_timer;
+  PerfID _kn_jacobian_timer;
 };
-
