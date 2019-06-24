@@ -197,15 +197,16 @@
 
   nl_max_its = 10
 
-  dt = 0.1
+  dt = 0.01
   dtmax = 10.0
   dtmin = 0.01
-
-  num_steps = 10
+  end_time = 1
+  #num_steps = 10
 []
 
 [Outputs]
-  file_base = out
+  file_base = out2
   exodus = true
   perf_graph = true
+  csv = true
 []
