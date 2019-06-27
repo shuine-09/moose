@@ -36,6 +36,9 @@ protected:
   /// Grain tracker object
   const GrainDataTracker<RankFourTensor> & _grain_tracker;
 
+  /// Grain tracker object
+  const GrainDataTracker<RankTwoTensor> & _grain_tracker_rotation;
+
   /// Number of order parameters
   const unsigned int _op_num;
 
@@ -47,5 +50,7 @@ protected:
 
   /// Conversion factor from J to eV
   const Real _JtoeV;
-};
 
+  /// Crystal Rotation Matrix
+  MaterialProperty<RankTwoTensor> & _crysrot;
+};

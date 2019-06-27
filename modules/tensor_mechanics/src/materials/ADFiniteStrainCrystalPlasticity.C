@@ -498,6 +498,8 @@ template <ComputeStage compute_stage>
 void
 ADFiniteStrainCrystalPlasticity<compute_stage>::computeQpStress()
 {
+  if (isBoundaryMaterial())
+    return;
   unsigned int substep_iter = 1; // Depth of substepping; Limited to maximum substep iteration
   unsigned int num_substep = 1;  // Calculated from substep_iter as 2^substep_iter
   Real dt_original = _dt;        // Stores original _dt; Reset at the end of solve
