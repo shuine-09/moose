@@ -854,10 +854,12 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::updateGss()
 
   for (unsigned int i = 0; i < _nss; ++i)
     // hb(i)=val;
-    if ((1.0 - _gss_tmp(i) / _tau_sat) > 0.0)
+    if ((1.0 - _gss_tmp(i) / _tau_sat) > 1.0e-8)
       hb(i) = _h0 * std::pow(std::abs(1.0 - _gss_tmp(i) / _tau_sat), a);
-    else
+    else if ((1.0 - _gss_tmp(i) / _tau_sat) < -1.0e-8)
       hb(i) = -_h0 * std::pow(std::abs(1.0 - _gss_tmp(i) / _tau_sat), a);
+    else
+      hb(i) = 0.0;
 
   for (unsigned int i = 0; i < _nss; ++i)
   {
@@ -977,11 +979,11 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::getSlipIncrements()
 {
   for (unsigned int i = 0; i < _nss; ++i)
   {
-    if (std::abs(_tau(i)) < 1.0e-10)
+    if (std::abs(_tau(i) / _gss_tmp(i)) < 1.0e-8)
       _slip_incr(i) = 0.0;
-    else if (_tau(i) > 0)
+    else if (_tau(i) / _gss_tmp(i) > 1.0e-8)
       _slip_incr(i) = _a0(i) * std::pow(std::abs(_tau(i) / _gss_tmp(i)), 1.0 / _xm(i)) * _dt;
-    else if (_tau(i) < 0)
+    else if (_tau(i) / _gss_tmp(i) < -1.0e-8)
       _slip_incr(i) = -_a0(i) * std::pow(std::abs(_tau(i) / _gss_tmp(i)), 1.0 / _xm(i)) * _dt;
 
     // std::cout << "_slip_incr(i) = " << _slip_incr(i) << std::endl;
@@ -997,7 +999,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::getSlipIncrements()
   }
 
   for (unsigned int i = 0; i < _nss; ++i)
-    if (std::abs(_tau(i)) < 1.0e-10)
+    if (std::abs(_tau(i) / _gss_tmp(i)) < 1.0e-8)
       _dslipdtau(i) = 0.0;
     else
       _dslipdtau(i) = _a0(i) / _xm(i) *

@@ -7,34 +7,33 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef ADFINITESTRAINCRYSTALPLASTICITY_H
-#define ADFINITESTRAINCRYSTALPLASTICITY_H
+#pragma once
 
 #include "ADComputeStressBase.h"
 #include "ADMaterial.h"
 
-#define usingFiniteStrainCrystalPlasticity                                                         \
+#define usingFiniteStrainCrystalPlasticityPF                                                       \
   usingComputeStressBaseMembers;                                                                   \
-  using ADFiniteStrainCrystalPlasticity<compute_stage>::_elasticity_tensor;                        \
-  using ADFiniteStrainCrystalPlasticity<compute_stage>::_elasticity_tensor_name;
+  using ADFiniteStrainCrystalPlasticityPF<compute_stage>::_elasticity_tensor;                      \
+  using ADFiniteStrainCrystalPlasticityPF<compute_stage>::_elasticity_tensor_name;
 
 template <ComputeStage>
-class ADFiniteStrainCrystalPlasticity;
+class ADFiniteStrainCrystalPlasticityPF;
 
-declareADValidParams(ADFiniteStrainCrystalPlasticity);
+declareADValidParams(ADFiniteStrainCrystalPlasticityPF);
 
 /**
- * ADFiniteStrainCrystalPlasticity uses the multiplicative decomposition of deformation gradient
+ * ADFiniteStrainCrystalPlasticityPF uses the multiplicative decomposition of deformation gradient
  * and solves the PK2 stress residual equation at the intermediate configuration to evolve the
  * material state.
  * The internal variables are updated using an interative predictor-corrector algorithm.
  * Backward Euler integration rule is used for the rate equations.
  */
 template <ComputeStage compute_stage>
-class ADFiniteStrainCrystalPlasticity : public ADComputeStressBase<compute_stage>
+class ADFiniteStrainCrystalPlasticityPF : public ADComputeStressBase<compute_stage>
 {
 public:
-  ADFiniteStrainCrystalPlasticity(const InputParameters & parameters);
+  ADFiniteStrainCrystalPlasticityPF(const InputParameters & parameters);
 
 protected:
   /**
@@ -340,7 +339,28 @@ protected:
   ///Flags to reset variables and reinitialize variables
   bool _first_step_iter, _last_step_iter, _first_substep;
 
+  /// Coupled order parameter defining the crack
+  const ADVariableValue & _c;
+  const VariableValue & _c_old;
+
+  /// Small stiffness of completely damaged material point
+  Real _kdamage;
+  /// Use current value of history variable
+  bool _use_current_hist;
+
+  /// History variable that prevents crack healing, declared in this material
+  ADMaterialProperty(Real) & _hist;
+  /// Old value of history variable
+  const MaterialProperty<Real> & _hist_old;
+
+  ADReal _gd_old;
+  ADReal _gd;
+
+  ADMaterialProperty(Real) & _Wp;
+  const MaterialProperty<Real> & _Wp_old;
+  Real _W0;
+  bool _beta_p;
+  bool _beta_e;
+
   usingComputeStressBaseMembers;
 };
-
-#endif // FINITESTRAINCRYSTALPLASTICITY_H
