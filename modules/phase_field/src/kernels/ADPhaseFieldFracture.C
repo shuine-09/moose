@@ -22,11 +22,11 @@ defineADValidParams(
 template <ComputeStage compute_stage>
 ADPhaseFieldFracture<compute_stage>::ADPhaseFieldFracture(const InputParameters & parameters)
   : ADKernel<compute_stage>(parameters),
-    _gc_prop(adGetMaterialProperty<Real>("gc")),
-    _l(adGetMaterialProperty<Real>("l_name")),
-    _hist(adGetADMaterialProperty<Real>("hist")),
-    _hist_old(adGetMaterialPropertyOld<Real>("hist")),
-    _L(adGetParam<Real>("L"))
+    _gc_prop(getMaterialProperty<Real>("gc")),
+    _l(getMaterialProperty<Real>("l_name")),
+    _hist(getADMaterialProperty<Real>("hist")),
+    _hist_old(getMaterialPropertyOld<Real>("hist")),
+    _L(getParam<Real>("L"))
 {
 }
 
@@ -34,10 +34,10 @@ template <ComputeStage compute_stage>
 ADResidual
 ADPhaseFieldFracture<compute_stage>::computeQpResidual()
 {
-  return (-_gc_prop[_qp] * _l[_qp] * _grad_u[_qp] * _grad_test[_i][_qp] +
-          2.0 * (1.0 - _u[_qp]) * _test[_i][_qp] * _hist_old[_qp] -
-          _gc_prop[_qp] / _l[_qp] * _u[_qp] * _test[_i][_qp]) /
-         _gc_prop[_qp];
+  // return (-_gc_prop[_qp] * _l[_qp] * _grad_u[_qp] * _grad_test[_i][_qp] +
+  //         2.0 * (1.0 - _u[_qp]) * _test[_i][_qp] * _hist_old[_qp] -
+  //         _gc_prop[_qp] / _l[_qp] * _u[_qp] * _test[_i][_qp]) /
+  //        _gc_prop[_qp];
 
   // if (_current_elem->id() == 0 && _qp == 0)
   //   std::cout << "hist_old = " << MetaPhysicL::raw_value(_hist_old[_qp]) << ", part 1 = "
@@ -55,10 +55,10 @@ ADPhaseFieldFracture<compute_stage>::computeQpResidual()
   //                    _gc_prop[_qp])
   //             << std::endl;
 
-  // return (-3.0 / 4 * _gc_prop[_qp] * _l[_qp] * _grad_u[_qp] * _grad_test[_i][_qp] +
-  //         2.0 * (1.0 - _u[_qp]) * _test[_i][_qp] * _hist_old[_qp] -
-  //         _gc_prop[_qp] / _l[_qp] * (3.0 / 8) * _test[_i][_qp]) /
-  //        _gc_prop[_qp];
+  return -(-3.0 / 4 * _gc_prop[_qp] * _l[_qp] * _grad_u[_qp] * _grad_test[_i][_qp] +
+           2.0 * (1.0 - _u[_qp]) * _test[_i][_qp] * _hist_old[_qp] -
+           _gc_prop[_qp] / _l[_qp] * (3.0 / 8) * _test[_i][_qp]) /
+         _gc_prop[_qp];
 }
 
 template class ADPhaseFieldFracture<RESIDUAL>;

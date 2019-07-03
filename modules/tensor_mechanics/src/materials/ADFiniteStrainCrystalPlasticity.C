@@ -103,55 +103,55 @@ template <ComputeStage compute_stage>
 ADFiniteStrainCrystalPlasticity<compute_stage>::ADFiniteStrainCrystalPlasticity(
     const InputParameters & parameters)
   : ADComputeStressBase<compute_stage>(parameters),
-    _nss(adGetParam<int>("nss")),
-    _gprops(adGetParam<std::vector<Real>>("gprops")),
-    _hprops(adGetParam<std::vector<Real>>("hprops")),
-    _flowprops(adGetParam<std::vector<Real>>("flowprops")),
-    _slip_sys_file_name(adGetParam<FileName>("slip_sys_file_name")),
-    _slip_sys_res_prop_file_name(adGetParam<FileName>("slip_sys_res_prop_file_name")),
-    _slip_sys_flow_prop_file_name(adGetParam<FileName>("slip_sys_flow_prop_file_name")),
-    _slip_sys_hard_prop_file_name(adGetParam<FileName>("slip_sys_hard_prop_file_name")),
-    _rtol(adGetParam<Real>("rtol")),
-    _abs_tol(adGetParam<Real>("abs_tol")),
-    _gtol(adGetParam<Real>("gtol")),
-    _slip_incr_tol(adGetParam<Real>("slip_incr_tol")),
-    _maxiter(adGetParam<unsigned int>("maxiter")),
-    _maxiterg(adGetParam<unsigned int>("maxitergss")),
-    _num_slip_sys_flowrate_props(adGetParam<unsigned int>("num_slip_sys_flowrate_props")),
-    _tan_mod_type(adGetParam<MooseEnum>("tan_mod_type")),
-    _intvar_read_type(adGetParam<MooseEnum>("intvar_read_type")),
-    _num_slip_sys_props(adGetParam<unsigned int>("num_slip_sys_props")),
-    _gen_rndm_stress_flag(adGetParam<bool>("gen_random_stress_flag")),
-    _input_rndm_scale_var(adGetParam<bool>("input_random_scaling_var")),
-    _rndm_scale_var(adGetParam<Real>("random_scaling_var")),
-    _rndm_seed(adGetParam<unsigned int>("random_seed")),
-    _max_substep_iter(adGetParam<unsigned int>("maximum_substep_iteration")),
-    _use_line_search(adGetParam<bool>("use_line_search")),
-    _min_lsrch_step(adGetParam<Real>("min_line_search_step_size")),
-    _lsrch_tol(adGetParam<Real>("line_search_tol")),
-    _lsrch_max_iter(adGetParam<unsigned int>("line_search_maxiter")),
-    _lsrch_method(adGetParam<MooseEnum>("line_search_method")),
-    _fp(adDeclareADProperty<RankTwoTensor>("fp")), // Plastic deformation gradient
-    _fp_old(adGetMaterialPropertyOld<RankTwoTensor>(
+    _nss(getParam<int>("nss")),
+    _gprops(getParam<std::vector<Real>>("gprops")),
+    _hprops(getParam<std::vector<Real>>("hprops")),
+    _flowprops(getParam<std::vector<Real>>("flowprops")),
+    _slip_sys_file_name(getParam<FileName>("slip_sys_file_name")),
+    _slip_sys_res_prop_file_name(getParam<FileName>("slip_sys_res_prop_file_name")),
+    _slip_sys_flow_prop_file_name(getParam<FileName>("slip_sys_flow_prop_file_name")),
+    _slip_sys_hard_prop_file_name(getParam<FileName>("slip_sys_hard_prop_file_name")),
+    _rtol(getParam<Real>("rtol")),
+    _abs_tol(getParam<Real>("abs_tol")),
+    _gtol(getParam<Real>("gtol")),
+    _slip_incr_tol(getParam<Real>("slip_incr_tol")),
+    _maxiter(getParam<unsigned int>("maxiter")),
+    _maxiterg(getParam<unsigned int>("maxitergss")),
+    _num_slip_sys_flowrate_props(getParam<unsigned int>("num_slip_sys_flowrate_props")),
+    _tan_mod_type(getParam<MooseEnum>("tan_mod_type")),
+    _intvar_read_type(getParam<MooseEnum>("intvar_read_type")),
+    _num_slip_sys_props(getParam<unsigned int>("num_slip_sys_props")),
+    _gen_rndm_stress_flag(getParam<bool>("gen_random_stress_flag")),
+    _input_rndm_scale_var(getParam<bool>("input_random_scaling_var")),
+    _rndm_scale_var(getParam<Real>("random_scaling_var")),
+    _rndm_seed(getParam<unsigned int>("random_seed")),
+    _max_substep_iter(getParam<unsigned int>("maximum_substep_iteration")),
+    _use_line_search(getParam<bool>("use_line_search")),
+    _min_lsrch_step(getParam<Real>("min_line_search_step_size")),
+    _lsrch_tol(getParam<Real>("line_search_tol")),
+    _lsrch_max_iter(getParam<unsigned int>("line_search_maxiter")),
+    _lsrch_method(getParam<MooseEnum>("line_search_method")),
+    _fp(declareADProperty<RankTwoTensor>("fp")), // Plastic deformation gradient
+    _fp_old(getMaterialPropertyOld<RankTwoTensor>(
         "fp")), // Plastic deformation gradient of previous increment
-    _pk2(adDeclareADProperty<RankTwoTensor>("pk2")), // 2nd Piola Kirchoff Stress
-    _pk2_old(adGetMaterialPropertyOld<RankTwoTensor>(
+    _pk2(declareADProperty<RankTwoTensor>("pk2")), // 2nd Piola Kirchoff Stress
+    _pk2_old(getMaterialPropertyOld<RankTwoTensor>(
         "pk2")), // 2nd Piola Kirchoff Stress of previous increment
-    _lag_e(adDeclareADProperty<RankTwoTensor>("lage")), // Lagrangian strain
+    _lag_e(declareADProperty<RankTwoTensor>("lage")), // Lagrangian strain
     _lag_e_old(
-        adGetMaterialPropertyOld<RankTwoTensor>("lage")), // Lagrangian strain of previous increment
-    _gss(adDeclareADProperty<DenseVector<Real>>("gss")),  // Slip system resistances
-    _gss_old(adGetMaterialPropertyOld<DenseVector<Real>>("gss")),
-    _acc_slip(adDeclareADProperty<Real>("acc_slip")), // Accumulated slip
+        getMaterialPropertyOld<RankTwoTensor>("lage")), // Lagrangian strain of previous increment
+    _gss(declareADProperty<DenseVector<Real>>("gss")),  // Slip system resistances
+    _gss_old(getMaterialPropertyOld<DenseVector<Real>>("gss")),
+    _acc_slip(declareADProperty<Real>("acc_slip")), // Accumulated slip
     _acc_slip_old(
-        adGetMaterialPropertyOld<Real>("acc_slip")), // Accumulated alip of previous increment
-    _update_rot(adDeclareADProperty<RankTwoTensor>(
+        getMaterialPropertyOld<Real>("acc_slip")), // Accumulated alip of previous increment
+    _update_rot(declareADProperty<RankTwoTensor>(
         "update_rot")), // Rotation tensor considering material rotation and crystal orientation
-    _deformation_gradient(adGetADMaterialProperty<RankTwoTensor>("deformation_gradient")),
-    _deformation_gradient_old(adGetMaterialPropertyOld<RankTwoTensor>("deformation_gradient")),
+    _deformation_gradient(getADMaterialProperty<RankTwoTensor>("deformation_gradient")),
+    _deformation_gradient_old(getMaterialPropertyOld<RankTwoTensor>("deformation_gradient")),
     _elasticity_tensor_name(_base_name + "elasticity_tensor"),
-    _elasticity_tensor(adGetADMaterialProperty<RankFourTensor>(_elasticity_tensor_name)),
-    _crysrot(adGetMaterialProperty<RankTwoTensor>("crysrot")),
+    _elasticity_tensor(getADMaterialProperty<RankFourTensor>(_elasticity_tensor_name)),
+    _crysrot(getADMaterialProperty<RankTwoTensor>("crysrot")),
     _mo(_nss * LIBMESH_DIM),
     _no(_nss * LIBMESH_DIM),
     _a0(_nss),
@@ -192,6 +192,11 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::ADFiniteStrainCrystalPlasticity(
   else
     getFlowRateParams();
 
+  if (_slip_sys_hard_prop_file_name.length() != 0)
+    readFileHardnessParams();
+  else
+    getHardnessParams();
+
   RankTwoTensor::initRandom(_rndm_seed);
 }
 
@@ -230,10 +235,10 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::initSlipSysProps()
       getInitSlipSysRes();
   }
 
-  if (_slip_sys_hard_prop_file_name.length() != 0)
-    readFileHardnessParams();
-  else
-    getHardnessParams();
+  // if (_slip_sys_hard_prop_file_name.length() != 0)
+  //   readFileHardnessParams();
+  // else
+  //   getHardnessParams();
 }
 
 template <ComputeStage compute_stage>
@@ -665,7 +670,8 @@ template <ComputeStage compute_stage>
 void
 ADFiniteStrainCrystalPlasticity<compute_stage>::solveStatevar()
 {
-  ADReal gmax, gdiff;
+  ADReal gmax;
+  // ADReal gdiff;
   unsigned int iterg;
   DenseVector<ADReal> gss_prev(_nss);
 
@@ -685,13 +691,13 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::solveStatevar()
     update_slip_system_resistance(); // Update slip system resistance
 
     gmax = 0.0;
-    for (unsigned i = 0; i < _nss; ++i)
-    {
-      gdiff = std::abs(gss_prev(i) - _gss_tmp(i)); // Calculate increment size
-
-      if (gdiff > gmax)
-        gmax = gdiff;
-    }
+    // for (unsigned i = 0; i < _nss; ++i)
+    // {
+    //   gdiff = std::abs(gss_prev(i) - _gss_tmp(i)); // Calculate increment size
+    //
+    //   if (gdiff > gmax)
+    //     gmax = gdiff;
+    // }
     iterg++;
   }
 
@@ -761,7 +767,8 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::solveStress()
   unsigned int iter = 0;
   ADRankTwoTensor resid, dpk2;
   ADRankFourTensor jac;
-  Real rnorm, rnorm0, rnorm_prev;
+  Real rnorm, rnorm0;
+  // Real rnorm_prev;
 
   calc_resid_jacob(resid, jac); // Calculate stress residual
   if (_err_tol)
@@ -855,13 +862,14 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::updateGss()
   // val = _h0 * std::pow(1.0/val,2.0); // Kalidindi
 
   for (unsigned int i = 0; i < _nss; ++i)
-    // hb(i)=val;
-    if ((1.0 - _gss_tmp(i) / _tau_sat) > 1.0e-8)
+  {
+    if ((1.0 - MetaPhysicL::raw_value(_gss_tmp(i)) / _tau_sat) > 1.0e-8)
       hb(i) = _h0 * std::pow(std::abs(1.0 - _gss_tmp(i) / _tau_sat), a);
-    else if ((1.0 - _gss_tmp(i) / _tau_sat) < -1.0e-8)
+    else if ((1.0 - MetaPhysicL::raw_value(_gss_tmp(i)) / _tau_sat) < -1.0e-8)
       hb(i) = -_h0 * std::pow(std::abs(1.0 - _gss_tmp(i) / _tau_sat), a);
     else
       hb(i) = 0.0;
+  }
 
   for (unsigned int i = 0; i < _nss; ++i)
   {

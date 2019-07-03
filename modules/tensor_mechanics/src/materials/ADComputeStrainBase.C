@@ -41,6 +41,7 @@ ADComputeStrainBase<compute_stage>::ADComputeStrainBase(const InputParameters & 
     _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
     _mechanical_strain(declareADProperty<RankTwoTensor>(_base_name + "mechanical_strain")),
     _total_strain(declareADProperty<RankTwoTensor>(_base_name + "total_strain")),
+    _deformation_gradient(declareADProperty<RankTwoTensor>(_base_name + "deformation_gradient")),
     _eigenstrain_names(getParam<std::vector<MaterialPropertyName>>("eigenstrain_names")),
     _eigenstrains(_eigenstrain_names.size()),
     _global_strain(isParamValid("global_strain")

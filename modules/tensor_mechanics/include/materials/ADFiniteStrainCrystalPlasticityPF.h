@@ -288,6 +288,8 @@ protected:
   const MaterialProperty<RankTwoTensor> & _pk2_old;
   ADMaterialProperty(RankTwoTensor) & _lag_e;
   const MaterialProperty<RankTwoTensor> & _lag_e_old;
+  ADMaterialProperty(RankTwoTensor) & _lag_el;
+  ADMaterialProperty(RankTwoTensor) & _lag_pl;
   ADMaterialProperty(DenseVector<Real>) & _gss;
   const MaterialProperty<DenseVector<Real>> & _gss_old;
   ADMaterialProperty(Real) & _acc_slip;
