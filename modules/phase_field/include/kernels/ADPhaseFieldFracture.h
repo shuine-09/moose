@@ -41,6 +41,10 @@ protected:
 
   const Real _L;
 
+  const Point _normal;
+
+  const Real _beta;
+
   usingKernelMembers;
   //@}
 };

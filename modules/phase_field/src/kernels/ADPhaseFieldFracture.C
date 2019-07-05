@@ -17,6 +17,8 @@ defineADValidParams(
         "Kernel to compute bulk energy contribution to damage order parameter residual equation");
     params.addParam<MaterialPropertyName>("l_name", "l", "Interface width");
     params.addParam<Real>("L", 1.0, "mobility");
+    params.addParam<Point>("normal", Point(1, 0, 0), "plane normal");
+    params.addParam<Real>("beta", 0.0, "plane normal");
     params.addParam<MaterialPropertyName>("gc", "gc_prop", "Critical fracture energy density"););
 
 template <ComputeStage compute_stage>
@@ -26,7 +28,9 @@ ADPhaseFieldFracture<compute_stage>::ADPhaseFieldFracture(const InputParameters 
     _l(getMaterialProperty<Real>("l_name")),
     _hist(getADMaterialProperty<Real>("hist")),
     _hist_old(getMaterialPropertyOld<Real>("hist")),
-    _L(getParam<Real>("L"))
+    _L(getParam<Real>("L")),
+    _normal(getParam<Point>("normal")),
+    _beta(getParam<Real>("beta"))
 {
 }
 
@@ -55,7 +59,20 @@ ADPhaseFieldFracture<compute_stage>::computeQpResidual()
   //                    _gc_prop[_qp])
   //             << std::endl;
 
-  return -(-3.0 / 4 * _gc_prop[_qp] * _l[_qp] * _grad_u[_qp] * _grad_test[_i][_qp] +
+  // return -(-3.0 / 4 * _gc_prop[_qp] * _l[_qp] * _grad_u[_qp] * _grad_test[_i][_qp] +
+  //          2.0 * (1.0 - _u[_qp]) * _test[_i][_qp] * _hist_old[_qp] -
+  //          _gc_prop[_qp] / _l[_qp] * (3.0 / 8) * _test[_i][_qp]) /
+  //        _gc_prop[_qp];
+
+  ADRankTwoTensor w, iden;
+  iden.zero();
+  iden.addIa(1.0);
+  ADRankTwoTensor mm;
+  mm.vectorOuterProduct(_normal, _normal);
+
+  w = iden + _beta * (iden - mm);
+
+  return -(-3.0 / 4 * _gc_prop[_qp] * _l[_qp] * (w * _grad_u[_qp]) * _grad_test[_i][_qp] +
            2.0 * (1.0 - _u[_qp]) * _test[_i][_qp] * _hist_old[_qp] -
            _gc_prop[_qp] / _l[_qp] * (3.0 / 8) * _test[_i][_qp]) /
          _gc_prop[_qp];

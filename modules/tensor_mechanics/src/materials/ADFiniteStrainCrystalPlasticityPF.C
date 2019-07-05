@@ -660,11 +660,33 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::postSolveQp()
   }
   else
   {
-    _stress[_qp] = _fe * _pk2[_qp] * _fe.transpose() / _fe.det();
-
-    ADRankTwoTensor iden;
+    // _stress[_qp] = _fe * _pk2[_qp] * _fe.transpose() / _fe.det();
+    ADRankTwoTensor iden, ce, ee;
     iden.zero();
     iden.addIa(1.0);
+    ce = _fe.transpose() * _fe;
+    ee = ce - iden;
+    ee *= 0.5;
+
+    ADRankTwoTensor pk2_undamage = _elasticity_tensor[_qp] * ee;
+
+    ADRankTwoTensor D, Q, D_pos, D_neg;
+    pk2_undamage.diagonalize(Q, D);
+
+    ADRankTwoTensor pk2_pos, pk2_neg;
+
+    for (unsigned int i = 0; i < 3; ++i)
+      D_pos(i, i) = D(i, i) > 0.0 ? D(i, i) : 0;
+
+    pk2_pos = Q * D_pos * Q.transpose();
+
+    ADRankTwoTensor pk2 = _gd * pk2_pos + (_pk2[_qp] - pk2_pos);
+
+    _stress[_qp] = _fe * pk2 * _fe.transpose() / _fe.det();
+
+    // ADRankTwoTensor iden;
+    // iden.zero();
+    // iden.addIa(1.0);
 
     _lag_e[_qp] = _deformation_gradient[_qp].transpose() * _deformation_gradient[_qp] - iden;
     _lag_e[_qp] = _lag_e[_qp] * 0.5;
@@ -700,32 +722,33 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::postSolveQp()
   ADReal G0_pos = 0.0;
 
   if (_beta_e)
-    G0_pos = pk2_undamage.doubleContraction(ee) / 2.0;
+    G0_pos = pk2_pos.doubleContraction(ee) / 2.0;
 
   DenseVector<ADReal> tau(_nss);
 
   ADReal plastic_work = 0.0;
 
   for (unsigned int i = 0; i < _nss; ++i)
-    tau(i) = _pk2[_qp].doubleContraction(_s0[i]);
+    // tau(i) = _pk2[_qp].doubleContraction(_s0[i]);
+    tau(i) = pk2_pos.doubleContraction(_s0[i]);
 
-  // for (unsigned int i = 0; i < _nss; ++i)
-  // {
-  //   ADReal gamma = 0.0;
-  //   if (std::abs(_tau(i) / (_gss[_qp](i) * _gd_old)) < 1.0e-8)
-  //     gamma = 0.0;
-  //   else if (_tau(i) / (_gss[_qp](i) * _gd_old) > 1.0e-8)
-  //     gamma = _a0(i) * std::pow(std::abs(tau(i) / (_gd_old * _gss[_qp](i))), 1.0 / _xm(i));
-  //   else if (_tau(i) / (_gss[_qp](i) * _gd_old) < 1.0e-8)
-  //     gamma = -_a0(i) * std::pow(std::abs(tau(i) / (_gd_old * _gss[_qp](i))), 1.0 / _xm(i));
-  //
-  //   plastic_work += std::abs(gamma * _dt * tau(i));
-  // }
+  for (unsigned int i = 0; i < _nss; ++i)
+  {
+    ADReal gamma = 0.0;
+    if (std::abs(_tau(i) / (_gss[_qp](i))) < 1.0e-8)
+      gamma = 0.0;
+    else if (_tau(i) / (_gss[_qp](i)) > 1.0e-8)
+      gamma = _a0(i) * std::pow(std::abs(tau(i) / (_gss[_qp](i))), 1.0 / _xm(i));
+    else if (_tau(i) / (_gss[_qp](i)) < 1.0e-8)
+      gamma = -_a0(i) * std::pow(std::abs(tau(i) / (_gss[_qp](i))), 1.0 / _xm(i));
+
+    plastic_work += std::abs(gamma * _dt * tau(i));
+  }
 
   _Wp[_qp] = _Wp_old[_qp] + plastic_work;
 
   if (_beta_p && _Wp[_qp] >= _W0)
-    G0_pos += (_Wp[_qp] - _W0);
+    G0_pos += 0.1 * (_Wp[_qp] - _W0);
 
   // Assign history variable and derivative
   // if (G0_pos > _hist_old[_qp])
@@ -893,7 +916,10 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::solveStress()
   if (iter >= _maxiter)
   {
 #ifdef DEBUG
-    mooseWarning("FiniteStrainCrystalPLasticity: Stress Integration error rmax = ", rnorm);
+    mooseWarning("FiniteStrainCrystalPLasticity: Stress Integration error rmax = ",
+                 rnorm,
+                 ", rnorm0 = ",
+                 rnorm0);
 #endif
     _err_tol = true;
   }
@@ -956,9 +982,9 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::updateGss()
   for (unsigned int i = 0; i < _nss; ++i)
     // hb(i)=val;
     if ((1.0 - _gss_tmp(i) / _tau_sat) > 1.0e-8)
-      hb(i) = _h0 * std::pow(std::abs(1.0 - _gss_tmp(i) * 1. / _tau_sat), a);
+      hb(i) = _h0 * std::pow(std::abs(1.0 - _gss_tmp(i) / _tau_sat), a);
     else if ((1.0 - _gss_tmp(i) / _tau_sat) < -1.0e-8)
-      hb(i) = -_h0 * std::pow(std::abs(1.0 - _gss_tmp(i) * 1. / _tau_sat), a);
+      hb(i) = -_h0 * std::pow(std::abs(1.0 - _gss_tmp(i) / _tau_sat), a);
     else
       hb(i) = 0.0;
 
@@ -1066,24 +1092,24 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::calcResidual(ADRankTwoTensor &
   //
   // pk2_new = _gd * pk2_pos + pk2_neg;
 
-  ADRankTwoTensor pk2_undamage = _elasticity_tensor[_qp] * ee;
+  // ADRankTwoTensor pk2_undamage = _elasticity_tensor[_qp] * ee;
+  //
+  // ADRankTwoTensor D, Q, D_pos, D_neg;
+  // pk2_undamage.diagonalize(Q, D);
+  //
+  // ADRankTwoTensor pk2_pos, pk2_neg;
+  //
+  // for (unsigned int i = 0; i < 3; ++i)
+  //   D_pos(i, i) = D(i, i) > 0.0 ? D(i, i) : 0;
+  //
+  // D_neg = D - D_pos;
+  //
+  // pk2_pos = Q * D_pos * Q.transpose();
+  // pk2_neg = Q * D_neg * Q.transpose();
+  //
+  // pk2_new = _gd * pk2_pos + pk2_neg;
 
-  ADRankTwoTensor D, Q, D_pos, D_neg;
-  pk2_undamage.diagonalize(Q, D);
-
-  ADRankTwoTensor pk2_pos, pk2_neg;
-
-  for (unsigned int i = 0; i < 3; ++i)
-    D_pos(i, i) = D(i, i) > 0.0 ? D(i, i) : 0;
-
-  D_neg = D - D_pos;
-
-  pk2_pos = Q * D_pos * Q.transpose();
-  pk2_neg = Q * D_neg * Q.transpose();
-
-  pk2_new = _gd * pk2_pos + pk2_neg;
-
-  // pk2_new = _elasticity_tensor[_qp] * ee;
+  pk2_new = _elasticity_tensor[_qp] * ee;
 
   resid = _pk2_tmp - pk2_new;
 }
@@ -1118,8 +1144,8 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::calcJacobian(ADRankFourTensor 
   for (unsigned int i = 0; i < _nss; ++i)
     dfpinvdpk2 += (dfpinvdslip[i] * _dslipdtau(i)).outerProduct(dtaudpk2[i]);
 
-  // jac = RankFourTensor::IdentityFour() -
-  //       (_gd * _elasticity_tensor[_qp] * deedfe * dfedfpinv * dfpinvdpk2);
+  jac =
+      RankFourTensor::IdentityFour() - (_elasticity_tensor[_qp] * deedfe * dfedfpinv * dfpinvdpk2);
 
   // ADRankTwoTensor ce, ee, iden;
   // iden.zero();
@@ -1128,28 +1154,12 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::calcJacobian(ADRankFourTensor 
   // ee = ce - iden;
   // ee *= 0.5;
   // ADRankTwoTensor pk2_undamage = _elasticity_tensor[_qp] * ee;
-  // std::vector<ADReal> eigval;
-  // ADRankTwoTensor eigvec;
-  // ADRankFourTensor Ppos = pk2_undamage.positiveProjectionEigenDecomposition(eigval, eigvec);
+  // ADRankFourTensor Ppos = pk2_undamage.positiveProjectionEigenDecomposition();
   //
   // RankFourTensor I4sym(RankFourTensor::initIdentitySymmetricFour);
   // jac = RankFourTensor::IdentityFour() -
   //       ((_gd * Ppos * _elasticity_tensor[_qp] + (I4sym - Ppos) * _elasticity_tensor[_qp]) *
   //        deedfe * dfedfpinv * dfpinvdpk2);
-
-  ADRankTwoTensor ce, ee, iden;
-  iden.zero();
-  iden.addIa(1.0);
-  ce = _fe.transpose() * _fe;
-  ee = ce - iden;
-  ee *= 0.5;
-  ADRankTwoTensor pk2_undamage = _elasticity_tensor[_qp] * ee;
-  ADRankFourTensor Ppos = pk2_undamage.positiveProjectionEigenDecomposition();
-
-  RankFourTensor I4sym(RankFourTensor::initIdentitySymmetricFour);
-  jac = RankFourTensor::IdentityFour() -
-        ((_gd * Ppos * _elasticity_tensor[_qp] + (I4sym - Ppos) * _elasticity_tensor[_qp]) *
-         deedfe * dfedfpinv * dfpinvdpk2);
 }
 
 // Calculate slip increment,dslipdtau. Override to modify.
@@ -1159,14 +1169,12 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::getSlipIncrements()
 {
   for (unsigned int i = 0; i < _nss; ++i)
   {
-    if (std::abs(_tau(i) / _gss_tmp(i) / _gd_old) < 1.0e-8)
+    if (std::abs(_tau(i) / _gss_tmp(i) / 1.0) < 1.0e-8)
       _slip_incr(i) = 0.0;
-    else if (_tau(i) / _gss_tmp(i) / _gd_old > 1.0e-8)
-      _slip_incr(i) =
-          _a0(i) * std::pow(std::abs(_tau(i) / _gss_tmp(i) / _gd_old), 1.0 / _xm(i)) * _dt;
-    else if (_tau(i) / _gss_tmp(i) / _gd_old < -1.0e-8)
-      _slip_incr(i) =
-          -_a0(i) * std::pow(std::abs(_tau(i) / _gss_tmp(i) / _gd_old), 1.0 / _xm(i)) * _dt;
+    else if (_tau(i) / _gss_tmp(i) / 1.0 > 1.0e-8)
+      _slip_incr(i) = _a0(i) * std::pow(std::abs(_tau(i) / _gss_tmp(i) / 1.0), 1.0 / _xm(i)) * _dt;
+    else if (_tau(i) / _gss_tmp(i) / 1.0 < -1.0e-8)
+      _slip_incr(i) = -_a0(i) * std::pow(std::abs(_tau(i) / _gss_tmp(i) / 1.0), 1.0 / _xm(i)) * _dt;
 
     // std::cout << "_slip_incr(i) = " << _slip_incr(i) << std::endl;
 
@@ -1181,12 +1189,12 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::getSlipIncrements()
   }
 
   for (unsigned int i = 0; i < _nss; ++i)
-    if (std::abs(_tau(i) / _gss_tmp(i) / _gd_old) < 1.0e-8)
+    if (std::abs(_tau(i) / _gss_tmp(i) / 1.0) < 1.0e-8)
       _dslipdtau(i) = 0.0;
     else
       _dslipdtau(i) = _a0(i) / _xm(i) *
-                      std::pow(std::abs(_tau(i) / _gss_tmp(i) / _gd_old), 1.0 / _xm(i) - 1.0) /
-                      _gss_tmp(i) / _gd_old * _dt;
+                      std::pow(std::abs(_tau(i) / _gss_tmp(i) / 1.0), 1.0 / _xm(i) - 1.0) /
+                      _gss_tmp(i) / 1.0 * _dt;
 }
 
 // // Calls getMatRot to perform RU factorization of a tensor.
