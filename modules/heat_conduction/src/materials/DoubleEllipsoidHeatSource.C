@@ -47,12 +47,75 @@ DoubleEllipsoidHeatSource::computeQpProperties()
 {
   // const Real & x = _q_point[_qp](0);
   // const Real & y = _q_point[_qp](1);
-  // const Real & z = _q_point[_qp](2);
+  // // const Real & z = _q_point[_qp](2);
+  // Real x_t = 22;
+  // Real y_t = 10;
+  // if (_v * _t > 0 && _v * _t < 50)
+  // {
+  //   x_t = 22 + _v * _t;
+  //   y_t = 10;
+  // }
+  // else if (_v * _t > 50 && _v * _t < 100)
+  // {
+  //   x_t = 78 - (_v * _t - 50);
+  //   y_t = 12;
+  // }
+  // else if (_v * _t > 100 && _v * _t < 150)
+  // {
+  //   x_t = 22 + (_v * _t - 100);
+  //   y_t = 14;
+  // }
+  // else if (_v * _t > 150 && _v * _t < 200)
+  // {
+  //   x_t = 78 - (_v * _t - 150);
+  //   y_t = 16;
+  // }
+  // else if (_v * _t > 200 && _v * _t < 250)
+  // {
+  //   x_t = 22 + (_v * _t - 200);
+  //   y_t = 18;
+  // }
+  // else if (_v * _t > 250 && _v * _t < 300)
+  // {
+  //   x_t = 78 - (_v * _t - 250);
+  //   y_t = 20;
+  // }
+  // else if (_v * _t > 300 && _v * _t < 350)
+  // {
+  //   x_t = 22 + (_v * _t - 300);
+  //   y_t = 22;
+  // }
+  // else if (_v * _t > 350 && _v * _t < 400)
+  // {
+  //   x_t = 78 - (_v * _t - 350);
+  //   y_t = 24;
+  // }
+  // else if (_v * _t > 400 && _v * _t < 450)
+  // {
+  //   x_t = 22 + (_v * _t - 400);
+  //   y_t = 26;
+  // }
+  // else if (_v * _t > 450 && _v * _t < 500)
+  // {
+  //   x_t = 78 - (_v * _t - 450);
+  //   y_t = 28;
+  // }
+  // else if (_v * _t > 500 && _v * _t < 550)
+  // {
+  //   x_t = 22 + (_v * _t - 500);
+  //   y_t = 30;
+  // }
+  // else
+  // {
+  //   x_t = 1000;
+  //   y_t = 1000;
+  // }
+  //
   // _volumetric_heat[_qp] = 6.0 * std::sqrt(3.0) * _P * _eta * _f /
   //                         (_a * _b * _c * std::pow(libMesh::pi, 1.5)) *
-  //                         std::exp(-(3.0 * std::pow(x, 2.0) / std::pow(_a, 2.0) +
-  //                                    3.0 * std::pow(y, 2.0) / std::pow(_b, 2.0) +
-  //                                    3.0 * std::pow(z + _v * _t, 2.0) / pow(_c, 2.0)));
+  //                         std::exp(-(3.0 * std::pow(x - x_t, 2.0) / std::pow(_a, 2.0) +
+  //                                    3.0 * std::pow(y - y_t, 2.0) / std::pow(_b, 2.0) +
+  //                                    3.0 * std::pow(0, 2.0) / pow(_c, 2.0)));
   const Real & x = _q_point[_qp](0);
   const Real & y = _q_point[_qp](1);
   const Real & z = _q_point[_qp](2);
