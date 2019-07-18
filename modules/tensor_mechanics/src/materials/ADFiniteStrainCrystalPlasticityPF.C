@@ -103,7 +103,8 @@ defineADValidParams(
     params.addParam<bool>("beta_p", false, "Include effective plastic work driving energy.");
     params.addParam<bool>("beta_e", false, "Include elastic work driving energy.");
     params.addParam<Real>("W0", 0, "plastic work threshold.");
-
+    params.addParam<Real>("Hall_Petch_const", 0, "Hall_Petch_const");
+    params.addParam<Real>("grain_size", 1, "Grain size");
     MooseEnum line_search_method("CUT_HALF BISECTION", "CUT_HALF");
     params.addParam<MooseEnum>("line_search_method",
                                line_search_method,
@@ -185,7 +186,9 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::ADFiniteStrainCrystalPlasticit
     _Wp_old(getMaterialPropertyOld<Real>("Wp")),
     _W0(getParam<Real>("W0")),
     _beta_p(getParam<bool>("beta_p")),
-    _beta_e(getParam<bool>("beta_e"))
+    _beta_e(getParam<bool>("beta_e")),
+    _Hall_Petch_const(getParam<Real>("Hall_Petch_const")),
+    _grain_size(getParam<Real>("grain_size"))
 {
   _err_tol = false;
 
@@ -274,7 +277,7 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::assignSlipSysRes()
   _gss[_qp].resize(_nss);
 
   for (unsigned int i = 0; i < _nss; ++i)
-    _gss[_qp](i) = _slip_sys_props(i);
+    _gss[_qp](i) = _slip_sys_props(i) + _Hall_Petch_const / std::sqrt(_grain_size);
 }
 
 // Read initial slip system resistances  from .txt file. See test.
@@ -338,7 +341,7 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::getInitSlipSysRes()
                  "in slip system resistance property read");
 
     for (unsigned int j = is; j <= ie; ++j)
-      _gss[_qp](j - 1) = _gprops[i * num_data_grp + 2];
+      _gss[_qp](j - 1) = _gprops[i * num_data_grp + 2] + _Hall_Petch_const / std::sqrt(_grain_size);
   }
 
   for (unsigned int i = 0; i < _nss; ++i)
@@ -455,7 +458,7 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::getHardnessParams()
                "in .i file or a slip_sys_hard_prop_file_name");
 
   _r = _hprops[0];
-  _h0 = _hprops[1];
+  _h0 = _hprops[1] + _Hall_Petch_const / std::sqrt(_grain_size);
   _tau_init = _hprops[2];
   _tau_sat = _hprops[3];
 }
@@ -530,6 +533,9 @@ template <ComputeStage compute_stage>
 void
 ADFiniteStrainCrystalPlasticityPF<compute_stage>::computeQpStress()
 {
+  if (isBoundaryMaterial())
+    return;
+
   _gd = Utility::pow<2>(1.0 - _c[_qp]) + _kdamage;
   _gd_old = Utility::pow<2>(1.0 - _c_old[_qp]) + _kdamage;
   //_gd = 1.0;

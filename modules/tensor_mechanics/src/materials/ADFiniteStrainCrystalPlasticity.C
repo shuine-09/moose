@@ -94,6 +94,8 @@ defineADValidParams(
     params.addParam<unsigned int>("line_search_maxiter",
                                   20,
                                   "Line search bisection method maximum number of iteration");
+    params.addParam<Real>("Hall_Petch_const", 0, "Hall_Petch_const");
+    params.addParam<Real>("grain_size", 1, "Grain size");
     MooseEnum line_search_method("CUT_HALF BISECTION", "CUT_HALF");
     params.addParam<MooseEnum>("line_search_method",
                                line_search_method,
@@ -161,7 +163,9 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::ADFiniteStrainCrystalPlasticity(
     _dslipdtau(_nss),
     _s0(_nss),
     _gss_tmp(_nss),
-    _gss_tmp_old(_nss)
+    _gss_tmp_old(_nss),
+    _Hall_Petch_const(getParam<Real>("Hall_Petch_const")),
+    _grain_size(getParam<Real>("grain_size"))
 //_dgss_dsliprate(_nss, _nss)
 {
   _err_tol = false;
@@ -248,7 +252,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::assignSlipSysRes()
   _gss[_qp].resize(_nss);
 
   for (unsigned int i = 0; i < _nss; ++i)
-    _gss[_qp](i) = _slip_sys_props(i);
+    _gss[_qp](i) = _slip_sys_props(i) + _Hall_Petch_const / std::sqrt(_grain_size);
 }
 
 // Read initial slip system resistances  from .txt file. See test.
@@ -311,7 +315,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::getInitSlipSysRes()
                  "in slip system resistance property read");
 
     for (unsigned int j = is; j <= ie; ++j)
-      _gss[_qp](j - 1) = _gprops[i * num_data_grp + 2];
+      _gss[_qp](j - 1) = _gprops[i * num_data_grp + 2] + _Hall_Petch_const / std::sqrt(_grain_size);
   }
 
   for (unsigned int i = 0; i < _nss; ++i)
@@ -428,7 +432,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::getHardnessParams()
                "in .i file or a slip_sys_hard_prop_file_name");
 
   _r = _hprops[0];
-  _h0 = _hprops[1];
+  _h0 = _hprops[1] + _Hall_Petch_const / std::sqrt(_grain_size);
   _tau_init = _hprops[2];
   _tau_sat = _hprops[3];
 }
@@ -795,7 +799,7 @@ ADFiniteStrainCrystalPlasticity<compute_stage>::solveStress()
     calc_resid_jacob(resid, jac);
     internalVariableUpdateNRiteration(); // update _fp_prev_inv
     rnorm = MetaPhysicL::raw_value(resid.L2norm());
-    if (rnorm < _rtol * rnorm0 || rnorm0 < _abs_tol)
+    if (rnorm < _rtol * rnorm0 || rnorm < _abs_tol)
       break;
   }
 

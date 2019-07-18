@@ -340,6 +340,9 @@ protected:
   ///Flags to reset variables and reinitialize variables
   bool _first_step_iter, _last_step_iter, _first_substep;
 
+  Real _Hall_Petch_const;
+  Real _grain_size;
+
   usingComputeStressBaseMembers;
 };
 

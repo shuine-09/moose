@@ -364,5 +364,8 @@ protected:
   bool _beta_p;
   bool _beta_e;
 
+  Real _Hall_Petch_const;
+  Real _grain_size;
+
   usingComputeStressBaseMembers;
 };
