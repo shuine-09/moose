@@ -887,13 +887,13 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::solveStress()
   calc_resid_jacob(resid, jac); // Calculate stress residual
   if (_err_tol)
   {
-#ifdef DEBUG
+    //#ifdef DEBUG
     mooseWarning(
         "FiniteStrainCrystalPLasticity: Slip increment exceeds tolerance - Element number ",
         _current_elem->id(),
         " Gauss point = ",
         _qp);
-#endif
+    //#endif
     return;
   }
 
@@ -909,18 +909,18 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::solveStress()
     calc_resid_jacob(resid, jac);
     internalVariableUpdateNRiteration(); // update _fp_prev_inv
     rnorm = MetaPhysicL::raw_value(resid.L2norm());
-    if (rnorm < _rtol * rnorm0 || rnorm0 < _abs_tol)
+    if (rnorm < _rtol * rnorm0 || rnorm < _abs_tol)
       break;
   }
 
   if (iter >= _maxiter)
   {
-#ifdef DEBUG
+    //#ifdef DEBUG
     mooseWarning("FiniteStrainCrystalPLasticity: Stress Integration error rmax = ",
                  rnorm,
                  ", rnorm0 = ",
                  rnorm0);
-#endif
+    //#endif
     _err_tol = true;
   }
 }
@@ -1181,9 +1181,9 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::getSlipIncrements()
     if (std::abs(_slip_incr(i)) > _slip_incr_tol)
     {
       _err_tol = true;
-#ifdef DEBUG
+      //#ifdef DEBUG
       mooseWarning("Maximum allowable slip increment exceeded ", std::abs(_slip_incr(i)));
-#endif
+      //#endif
       return;
     }
   }

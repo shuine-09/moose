@@ -56,8 +56,11 @@ PFFractureBoundsAux::computeValue()
     // The zero is for the component, this will only work for Lagrange variables!
     dof_id_type dof = _current_node->dof_number(_nl_sys.number(), _bounded_variable_id, 0);
 
-    MooseVariableFEBase & lower = _subproblem.getVariable(
-        0, _lower_var_name, Moose::VarKindType::VAR_ANY, Moose::VarFieldType::VAR_FIELD_STANDARD);
+    // MooseVariableFEBase & lower = _subproblem.getVariable(
+    //     0, _lower_var_name, Moose::VarKindType::VAR_ANY,
+    //     Moose::VarFieldType::VAR_FIELD_STANDARD);
+
+    MooseVariable & lower = _subproblem.getStandardVariable(_tid, _lower_var_name);
 
     Real value_old = lower.getNodalValueOld(*_current_node);
 

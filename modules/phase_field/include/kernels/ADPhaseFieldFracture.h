@@ -27,7 +27,7 @@ public:
   ADPhaseFieldFracture(const InputParameters & parameters);
 
 protected:
-  virtual ADResidual computeQpResidual() override;
+  ADReal computeQpResidual() override;
 
   /// Critical energy release rate for fracture
   const MaterialProperty<Real> & _gc_prop;

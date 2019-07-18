@@ -35,7 +35,7 @@ ADPhaseFieldFracture<compute_stage>::ADPhaseFieldFracture(const InputParameters 
 }
 
 template <ComputeStage compute_stage>
-ADResidual
+ADReal
 ADPhaseFieldFracture<compute_stage>::computeQpResidual()
 {
   // return (-_gc_prop[_qp] * _l[_qp] * _grad_u[_qp] * _grad_test[_i][_qp] +
@@ -59,24 +59,21 @@ ADPhaseFieldFracture<compute_stage>::computeQpResidual()
   //                    _gc_prop[_qp])
   //             << std::endl;
 
-  // return -(-3.0 / 4 * _gc_prop[_qp] * _l[_qp] * _grad_u[_qp] * _grad_test[_i][_qp] +
-  //          2.0 * (1.0 - _u[_qp]) * _test[_i][_qp] * _hist_old[_qp] -
-  //          _gc_prop[_qp] / _l[_qp] * (3.0 / 8) * _test[_i][_qp]) /
-  //        _gc_prop[_qp];
-
-  ADRankTwoTensor w, iden;
-  iden.zero();
-  iden.addIa(1.0);
-  ADRankTwoTensor mm;
-  mm.vectorOuterProduct(_normal, _normal);
-
-  w = iden + _beta * (iden - mm);
-
-  return -(-3.0 / 4 * _gc_prop[_qp] * _l[_qp] * (w * _grad_u[_qp]) * _grad_test[_i][_qp] +
+  return -(-3.0 / 4 * _gc_prop[_qp] * _l[_qp] * _grad_u[_qp] * _grad_test[_i][_qp] +
            2.0 * (1.0 - _u[_qp]) * _test[_i][_qp] * _hist_old[_qp] -
            _gc_prop[_qp] / _l[_qp] * (3.0 / 8) * _test[_i][_qp]) /
          _gc_prop[_qp];
-}
 
-template class ADPhaseFieldFracture<RESIDUAL>;
-template class ADPhaseFieldFracture<JACOBIAN>;
+  // ADRankTwoTensor w, iden;
+  // iden.zero();
+  // iden.addIa(1.0);
+  // ADRankTwoTensor mm;
+  // mm.vectorOuterProduct(_normal, _normal);
+  //
+  // w = iden + _beta * (iden - mm);
+  //
+  // return -(-3.0 / 4 * _gc_prop[_qp] * _l[_qp] * (w * _grad_u[_qp]) * _grad_test[_i][_qp] +
+  //          2.0 * (1.0 - _u[_qp]) * _test[_i][_qp] * _hist_old[_qp] -
+  //          _gc_prop[_qp] / _l[_qp] * (3.0 / 8) * _test[_i][_qp]) /
+  //        _gc_prop[_qp];
+}
