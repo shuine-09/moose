@@ -661,7 +661,8 @@ ADFiniteStrainCrystalPlasticityPF<compute_stage>::postSolveQp()
 
       _stress[_qp] = RankTwoTensor::genRandomSymmTensor(_rndm_scale_var, 1.0);
     }
-    else
+    // else if (!_fe_problem.getNonlinearSystemBase().computingInitialResidual())
+    if (_fe_problem.getNonlinearSystemBase().getCurrentNonlinearIterationNumber() > 0)
       throw MooseException("ADFiniteStrainCrystalPlasticityPF: Constitutive failure");
   }
   else
