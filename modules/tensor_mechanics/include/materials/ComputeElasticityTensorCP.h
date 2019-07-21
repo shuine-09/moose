@@ -48,4 +48,4 @@ protected:
   RotationTensor _R;
 };
 
-#endif // COMPUTEELASTICITYTENSORCP_H
+#endif

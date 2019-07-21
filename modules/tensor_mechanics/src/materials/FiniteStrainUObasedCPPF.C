@@ -234,8 +234,10 @@ FiniteStrainUObasedCPPF::initQpStatefulProperties()
     // Initializes slip system related properties
     _uo_state_vars[i]->initSlipSysProps((*_mat_prop_state_vars[i])[_qp], _q_point[_qp]);
 
-  if (_use_linear_fracture_energy)
-    _hist[_qp] = 3.0 / 16.0 * 7.0 / 2.0;
+  // if (_use_linear_fracture_energy)
+  //   _hist[_qp] = 3.0 / 16.0 * 7.0 / 2.0;
+
+  _hist[_qp] = 0.0;
 
   _Wp[_qp] = 0;
 }
@@ -329,12 +331,25 @@ FiniteStrainUObasedCPPF::solveQp()
 void
 FiniteStrainUObasedCPPF::postSolveQp()
 {
-  _stress[_qp] = _fe * _pk2[_qp] * _fe.transpose() / _fe.det();
+  RankTwoTensor ce, ee;
+  RankTwoTensor iden(RankTwoTensor::initIdentity);
+  ce = _fe.transpose() * _fe;
+  ee = ce - iden;
+  ee *= 0.5;
+  RankTwoTensor pk2_undamage = _elasticity_tensor[_qp] * ee;
+  std::vector<Real> eigval;
+  RankTwoTensor eigvec;
+  RankFourTensor Ppos = pk2_undamage.positiveProjectionEigenDecomposition(eigval, eigvec);
+
+  RankTwoTensor pk2_pos = Ppos * pk2_undamage;
+  RankTwoTensor pk2_neg = pk2_undamage - pk2_pos;
+
+  RankTwoTensor pk2_new = _gd * pk2_pos + pk2_neg;
+
+  _stress[_qp] = _fe * pk2_new * _fe.transpose() / _fe.det();
 
   // Calculate jacobian for preconditioner
   calcTangentModuli();
-
-  RankTwoTensor iden(RankTwoTensor::initIdentity);
 
   _lag_e[_qp] = _deformation_gradient[_qp].transpose() * _deformation_gradient[_qp] - iden;
   _lag_e[_qp] = _lag_e[_qp] * 0.5;
@@ -349,7 +364,55 @@ FiniteStrainUObasedCPPF::postSolveQp()
   _deformation_gradient[_qp].getRUDecompositionRotation(rot);
   _update_rot[_qp] = rot * _crysrot[_qp];
 
-  calculateCrackDrivingStateFunction();
+  // calculateCrackDrivingStateFunction();
+  const Real c = _c[_qp];
+
+  Real G0_pos = 0;
+  const Real G0_neg = 0.0;
+
+  if (_beta_e)
+    G0_pos = pk2_pos.doubleContraction(ee) / 2.0;
+
+  _Wp[_qp] = _Wp_old[_qp] + _Wp_sub;
+
+  if (_beta_p && _Wp[_qp] >= _W0)
+    // G0_pos += 0.1 * (_Wp[_qp] - _W0);
+    G0_pos += (_Wp[_qp] - _W0);
+
+  // Assign history variable and derivative
+  // if (G0_pos > _hist_old[_qp])
+  //   _hist[_qp] = G0_pos;
+  // else
+  //   _hist[_qp] = _hist_old[_qp];
+
+  _hist[_qp] = G0_pos;
+
+  Real hist_variable = _hist_old[_qp];
+  if (_use_current_hist)
+    hist_variable = _hist[_qp];
+
+  if (_use_linear_fracture_energy)
+  {
+    // Elastic free energy density
+    _F[_qp] = hist_variable * _gd - G0_neg + 3 * _gc[_qp] / (8 * _l[_qp]) * c;
+
+    // derivative of elastic free energy density wrt c
+    _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + 3 * _gc[_qp] / (8 * _l[_qp]);
+
+    // 2nd derivative of elastic free energy density wrt c
+    _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage);
+  }
+  else
+  {
+    // Elastic free energy density
+    _F[_qp] = hist_variable * _gd - G0_neg + _gc[_qp] / (2 * _l[_qp]) * c * c;
+
+    // derivative of elastic free energy density wrt c
+    _dFdc[_qp] = -hist_variable * 2.0 * (1.0 - c) * (1 - _kdamage) + _gc[_qp] / _l[_qp] * c;
+
+    // 2nd derivative of elastic free energy density wrt c
+    _d2Fdc2[_qp] = hist_variable * 2.0 * (1 - _kdamage) + _gc[_qp] / _l[_qp];
+  }
 }
 
 void
@@ -419,6 +482,7 @@ FiniteStrainUObasedCPPF::isStateVariablesConverged()
     }
   }
   return false;
+  // return true;
 }
 
 void
@@ -465,7 +529,7 @@ FiniteStrainUObasedCPPF::solveStress()
   rnorm0 = rnorm;
 
   // Check for stress residual tolerance
-  while (rnorm > _rtol * rnorm0 && rnorm0 > _abs_tol && iter < _maxiter)
+  while (rnorm > _rtol * rnorm0 && rnorm > _abs_tol && iter < _maxiter)
   {
     // Calculate stress increment
     dpk2 = -_jac.invSymm() * _resid;
@@ -524,7 +588,7 @@ FiniteStrainUObasedCPPF::updateSlipSystemResistanceAndStateVariable()
 
   for (unsigned int i = 0; i < _num_uo_state_var_evol_rate_comps; ++i)
     _uo_state_var_evol_rate_comps[i]->calcStateVariableEvolutionRateComponent(
-        _qp, (*_mat_prop_state_var_evol_rate_comps[i])[_qp], _gd_old);
+        _qp, (*_mat_prop_state_var_evol_rate_comps[i])[_qp], 1.0);
 
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
   {
@@ -552,7 +616,7 @@ FiniteStrainUObasedCPPF::getSlipRates()
 {
   for (unsigned int i = 0; i < _num_uo_slip_rates; ++i)
   {
-    if (!_uo_slip_rates[i]->calcSlipRate(_qp, _dt, (*_mat_prop_slip_rates[i])[_qp], _gd_old))
+    if (!_uo_slip_rates[i]->calcSlipRate(_qp, _dt, (*_mat_prop_slip_rates[i])[_qp], 1.0))
     {
       _err_tol = true;
       return;
@@ -581,15 +645,17 @@ FiniteStrainUObasedCPPF::calcResidual()
   ee = ce - iden;
   ee *= 0.5;
 
-  RankTwoTensor pk2_undamage = _elasticity_tensor[_qp] * ee;
-  std::vector<Real> eigval;
-  RankTwoTensor eigvec;
-  RankFourTensor Ppos = pk2_undamage.positiveProjectionEigenDecomposition(eigval, eigvec);
+  // RankTwoTensor pk2_undamage = _elasticity_tensor[_qp] * ee;
+  // std::vector<Real> eigval;
+  // RankTwoTensor eigvec;
+  // RankFourTensor Ppos = pk2_undamage.positiveProjectionEigenDecomposition(eigval, eigvec);
+  //
+  // RankTwoTensor pk2_pos = Ppos * pk2_undamage;
+  // RankTwoTensor pk2_neg = pk2_undamage - pk2_pos;
+  //
+  // pk2_new = _gd * pk2_pos + pk2_neg;
 
-  RankTwoTensor pk2_pos = Ppos * pk2_undamage;
-  RankTwoTensor pk2_neg = pk2_undamage - pk2_pos;
-
-  pk2_new = _gd * pk2_pos + pk2_neg;
+  pk2_new = _elasticity_tensor[_qp] * ee;
 
   _resid = _pk2[_qp] - pk2_new;
 }
@@ -618,7 +684,7 @@ FiniteStrainUObasedCPPF::calcJacobian()
     std::vector<RankTwoTensor> dtaudpk2(nss), dfpinvdslip(nss);
     std::vector<Real> dslipdtau;
     dslipdtau.resize(nss);
-    _uo_slip_rates[i]->calcSlipRateDerivative(_qp, _dt, dslipdtau, _gd_old);
+    _uo_slip_rates[i]->calcSlipRateDerivative(_qp, _dt, dslipdtau, 1.0);
     for (unsigned int j = 0; j < nss; j++)
     {
       dtaudpk2[j] = (*_flow_direction[i])[_qp][j];
@@ -629,20 +695,22 @@ FiniteStrainUObasedCPPF::calcJacobian()
       dfpinvdpk2 += (dfpinvdslip[j] * dslipdtau[j] * _dt).outerProduct(dtaudpk2[j]);
   }
 
-  RankTwoTensor ce, ee;
-  RankTwoTensor iden(RankTwoTensor::initIdentity);
-  ce = _fe.transpose() * _fe;
-  ee = ce - iden;
-  ee *= 0.5;
-  RankTwoTensor pk2_undamage = _elasticity_tensor[_qp] * ee;
-  std::vector<Real> eigval;
-  RankTwoTensor eigvec;
-  RankFourTensor Ppos = pk2_undamage.positiveProjectionEigenDecomposition(eigval, eigvec);
+  // RankTwoTensor ce, ee;
+  // RankTwoTensor iden(RankTwoTensor::initIdentity);
+  // ce = _fe.transpose() * _fe;
+  // ee = ce - iden;
+  // ee *= 0.5;
+  // RankTwoTensor pk2_undamage = _elasticity_tensor[_qp] * ee;
+  // std::vector<Real> eigval;
+  // RankTwoTensor eigvec;
+  // RankFourTensor Ppos = pk2_undamage.positiveProjectionEigenDecomposition(eigval, eigvec);
 
   RankFourTensor I4sym(RankFourTensor::initIdentitySymmetricFour);
-  _jac = RankFourTensor::IdentityFour() -
-         ((_gd * Ppos * _elasticity_tensor[_qp] + (I4sym - Ppos) * _elasticity_tensor[_qp]) *
-          deedfe * dfedfpinv * dfpinvdpk2);
+  // _jac = RankFourTensor::IdentityFour() -
+  //        ((1.0 * Ppos * _elasticity_tensor[_qp] + (I4sym - Ppos) * _elasticity_tensor[_qp]) *
+  //         deedfe * dfedfpinv * dfpinvdpk2);
+  _jac =
+      RankFourTensor::IdentityFour() - (_elasticity_tensor[_qp] * deedfe * dfedfpinv * dfpinvdpk2);
 }
 
 void
@@ -687,7 +755,7 @@ FiniteStrainUObasedCPPF::elastoPlasticTangentModuli()
   RankFourTensor I4sym(RankFourTensor::initIdentitySymmetricFour);
 
   dsigdpk2dfe = _fe.mixedProductIkJl(_fe) *
-                (_gd * Ppos * _elasticity_tensor[_qp] + (I4sym - Ppos) * _elasticity_tensor[_qp]) *
+                (1.0 * Ppos * _elasticity_tensor[_qp] + (I4sym - Ppos) * _elasticity_tensor[_qp]) *
                 deedfe;
 
   pk2fet = _pk2[_qp] * _fe.transpose();
@@ -841,13 +909,16 @@ FiniteStrainUObasedCPPF::calculateCrackDrivingStateFunction()
   _Wp[_qp] = _Wp_old[_qp] + _Wp_sub;
 
   if (_beta_p && _Wp[_qp] >= _W0)
+    // G0_pos += 0.1 * (_Wp[_qp] - _W0);
     G0_pos += (_Wp[_qp] - _W0);
 
   // Assign history variable and derivative
-  if (G0_pos > _hist_old[_qp])
-    _hist[_qp] = G0_pos;
-  else
-    _hist[_qp] = _hist_old[_qp];
+  // if (G0_pos > _hist_old[_qp])
+  //   _hist[_qp] = G0_pos;
+  // else
+  //   _hist[_qp] = _hist_old[_qp];
+
+  _hist[_qp] = G0_pos;
 
   Real hist_variable = _hist_old[_qp];
   if (_use_current_hist)
