@@ -30,6 +30,7 @@
     diffusivity_at_negative_level_set = 1e-11
     equilibrium_concentration_jump = 0.6367
     value_at_interface_uo = value_uo
+    x0 = 6e-4
   [../]
   [./value_uo]
     type = PointValueAtXFEMInterface
@@ -137,8 +138,8 @@
 [Executioner]
   type = Transient
   solve_type = 'PJFNK'
-  petsc_options_iname = '-pc_type -pc_hypre_type'
-  petsc_options_value = 'hypre boomeramg'
+  petsc_options_iname = '-pc_type'
+  petsc_options_value = 'lu'
   line_search = 'none'
 
   l_tol = 1e-3

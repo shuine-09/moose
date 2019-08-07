@@ -64,6 +64,8 @@ public:
     return _grad_values_negative_level_set_side;
   };
 
+  Point getPointCurrentLocation(unsigned int i) const { return _points[i]; };
+
   unsigned int numberPoints() const { return _points.size(); };
 
 protected:
