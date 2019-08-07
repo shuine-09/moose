@@ -34,6 +34,8 @@ protected:
 
   /// Jump of the equilibrium concentrations at phase boundary
   Real _equilibrium_concentration_jump;
+
+  Real _x0;
 };
 
 #endif // XFEMC4OXIDEVELOCITY_H
