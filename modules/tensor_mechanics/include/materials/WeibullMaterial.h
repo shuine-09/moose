@@ -42,6 +42,8 @@ private:
   Real _specimen_volume;
   Real _specimen_material_property;
   Real _eta;
+  Real _high;
+  Real _low;
 };
 
 #endif // WEIBULLMATERIAL_H

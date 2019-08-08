@@ -26,6 +26,8 @@ validParams<WeibullMaterial>()
       "specimen_material_property",
       "The median value of material property observed in the laboratory.");
   params.addRequiredParam<Real>("specimen_volume", "Specimen volume used in the laboratory.");
+  params.addParam<Real>("high", 0.0, "Specimen volume used in the laboratory.");
+  params.addParam<Real>("low", 0.0,"Specimen volume used in the laboratory.");
   return params;
 }
 
@@ -35,7 +37,9 @@ WeibullMaterial::WeibullMaterial(const InputParameters & parameters)
     _weibull_old(getMaterialPropertyOld<Real>("gc_prop")),
     _weibull_modulus(getParam<Real>("weibull_modulus")),
     _specimen_volume(getParam<Real>("specimen_volume")),
-    _specimen_material_property(getParam<Real>("specimen_material_property"))
+    _specimen_material_property(getParam<Real>("specimen_material_property")),
+    _high(getParam<Real>("high")),
+    _low(getParam<Real>("low"))
 {
   // Setup the random number generation
   setRandomResetFrequency(EXEC_INITIAL);
@@ -49,9 +53,23 @@ WeibullMaterial::initQpStatefulProperties()
     if (std::abs(_weibull_modulus) > 1.0e-5)
     {
       Real rn = getRandomReal();
+      if (_high > 1.0)
+      {
+        Point p = _q_point[_qp];
+        Real x = p(0);
+        Real z = p(2);
+        Real r = std::sqrt(x*x+z*z);
+        Real mp = (_high - _low) / 0.0041*r + _low;
+      _eta = mp *
+             std::pow(_specimen_volume * std::log(rn) / (_current_elem->volume() * std::log(0.5)),
+                      1.0 / (Real)_weibull_modulus);
+      }
+      else
+      {
       _eta = _specimen_material_property *
              std::pow(_specimen_volume * std::log(rn) / (_current_elem->volume() * std::log(0.5)),
                       1.0 / (Real)_weibull_modulus);
+      }
     }
     _weibull[_qp] = _eta;
   }
