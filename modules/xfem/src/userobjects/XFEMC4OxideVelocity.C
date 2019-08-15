@@ -49,6 +49,8 @@ XFEMC4OxideVelocity::computeMovingInterfaceVelocity(unsigned int point_id) const
 
   Real delta = std::abs(xt - _x0);
 
+  std::cout << "delta: " << delta << std::endl;
+
   // Current implementation only supports the case that the interface is moving horizontally
   //  return std::abs((_diffusivity_at_positive_level_set * grad_positive(0) -
   //                   _diffusivity_at_negative_level_set * grad_negative(0)) /
@@ -70,25 +72,30 @@ XFEMC4OxideVelocity::computeMovingInterfaceVelocity(unsigned int point_id) const
   const Real con_e_ox_m = 2 * con_v_ox_m;
   const Real con_o_ox_m(5.24e28);
   const Real con_o_m_ox(1.7078e28);
+  
+// use fixed temperature at 1200C until we add a temperature diffusion kernel
+  const Real temperature(1473);
 
-  const Real mobil_v = 4 * pow(migr_jp_l, 2) * migr_jp_f * 2 / (Kb * value_positive) *
-                       exp(-migr_e_v / (Kb * value_positive));
-  const Real mobil_e = 4 * pow(migr_jp_l, 2) * migr_jp_f * -1 / (Kb * value_positive) *
-                       exp(-migr_e_e / (Kb * value_positive));
+  const Real mobil_v = 4 * pow(migr_jp_l, 2) * migr_jp_f * 2 / (Kb * temperature) *
+                       exp(-migr_e_v / (Kb * temperature));
+  const Real mobil_e = 4 * pow(migr_jp_l, 2) * migr_jp_f * -1 / (Kb * temperature) *
+                       exp(-migr_e_e / (Kb * temperature));
 
   const Real A = mobil_e * con_e_ox_w - 2 * mobil_v * con_v_ox_m;
   const Real B = mobil_e * con_e_ox_w - mobil_e * con_e_ox_m;
   const Real C = 2 * mobil_v * con_v_ox_w - mobil_e * con_e_ox_m;
   const Real eta = (-B - sqrt(pow(B, 2) - 4 * A * C)) / (2 * A);
-  const Real potential = Kb * value_positive * log(eta);
+  const Real potential = Kb * temperature * log(eta);
 
   const Real J_v = mobil_v * potential * (con_v_ox_w - con_v_ox_m * pow(eta, 2)) /
-                   (1 - pow(eta, 2)) / 1e-5; //( _initial_cut - _cut_data[0] );
+                   (1 - pow(eta, 2)) / delta;
   const Real J_o = zircaloy_density * Na / (zirconium_atmass * 1e-3) *
                    _diffusivity_at_positive_level_set * grad_negative(0);
 
-  if (_t == 0 || _t == 10)
-    return sqrt(2 * 0.01126 * exp(-35980 / (1.987 * 1473))) * (-1e-2);
+  std::cout << "grad_negative: " << grad_negative(0) << " ; J_o: " << J_o << std::endl;
+
+  if (delta == 0)
+    return sqrt(2 * 0.01126 * exp(-35980 / (1.987 * temperature))) * (-1e-2);
   else
     return -zirconium_PBR * (J_v) / (zirconium_PBR * con_o_ox_m - con_o_m_ox);
 }
