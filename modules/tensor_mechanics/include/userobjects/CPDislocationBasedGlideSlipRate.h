@@ -13,7 +13,7 @@
 
 class CPDislocationBasedGlideSlipRate;
 
-template<>
+template <>
 InputParameters validParams<CPDislocationBasedGlideSlipRate>();
 
 /**
@@ -21,23 +21,24 @@ InputParameters validParams<CPDislocationBasedGlideSlipRate>();
  */
 class CPDislocationBasedGlideSlipRate : public CrystalPlasticitySlipRate
 {
- public:
+public:
   CPDislocationBasedGlideSlipRate(const InputParameters & parameters);
 
   virtual bool calcSlipRate(unsigned int qp, Real dt, std::vector<Real> & val) const;
   virtual bool calcSlipRateDerivative(unsigned int qp, Real dt, std::vector<Real> & val) const;
-  virtual void calcFlowDirection(unsigned int qp, std::vector<RankTwoTensor> & flow_direction) const;
+  virtual void calcFlowDirection(unsigned int qp,
+                                 std::vector<RankTwoTensor> & flow_direction) const;
 
- protected:
-  const MaterialProperty<std::vector<Real> > & _mat_prop_mobile_dislocation_density;
+protected:
+  const MaterialProperty<std::vector<Real>> & _mat_prop_mobile_dislocation_density;
 
-  const MaterialProperty<std::vector<Real> > & _mat_prop_thermal_slip_resistance;
+  const MaterialProperty<std::vector<Real>> & _mat_prop_thermal_slip_resistance;
 
-  const MaterialProperty<std::vector<Real> > & _mat_prop_athermal_slip_resistance;
+  const MaterialProperty<std::vector<Real>> & _mat_prop_athermal_slip_resistance;
 
   const MaterialProperty<RankTwoTensor> & _pk2;
 
-  const MaterialProperty<std::vector<RankTwoTensor> > & _flow_direction;
+  const MaterialProperty<std::vector<RankTwoTensor>> & _flow_direction;
 
   ///Penalty parameter value used to regularize activation energy based flow rule.
   Real _penalty_param;
@@ -45,6 +46,8 @@ class CPDislocationBasedGlideSlipRate : public CrystalPlasticitySlipRate
   Real _b, _lg, _jump_freq, _enthal, _p, _q;
   Real _k, _temp;
 
+  Real _use_damage;
+  const MaterialProperty<Real> * _w_old;
 };
 
 #endif // CPDISLOCATIONBASEDGLIDESLIPRATE_H

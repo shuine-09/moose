@@ -31,6 +31,7 @@ validParams<CPDislocationBasedGlideSlipRate>()
   params.addParam<Real>("exponentq", 1.34, "Exponent q used in flow rule");
   params.addParam<Real>("boltz_const", 1.38065e-20, "Boltzman constant: Default unit MPa-mm^3");
   params.addParam<Real>("temp", 273.0, "Temperature in K");
+  params.addParam<bool>("use_damage", false, "Use damage.");
   params.addClassDescription("Dislocation based constitutive mode userobject class for glide slip "
                              "rate in the matrix.  Override the virtual functions in your class");
   return params;
@@ -54,7 +55,9 @@ CPDislocationBasedGlideSlipRate::CPDislocationBasedGlideSlipRate(const InputPara
     _p(getParam<Real>("exponentp")),
     _q(getParam<Real>("exponentq")),
     _k(getParam<Real>("boltz_const")),
-    _temp(getParam<Real>("temp"))
+    _temp(getParam<Real>("temp")),
+    _use_damage(getParam<bool>("use_damage")),
+    _w_old(_use_damage ? &getMaterialPropertyOldByName<Real>("w") : nullptr)
 {
 }
 
@@ -97,9 +100,12 @@ CPDislocationBasedGlideSlipRate::calcSlipRate(unsigned int qp,
                                               std::vector<Real> & val) const
 {
   DenseVector<Real> tau(_variable_size);
+  Real w = 0.0;
+  if (_w_old)
+    w = (*_w_old)[qp];
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    tau(i) = _pk2[qp].doubleContraction(_flow_direction[qp][i]);
+    tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) * _b / (1 - w);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
@@ -143,9 +149,12 @@ CPDislocationBasedGlideSlipRate::calcSlipRateDerivative(unsigned int qp,
                                                         std::vector<Real> & val) const
 {
   DenseVector<Real> tau(_variable_size);
+  Real w = 0.0;
+  if (_w_old)
+    w = (*_w_old)[qp];
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    tau(i) = _pk2[qp].doubleContraction(_flow_direction[qp][i]);
+    tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) * _b / (1 - w);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {

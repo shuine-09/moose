@@ -40,6 +40,8 @@ validParams<CPDislocationBasedClimbRate>()
                                 "The precipitate_volume_fraction of precipitates.");
   params.addParam<Real>(
       "theta", libMesh::pi / 2, "The angle between dislocation line direction and burger vector.");
+
+  params.addParam<bool>("use_damage", false, "Use damage.");
   params.addClassDescription("Dislocation based constitutive mode userobject "
                              "class for climb rate.  Override the virtual "
                              "functions in your class");
@@ -70,7 +72,9 @@ CPDislocationBasedClimbRate::CPDislocationBasedClimbRate(const InputParameters &
     _activation_energy(getParam<Real>("activation_energy")),
     _precipitate_radius(getParam<Real>("precipitate_radius")),
     _precipitate_volume_fraction(getParam<Real>("precipitate_volume_fraction")),
-    _theta(getParam<Real>("theta"))
+    _theta(getParam<Real>("theta")),
+    _use_damage(getParam<bool>("use_damage")),
+    _w_old(_use_damage ? &getMaterialPropertyOldByName<Real>("w") : nullptr)
 {
 }
 
@@ -100,8 +104,13 @@ CPDislocationBasedClimbRate::calcSlipRate(unsigned int qp, Real dt, std::vector<
 
   const Real cv = 1.0;
 
+  Real w = 0.0;
+
+  if (_w_old)
+    w = (*_w_old)[qp];
+
   for (unsigned int i = 0; i < _variable_size; ++i)
-    tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) * _b;
+    tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) * _b / (1 - w);
 
   Real rho = 0.0;
   for (unsigned int i = 0; i < _variable_size; ++i)
@@ -163,8 +172,12 @@ CPDislocationBasedClimbRate::calcSlipRateDerivative(unsigned int qp,
 {
   DenseVector<Real> tau(_variable_size);
 
+  Real w = 0.0;
+  if (_w_old)
+    w = (*_w_old)[qp];
+
   for (unsigned int i = 0; i < _variable_size; ++i)
-    tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) * _b;
+    tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) * _b / (1 - w);
 
   Real rho = 0.0;
   for (unsigned int i = 0; i < _variable_size; ++i)

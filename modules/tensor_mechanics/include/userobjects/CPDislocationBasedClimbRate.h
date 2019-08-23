@@ -52,6 +52,8 @@ protected:
   Real _precipitate_radius;
   Real _precipitate_volume_fraction;
   Real _theta;
+  Real _use_damage;
+  const MaterialProperty<Real> * _w_old;
 };
 
 #endif // CPDISLOCATIONBASEDCLIMB_H
