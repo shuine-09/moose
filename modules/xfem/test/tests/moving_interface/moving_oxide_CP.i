@@ -28,7 +28,7 @@
     type = XFEMCathcartPawelOxideVelocity
     diffusivity_at_positive_level_set = 1e-5
     diffusivity_at_negative_level_set = 1e-11
-    equilibrium_concentration_jump = 0.6367
+    equilibrium_concentration_jump = 0.3689
     value_at_interface_uo = value_uo
   [../]
   [./value_uo]
@@ -40,7 +40,7 @@
   [../]
   [./moving_line_segments]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '3.9e-4 0 3.9e-4 1e-3 0 0'
+    cut_data = '5.9e-4 0 5.9e-4 1e-3 0 0'
     heal_always = true
     interface_velocity = velocity
   [../]
@@ -55,7 +55,7 @@
   [./ic_u]
     type = FunctionIC
     variable = u
-    function = 'if(x<3.9e-4, 0.03, 0.6667)'
+    function = 'if(x<5.9e-4, 0.03, 0.6667)'
   [../]
 []
 
@@ -66,13 +66,16 @@
   [../]
 []
 
+# Need to use XFEMTwoSideDirichlet that has been removed
 [Constraints]
   [./u_constraint]
-    type = XFEMEqualValueAtInterface
+    type = XFEMTwoSideDirichlet
     geometric_cut_userobject = 'moving_line_segments'
     use_displaced_mesh = false
     variable = u
-    value = 0.6667
+    value_at_positive_level_set_interface = 0.2978
+    value_at_negative_level_set_interface = 0.6667
+#    value = 0.6667
     alpha = 1e5
   [../]
 []
@@ -137,8 +140,8 @@
 [Executioner]
   type = Transient
   solve_type = 'PJFNK'
-  petsc_options_iname = '-pc_type -pc_hypre_type'
-  petsc_options_value = 'hypre boomeramg'
+  petsc_options_iname = '-pc_type'
+  petsc_options_value = 'lu'
   line_search = 'none'
 
   l_tol = 1e-3
@@ -148,7 +151,7 @@
 
   start_time = 0.0
   dt = 10
-  num_steps = 10
+  num_steps = 150
   max_xfem_update = 1
 []
 

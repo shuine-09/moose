@@ -95,7 +95,7 @@ XFEMC4OxideVelocity::computeMovingInterfaceVelocity(unsigned int point_id) const
   std::cout << "grad_negative: " << grad_negative(0) << " ; J_o: " << J_o << std::endl;
 
   if (delta == 0)
-    return sqrt(2 * 0.01126 * exp(-35980 / (1.987 * temperature))) * (-1e-2);
+    return sqrt(0.01126 * exp(-35890 / (1.987 * temperature)) / (4 * _t)) * (-1e-2);
   else
     return -zirconium_PBR * (J_v) / (zirconium_PBR * con_o_ox_m - con_o_m_ox);
 }

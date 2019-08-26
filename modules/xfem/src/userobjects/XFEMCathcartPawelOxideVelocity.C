@@ -49,5 +49,7 @@ XFEMCathcartPawelOxideVelocity::computeMovingInterfaceVelocity(
 //  return std::abs((_diffusivity_at_positive_level_set * grad_positive(0) -
 //                   _diffusivity_at_negative_level_set * grad_negative(0)) /
 //                  (value_positive - value_negative + _equilibrium_concentration_jump));
-  return sqrt(2 * 0.01126 * exp(-35980 / (1.987 * 1473))) * (-1e-2);
+//  return sqrt(2 * 0.01126 * exp(-35890 / (1.987 * 1473))) * (-1e-2);
+  const Real temperature(1473);
+  return sqrt(0.01126 * exp(-35890 / (1.987 * temperature)) / (4 * _t)) * (-1e-2);
 }
