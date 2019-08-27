@@ -4,39 +4,53 @@
 []
 
 [XFEM]
-  qrule = volfrac
+  geometric_cut_userobjects = 'cut_mesh'
   output_cut_plane = true
-  use_crack_growth_increment = true
-  crack_growth_increment = 0.07
+  qrule = volfrac
 []
 
 [Mesh]
   type = GeneratedMesh
-  dim = 2
-  nx = 11
-  ny = 11
+  dim = 3
+  nx = 5
+  ny = 5
+  nz = 5
   xmin = 0.0
   xmax = 1.0
   ymin = 0.0
   ymax = 1.0
-  elem_type = QUAD4
-  displacements = 'disp_x disp_y'
+  zmin = -0.4
+  zmax = 0.6
+  elem_type = HEX8
+  displacements = 'disp_x disp_y disp_z'
 []
 
 [UserObjects]
-  [./line_seg_cut_uo]
-    type = LineSegmentCutUserObject
-    cut_data = '1.0  0.5  0.7  0.5'
-    time_start_cut = 0.0
-    time_end_cut = 0.0
+  [./cut_mesh]
+    type = MeshCut3DUserObject
+    mesh_file = mesh_grow.xda
+    function_x = growth_func_x
+    function_y = growth_func_y
+    function_z = growth_func_z
+# The current gold file does not grow the cutting mesh, but this is something
+# that needs to be tested more in the future.
+#    size_control = 0.05
+#    n_step_growth = 50
   [../]
-  [./xfem_marker_uo]
-    type = XFEMMaterialTensorMarkerUserObject
-    execute_on = timestep_end
-    tensor = stress
-    quantity = MaxPrincipal
-    threshold = 5e+1
-    average = true
+[]
+
+[Functions]
+  [./growth_func_x]
+    type = ParsedFunction
+    value = 5*(x-0.3)+z
+  [../]
+  [./growth_func_y]
+    type = ParsedFunction
+    value = 5*(y-0.5)+(z+x)/2
+  [../]
+  [./growth_func_z]
+    type = ParsedFunction
+    value = 5*(z-0.1)+x
   [../]
 []
 
@@ -45,7 +59,9 @@
   [../]
   [./disp_y]
   [../]
-[]
+  [./disp_z]
+  [../]
+  []
 
 [AuxVariables]
   [./stress_xx]
@@ -53,6 +69,10 @@
     family = MONOMIAL
   [../]
   [./stress_yy]
+    order = CONSTANT
+    family = MONOMIAL
+  [../]
+  [./stress_zz]
     order = CONSTANT
     family = MONOMIAL
   [../]
@@ -70,6 +90,8 @@
   [./solid]
     disp_x = disp_x
     disp_y = disp_y
+    disp_z = disp_z
+    use_displaced_mesh = true
   [../]
 []
 
@@ -88,6 +110,13 @@
     index = 1
     execute_on = timestep_end
   [../]
+  [./stress_zz]
+    type = MaterialTensorAux
+    tensor = stress
+    variable = stress_zz
+    index = 2
+    execute_on = timestep_end
+  [../]
   [./vonmises]
     type = MaterialTensorAux
     tensor = stress
@@ -95,40 +124,47 @@
     quantity = vonmises
     execute_on = timestep_end
   [../]
+  [./SED]
+    type = MaterialRealAux
+    variable = SED
+    property = strain_energy_density
+    execute_on = timestep_end
+    block = 0
+  [../]
 []
 
 [Functions]
-  [./pull]
-    type = PiecewiseLinear
-    x='0  50   100'
-    y='0  0.02 0.1'
+  [./top_trac_y]
+    type = ConstantFunction
+    value = 10
   [../]
 []
 
+
 [BCs]
-  [./bottomx]
+  [./top_y]
+    type = FunctionNeumannBC
+    boundary = top
+    variable = disp_y
+    function = top_trac_y
+  [../]
+  [./bottom_x]
     type = PresetBC
     boundary = bottom
     variable = disp_x
     value = 0.0
   [../]
-  [./bottomy]
+  [./bottom_y]
     type = PresetBC
     boundary = bottom
     variable = disp_y
     value = 0.0
   [../]
-  [./topx]
+  [./bottom_z]
     type = PresetBC
-    boundary = top
-    variable = disp_x
+    boundary = bottom
+    variable = disp_z
     value = 0.0
-  [../]
-  [./topy]
-    type = FunctionPresetBC
-    boundary = top
-    variable = disp_y
-    function = pull
   [../]
 []
 
@@ -138,9 +174,10 @@
     block = 0
     disp_x = disp_x
     disp_y = disp_y
+    disp_z = disp_z
     poissons_ratio = 0.3
-    youngs_modulus = 1e6
-    formulation = NonlinearPlaneStrain
+    youngs_modulus = 207000
+    compute_JIntegral = true
   [../]
 []
 
@@ -164,22 +201,19 @@
 
 # controls for nonlinear iterations
   nl_max_its = 15
-  nl_rel_tol = 1e-14
-  nl_abs_tol = 1e-9
+  nl_rel_tol = 1e-12
+  nl_abs_tol = 1e-10
 
 # time control
   start_time = 0.0
   dt = 1.0
-  end_time = 4.0
-  num_steps = 5000
-
-  max_xfem_update = 1
+  end_time = 1.0
 []
 
 [Outputs]
-  file_base = crack_propagation_2d_out
+  file_base = mesh_grow
+  execute_on = 'timestep_end'
   exodus = true
-  execute_on = timestep_end
   [./console]
     type = Console
     output_linear = true

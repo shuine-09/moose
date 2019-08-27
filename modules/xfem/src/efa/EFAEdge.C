@@ -129,6 +129,7 @@ EFAEdge::getNodeMasters(EFANode * node,
 void
 EFAEdge::addIntersection(double position, EFANode * embedded_node_tmp, EFANode * from_node)
 {
+  std::cout << "            ++++ addIntersection" << std::endl;
   _embedded_nodes.push_back(embedded_node_tmp);
   if (from_node == _edge_node1)
     _intersection_x.push_back(position);

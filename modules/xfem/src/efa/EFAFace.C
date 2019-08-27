@@ -307,6 +307,7 @@ EFAFace::combineTwoEdges(unsigned int edge_id1, unsigned int edge_id2)
       EFAError("in combine_two_edges face edges are not correctly set up");
 
     EFAEdge * full_edge = new EFAEdge(new_node1, new_node2);
+    std::cout << "    combineTwoEdges" << std::endl;
     full_edge->addIntersection(-1.0, emb_node, new_node1); // dummy intersection_x
 
     delete _edges[edge_id1];
@@ -513,6 +514,7 @@ EFAFace::combineWithFace(const EFAFace * other_face) const
 
     EFAEdge * new_edge0 = new EFAEdge(_edges[this_edge_id0]->getNode(0),
                                       other_face->_edges[other_edge_id0]->getNode(1));
+    std::cout << "    combineWithFace 1" << std::endl;
     new_edge0->addIntersection(
         -1.0, common_nodes[0], new_edge0->getNode(0)); // dummy intersection_x
     new_frag->addEdge(new_edge0);                      // common_nodes[0]'s edge
@@ -529,6 +531,7 @@ EFAFace::combineWithFace(const EFAFace * other_face) const
 
     EFAEdge * new_edge1 = new EFAEdge(other_face->_edges[other_edge_id1]->getNode(0),
                                       _edges[this_edge_id1]->getNode(1));
+    std::cout << "    combineWithFace 2" << std::endl;
     new_edge1->addIntersection(
         -1.0, common_nodes[1], new_edge1->getNode(0)); // dummy intersection_x
     new_frag->addEdge(new_edge1);

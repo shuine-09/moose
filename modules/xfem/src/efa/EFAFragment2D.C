@@ -207,7 +207,6 @@ EFAFragment2D::combineTipEdges()
     EFANode * node2 = _boundary_edges[frag_tip_edge_id[1]]->getNode(1);
     if (emb_node != _boundary_edges[frag_tip_edge_id[1]]->getNode(0))
       EFAError("fragment edges are not correctly set up");
-
     // get the new edge with one intersection
     EFAEdge * elem_edge = _host_elem->getEdge(elem_tip_edge_id);
     double xi_node1 = elem_edge->distanceFromNode1(node1);
@@ -215,13 +214,24 @@ EFAFragment2D::combineTipEdges()
     double xi_emb = elem_edge->distanceFromNode1(emb_node);
     double position = (xi_emb - xi_node1) / (xi_node2 - xi_node1);
     EFAEdge * full_edge = new EFAEdge(node1, node2);
+    std::cout << "    combineTipEdges: " << std::endl;
     full_edge->addIntersection(position, emb_node, node1);
+
+    for (unsigned int iedge = 0; iedge < _boundary_edges.size(); ++iedge)
+    {
+      std::cout << "    before combining two frag edges _boundary_edges " << iedge << " has inter: " << _boundary_edges[iedge]->hasIntersection() << ", embed: " << _boundary_edges[iedge]->numEmbeddedNodes() << std::endl;
+    }
 
     // combine the two original fragment edges
     delete _boundary_edges[frag_tip_edge_id[0]];
     delete _boundary_edges[frag_tip_edge_id[1]];
     _boundary_edges[frag_tip_edge_id[0]] = full_edge;
     _boundary_edges.erase(_boundary_edges.begin() + frag_tip_edge_id[1]);
+
+    for (unsigned int iedge = 0; iedge < _boundary_edges.size(); ++iedge)
+    {
+      std::cout << "    after  combining two frag edges _boundary_edges " << iedge << " has inter: " << _boundary_edges[iedge]->hasIntersection() << ", embed: " << _boundary_edges[iedge]->numEmbeddedNodes() << std::endl;
+    }
   }
 }
 
@@ -344,7 +354,10 @@ EFAFragment2D::split()
       EFAError("A fragment boundary edge can't have more than 1 cuts");
     if (_boundary_edges[iedge]->hasIntersection())
       cut_edges.push_back(iedge);
+    std::cout << "            inter: " << _boundary_edges[iedge]->hasIntersection() << ", embed: " << _boundary_edges[iedge]->numEmbeddedNodes() << std::endl;
   }
+
+  std::cout << "        cut_edges, cut_nodes: " << cut_edges.size() << " " << cut_nodes.size() << std::endl;
 
   if (cut_edges.size() > 2)
   {

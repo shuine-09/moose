@@ -810,6 +810,7 @@ void
 EFAElement2D::updateFragments(const std::set<EFAElement *> & CrackTipElements,
                               std::map<unsigned int, EFANode *> & EmbeddedNodes)
 {
+  std::cout << "updateFragments elem: " << this->id() << std::endl;
   // combine the crack-tip edges in a fragment to a single intersected edge
   std::set<EFAElement *>::iterator sit;
   sit = CrackTipElements.find(this);
@@ -857,7 +858,10 @@ EFAElement2D::updateFragments(const std::set<EFAElement *> & CrackTipElements,
   if (num_cut_frag_edges == 3)
     new_frags = branchingSplit(EmbeddedNodes);
   else
-    new_frags = _fragments[0]->split();
+    {
+      new_frags = _fragments[0]->split();
+      std::cout << "        == split 2d: _fragments[0]->split(), size: " << new_frags.size() << std::endl;
+    }
 
   delete _fragments[0]; // delete the old fragment
   _fragments.clear();
@@ -999,6 +1003,7 @@ EFAElement2D::createChild(const std::set<EFAElement *> & CrackTipElements,
       shouldDuplicateForCutNodeElement = true;
   }
 
+  std::cout << _fragments.size() << ", " << shouldDuplicateForCrackTip(CrackTipElements) << ", " << shouldDuplicateForCutNodeElement << std::endl;
   if (_fragments.size() > 1 || shouldDuplicateForCrackTip(CrackTipElements) ||
       shouldDuplicateForCutNodeElement)
   {
@@ -1009,6 +1014,8 @@ EFAElement2D::createChild(const std::set<EFAElement *> & CrackTipElements,
     ParentElements.push_back(this);
     for (unsigned int ichild = 0; ichild < _fragments.size(); ++ichild)
     {
+      std::cout << "child" << std::endl;
+
       unsigned int new_elem_id;
       if (newChildElements.size() == 0)
         new_elem_id = Efa::getNewID(Elements);
@@ -1713,6 +1720,8 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
                          std::map<unsigned int, EFANode *> & EmbeddedNodes,
                          bool add_to_neighbor)
 {
+  std::cout << "before addEdgeCut: inter: " << _edges[edge_id]->hasIntersection() << ", embed: " << _edges[edge_id]->numEmbeddedNodes() << std::endl;
+
   EFANode * local_embedded = NULL;
   EFANode * edge_node1 = _edges[edge_id]->getNode(0);
   if (embedded_node) // use the existing embedded node if it was passed in
@@ -1782,6 +1791,7 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
         local_embedded = new EFANode(new_node_id, EFANode::N_CATEGORY_EMBEDDED);
         EmbeddedNodes.insert(std::make_pair(new_node_id, local_embedded));
       }
+      std::cout << "    addEdgeCut -> add2elem & !local_embedded: " << std::endl;
       _edges[edge_id]->addIntersection(position, local_embedded, edge_node1);
       if (_edges[edge_id]->numEmbeddedNodes() > 2)
         EFAError("element edge can't have >2 embedded nodes");
@@ -1790,6 +1800,7 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
     // add to frag edge
     if (add2frag)
     {
+      std::cout << "    addEdgeCut -> add2elem & add2frag: " << std::endl;
       frag_edge->addIntersection(frag_pos, local_embedded, frag_edge_node1);
       if (frag_edge->numEmbeddedNodes() > 1)
         EFAError("fragment edge can't have >1 embedded nodes");
@@ -1808,6 +1819,7 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
       edge_neighbor->addEdgeCut(neighbor_edge_id, neigh_pos, local_embedded, EmbeddedNodes, false);
     }
   } // If add_to_neighbor required
+  std::cout << "after  addEdgeCut: inter: " << _edges[edge_id]->hasIntersection() << ", embed: " << _edges[edge_id]->numEmbeddedNodes() << std::endl;
 }
 
 void
@@ -1886,6 +1898,7 @@ EFAElement2D::addFragmentEdgeCut(unsigned int frag_edge_id,
       unsigned int new_node_id = Efa::getNewID(EmbeddedNodes);
       local_embedded = new EFANode(new_node_id, EFANode::N_CATEGORY_EMBEDDED);
       EmbeddedNodes.insert(std::make_pair(new_node_id, local_embedded));
+      std::cout << "    addFragmentEdgeCut: " << std::endl;
       frag_edge->addIntersection(position, local_embedded, edge_node1);
 
       // save this interior embedded node to FaceNodes

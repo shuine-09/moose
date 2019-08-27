@@ -199,6 +199,10 @@ EFAFragment3D::removeInvalidEmbeddedNodes(std::map<unsigned int, EFANode *> & Em
 void
 EFAFragment3D::combine_tip_faces()
 {
+
+  for (unsigned int i = 0; i < _faces.size(); ++i)
+    std::cout << "    before combine_tip_faces: _faces[i]->getNumCuts(): " << i << ", " << _faces[i]->getNumCuts() << std::endl;
+
   if (!_host_elem)
     EFAError("In combine_tip_faces() the frag must have host_elem");
 
@@ -214,6 +218,9 @@ EFAFragment3D::combine_tip_faces()
       combine_two_faces(frag_tip_face_id[0], frag_tip_face_id[1], _host_elem->getFace(i));
   }
   // TODO: may need to combine other frag faces that have tip edges
+
+  for (unsigned int i = 0; i < _faces.size(); ++i)
+    std::cout << "    after  combine_tip_faces: _faces[i]->getNumCuts(): " << i << ", " << _faces[i]->getNumCuts() << std::endl;
 }
 
 bool
@@ -320,6 +327,7 @@ EFAFragment3D::split()
   std::vector<std::vector<EFAFace *>> all_subfaces;
   for (unsigned int i = 0; i < _faces.size(); ++i)
   {
+    std::cout << "    face: " << i << std::endl;
     std::vector<EFAFace *> subfaces = _faces[i]->split();
     all_subfaces.push_back(subfaces);
   }
@@ -327,6 +335,7 @@ EFAFragment3D::split()
   // build new frags
   if (hasFaceWithOneCut()) // "fakely" cut fragment
   {
+    std::cout << "        == has faces with 1 cut" << std::endl;
     EFAFragment3D * new_frag = new EFAFragment3D(_host_elem, false, NULL);
     for (unsigned int i = 0; i < all_subfaces.size(); ++i)
       for (unsigned int j = 0; j < all_subfaces[i].size(); ++j)
@@ -336,6 +345,7 @@ EFAFragment3D::split()
   }
   else // thoroughly cut fragment
   {
+    std::cout << "        == has faces with > 1 cut" << std::endl;
     // find the first face with 2 sub-faces
     EFAFace * start_face1 = NULL;
     EFAFace * start_face2 = NULL;

@@ -213,6 +213,8 @@ ElementFragmentAlgorithm::addElemEdgeIntersection(unsigned int elemid,
                                                   unsigned int edgeid,
                                                   double position)
 {
+  std::cout << "elem, edge: " << elemid << " " << edgeid << std::endl;
+  std::cout << "---------------" << std::endl;
   // this method is called when we are marking cut edges
   std::map<unsigned int, EFAElement *>::iterator eit = _elements.find(elemid);
   if (eit == _elements.end())
@@ -272,8 +274,12 @@ ElementFragmentAlgorithm::addElemFaceIntersection(unsigned int elemid,
   if (!curr_elem)
     EFAError("addElemEdgeIntersection: elem ", elemid, " is not of type EFAelement2D");
 
+  std::cout << "elem, face: " << elemid << " " << faceid << std::endl;
+  std::cout << "---------------" << std::endl;
   // add cuts to two face edges at the same time
+  std::cout << "    addFaceEdgeCut 1" << std::endl;
   curr_elem->addFaceEdgeCut(faceid, edgeid[0], position[0], NULL, _embedded_nodes, true, true);
+  std::cout << "    addFaceEdgeCut 2" << std::endl;
   curr_elem->addFaceEdgeCut(faceid, edgeid[1], position[1], NULL, _embedded_nodes, true, true);
 }
 
@@ -309,11 +315,15 @@ ElementFragmentAlgorithm::updateTopology(bool mergeUncutVirtualEdges)
   _child_elements.clear();
   _parent_elements.clear();
   //  _merged_edge_map.clear();
+  std::cout << _child_elements.size() << ", " << _permanent_nodes.size() << ", " << _temp_nodes.size() << std::endl;
 
   unsigned int first_new_node_id = Efa::getNewID(_permanent_nodes);
+  std::cout << "start: " << _child_elements.size() << ", " << _permanent_nodes.size() << ", " << _temp_nodes.size() << std::endl;
 
   createChildElements();
+  std::cout << "_permanent_nodes.size() is " << _permanent_nodes.size() << '\n';
   connectFragments(mergeUncutVirtualEdges);
+  std::cout << "_permanent_nodes.size() is " << _permanent_nodes.size() << '\n';
   sanityCheck();
   updateCrackTipElements();
 
@@ -324,6 +334,7 @@ ElementFragmentAlgorithm::updateTopology(bool mergeUncutVirtualEdges)
       _new_nodes.push_back(mit->second);
   }
   clearPotentialIsolatedNodes(); // _new_nodes and _permanent_nodes may change here
+
 }
 
 void
@@ -424,6 +435,7 @@ ElementFragmentAlgorithm::createChildElements()
   std::map<unsigned int, EFAElement *>::iterator ElementsEnd = _elements.end();
   for (eit = _elements.begin(); eit != ElementsEnd; ++eit)
   {
+    std::cout << "element " << eit->second->id() << std::endl;
     EFAElement * curr_elem = eit->second;
     curr_elem->createChild(_crack_tip_elements,
                            _elements,
@@ -446,6 +458,7 @@ ElementFragmentAlgorithm::connectFragments(bool mergeUncutVirtualEdges)
     childElem->connectNeighbors(
         _permanent_nodes, _temp_nodes, _inverse_connectivity, mergeUncutVirtualEdges);
     childElem->updateFragmentNode();
+    std::cout << _child_elements.size() << ", " << _permanent_nodes.size() << ", " << _temp_nodes.size() << std::endl;
   } // loop over child elements
 
   std::vector<EFAElement *>::iterator vit;

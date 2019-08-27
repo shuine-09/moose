@@ -274,6 +274,10 @@ XFEM::update(Real time, NonlinearSystemBase & nl, AuxiliarySystem & aux)
 
   storeCrackTipOriginAndDirection();
 
+  std::cout << "~~~~~~~~~~" << std::endl;
+  std::cout << "time: " << time << std::endl;
+  std::cout << "~~~~~~~~~~" << std::endl;
+
   if (markCuts(time))
     mesh_changed = cutMeshWithEFA(nl, aux);
 
@@ -398,6 +402,9 @@ XFEM::markCutEdgesByGeometry()
 
   for (const auto & gme : _geom_marked_elems_2d)
   {
+    std::cout << "=====================" << std::endl;
+    std::cout << "_geom_marked_elems_2d" << std::endl;
+    std::cout << "=====================" << std::endl;
     for (const auto & gmei : gme.second)
     {
       EFAElement2D * EFAElem = getEFAElem2D(gme.first);
@@ -591,6 +598,7 @@ XFEM::markCutEdgesByState(Real time)
        pmeit != _state_marked_elems.end();
        ++pmeit)
   {
+    std::cout << "_state_marked_elems +1" << std::endl;
     const Elem * elem = pmeit->first;
     RealVectorValue normal = pmeit->second;
     EFAElement2D * CEMElem = getEFAElem2D(elem);
@@ -789,6 +797,10 @@ XFEM::markCutEdgesByState(Real time)
         Real x1 = x0 + _crack_growth_increment * growth_direction(0);
         Real y1 = y0 + _crack_growth_increment * growth_direction(1);
 
+        std::cout << "crack location" << std::endl;
+        std::cout << x0 << ", " << y0 << std::endl;
+        std::cout << x1 << ", " << y1 << std::endl;
+
         XFEMCrackGrowthIncrement2DCut geometric_cut(x0, y0, x1, y1, time * 0.9, time * 0.9);
 
         for (const auto & elem : _mesh->element_ptr_range())
@@ -854,6 +866,10 @@ XFEM::markCutFacesByGeometry()
 
   for (const auto & gme : _geom_marked_elems_3d)
   {
+    std::cout << "=====================" << std::endl;
+    std::cout << "_geom_marked_elems_3d" << std::endl;
+    std::cout << "=====================" << std::endl;
+
     for (const auto & gmei : gme.second)
     {
       EFAElement3D * EFAElem = getEFAElem3D(gme.first);
@@ -1063,7 +1079,7 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
 
   _efa_mesh.updatePhysicalLinksAndFragments();
   // DEBUG
-  //_efa_mesh.printMesh();
+  _efa_mesh.printMesh();
 
   _efa_mesh.updateTopology();
   // DEBUG
@@ -1072,7 +1088,7 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
   const std::vector<EFANode *> new_nodes = _efa_mesh.getNewNodes();
   const std::vector<EFAElement *> new_elements = _efa_mesh.getChildElements();
   const std::vector<EFAElement *> delete_elements = _efa_mesh.getParentElements();
-
+  std::cout << new_nodes.size() << "========" << std::endl;
   bool mesh_changed = (new_nodes.size() + new_elements.size() + delete_elements.size() > 0);
 
   // Prepare to cache solution on DOFs modified by XFEM
@@ -1358,6 +1374,7 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
   for (std::size_t i = 0; i < delete_elements.size(); ++i)
   {
     Elem * elem_to_delete = _mesh->elem(delete_elements[i]->id());
+    std::cout << "delete: " << delete_elements[i]->id() << std::endl;
 
     // delete the XFEMCutElem object for any elements that are to be deleted
     std::map<unique_id_type, XFEMCutElem *>::iterator cemit =

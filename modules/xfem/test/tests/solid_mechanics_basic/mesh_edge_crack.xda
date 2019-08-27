@@ -1,7 +1,7 @@
 libMesh-0.7.0+
 4	 # number of elements
 6	 # number of nodes
-n/a	 # boundary condition specification file 
+n/a	 # boundary condition specification file
 n/a	 # subdomain id specification file
 n/a	 # processor id specification file
 n/a	 # p-level specification file
@@ -10,9 +10,9 @@ n/a	 # p-level specification file
 3 0 5 3
 3 4 1 2
 3 4 2 5
--0.001 0.5 -0.001
-0.401 0.5 -0.001
-0.401 0.5  0.201
--0.001 0.5  0.201
-0.21 0.5 -0.001
-0.21 0.5 0.201
+-0.001 1.5 -0.001
+1.001 1.5 -0.001
+1.001 1.5  1.001
+-0.001 1.5  1.001
+0.51 1.5 -0.001
+0.51 1.5 1.001

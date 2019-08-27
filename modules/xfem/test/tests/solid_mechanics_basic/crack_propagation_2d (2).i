@@ -7,25 +7,25 @@
   qrule = volfrac
   output_cut_plane = true
   use_crack_growth_increment = true
-  crack_growth_increment = 1.0
+  crack_growth_increment = 0.1
 []
 
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 3
-  ny = 3
+  nx = 11
+  ny = 11
   xmin = 0.0
-  xmax = 3.0
+  xmax = 1.0
   ymin = 0.0
-  ymax = 3.0
+  ymax = 1.0
   elem_type = QUAD4
 []
 
 [UserObjects]
   [./line_seg_cut_uo]
     type = LineSegmentCutUserObject
-    cut_data = '0.0  1.5  1.0  1.5'
+    cut_data = '1.0  0.5  0.8  0.5'
     time_start_cut = 0.0
     time_end_cut = 0.0
   [../]
@@ -122,7 +122,7 @@
 # time control
   start_time = 0.0
   dt = 1.0
-  end_time = 2.0
+  end_time = 5.0
   num_steps = 5000
 
   max_xfem_update = 1

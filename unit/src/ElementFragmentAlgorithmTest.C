@@ -1204,4 +1204,7 @@ TEST(ElementFragmentAlgorithm, test6b)
   std::set<unsigned int> cte_gold;
   cte_gold.insert(cte, cte + 2);
   CheckElements(crack_tip_elem, cte_gold);
+
+  std::cout<<"123";
+  std::cin.get();
 }

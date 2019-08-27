@@ -50,6 +50,7 @@ MeshCut3DUserObject::MeshCut3DUserObject(const InputParameters & parameters)
     _func_z(getFunction("function_z"))
 {
   _grow = (_n_step_growth == 0 ? 0 : 1);
+  _n_timestep = 0;
 
   if (_grow)
   {
@@ -77,35 +78,111 @@ MeshCut3DUserObject::MeshCut3DUserObject(const InputParameters & parameters)
 void
 MeshCut3DUserObject::initialize()
 {
+  // 2019
+  std::cout << "~~~~~~~~~~~~~~~ Cutter Mesh Update ~~~~~~~~~~~~" << "\n";
+  std::ofstream myfile;
+  myfile.open("mesh_grow.out", std::fstream::app);
+  myfile << _cut_mesh->n_nodes() << std::endl;
+  myfile << _cut_mesh->n_elem() << std::endl;
+  auto node_begin = _cut_mesh->nodes_begin();
+  auto node_end = _cut_mesh->nodes_end();
+  auto node_it = node_begin;
+  for (; node_it != node_end; ++node_it)
+  {
+    Node * cutnode = *node_it;
+    Point & this_point = *cutnode;
+    myfile << this_point(0) << " " << this_point(1) << " " << this_point(2) << " " << std::endl;
+  }
+  auto elem_begin2 = _cut_mesh->elements_begin();
+  auto elem_end2 = _cut_mesh->elements_end();
+  auto elem_it2 = elem_begin2;
+  for (; elem_it2 != elem_end2; ++elem_it2)
+  {
+    Elem * cut_elem = *elem_it2;
+    std::vector<unsigned int> tri;
+    for (unsigned int i = 0; i < cut_elem->n_nodes(); ++i)
+    {
+      tri.push_back(cut_elem->node_ptr(i)->id());
+    }
+    myfile << tri[0] << " " << tri[1] << " " << tri[2] << std::endl;
+  }
+
+
+
+  std::cout << "2019 time step is: " << _n_timestep << std::endl;
+
   // this is a test of all methods relevant to front growth
   if (_grow)
   {
     _stop = 0;
 
-    findBoundaryNodes();
-    findBoundaryEdges();
-    sortBoundaryNodes();
-    refineBoundary();
-
-    for (unsigned int i = 0; i < _n_step_growth; ++i)
+    if (_n_timestep == 0)
     {
-      findActiveBoundaryNodes();
+      findBoundaryNodes();
+      findBoundaryEdges();
+      sortBoundaryNodes();
+      refineBoundary();
+    }
 
-      if (_stop != 1)
+    if (_n_timestep > 1)
+    {
+      for (unsigned int i = 0; i < _n_step_growth; ++i)
       {
-        findActiveBoundaryDirection();
-        growFront();
-        sortFrontNodes();
+        findActiveBoundaryNodes();
 
-        if (_inactive_boundary_pos.size() != 0)
-          findFrontIntersection();
+        if (_stop != 1)
+        {
+          findActiveBoundaryDirection();
+          growFront();
+          std::cout << "~~~~ I am growing the mesh" << std::endl;
+          std::cout << "" << std::endl;
+          std::cout << "" << std::endl;
+          std::cout << "From cutElementByGeometry:" << std::endl;
+          sortFrontNodes();
 
-        refineFront();
-        triangulation();
-        joinBoundary();
+          if (_inactive_boundary_pos.size() != 0)
+            findFrontIntersection();
+
+          refineFront();
+          triangulation();
+          joinBoundary();
+        }
       }
     }
   }
+
+  _n_timestep++;
+
+
+
+
+  // 2019
+  myfile << _cut_mesh->n_nodes() << std::endl;
+  myfile << _cut_mesh->n_elem() << std::endl;
+  node_begin = _cut_mesh->nodes_begin();
+  node_end = _cut_mesh->nodes_end();
+  node_it = node_begin;
+  for (; node_it != node_end; ++node_it)
+  {
+    Node * cutnode = *node_it;
+    Point & this_point = *cutnode;
+    myfile << this_point(0) << " " << this_point(1) << " " << this_point(2) << " " << std::endl;
+  }
+  elem_begin2 = _cut_mesh->elements_begin();
+  elem_end2 = _cut_mesh->elements_end();
+  elem_it2 = elem_begin2;
+  for (; elem_it2 != elem_end2; ++elem_it2)
+  {
+    Elem * cut_elem = *elem_it2;
+    std::vector<unsigned int> tri;
+    for (unsigned int i = 0; i < cut_elem->n_nodes(); ++i)
+    {
+      tri.push_back(cut_elem->node_ptr(i)->id());
+    }
+    myfile << tri[0] << " " << tri[1] << " " << tri[2] << std::endl;
+  }
+  myfile.close();
+
 }
 
 bool
@@ -177,6 +254,7 @@ MeshCut3DUserObject::cutElementByGeometry(const Elem * elem,
     // if two edges of an element are cut, it is considered as an element being cut
     if (cut_edges.size() == 2)
     {
+      std::cout << "Element Face Being Cut: " << elem->id() << std::endl;
       elem_cut = true;
       Xfem::CutFace mycut;
       mycut._face_id = i;
@@ -535,6 +613,11 @@ MeshCut3DUserObject::sortBoundaryNodes()
     else
       mooseError("Discontinuity in cutter boundary");
   }
+  // 2019
+  std::cout << "initial boundary: ";
+  for (std::vector<dof_id_type>::const_iterator i = _boundary.begin(); i != _boundary.end(); ++i)
+      std::cout << *i << " ";
+  std::cout << '\n';
 }
 
 Real
@@ -600,6 +683,11 @@ MeshCut3DUserObject::refineBoundary()
   _boundary = new_boundary_order;
   mooseAssert(_boundary.size() > 0, "Boundary should not have zero size");
   _boundary.pop_back();
+  // 2019
+  std::cout << "refined boundary: ";
+  for (std::vector<dof_id_type>::const_iterator i = _boundary.begin(); i != _boundary.end(); ++i)
+      std::cout << *i << " ";
+  std::cout << '\n';
 }
 
 void
@@ -660,6 +748,11 @@ MeshCut3DUserObject::findActiveBoundaryNodes()
       _active_boundary.push_back(temp);
     }
   }
+  // 2019
+  std::cout << "active boundary: ";
+  for (std::vector<dof_id_type>::const_iterator i = _active_boundary[0].begin(); i != _active_boundary[0].end(); ++i)
+      std::cout << *i << " ";
+  std::cout << '\n';
 }
 
 void
@@ -755,7 +848,7 @@ MeshCut3DUserObject::growFront()
 
       Point x;
       for (unsigned int k = 0; k < LIBMESH_DIM; ++k)
-        x(k) = this_point(k) + dir(k) * _size_control;
+        x(k) = this_point(k) + dir(k) * _size_control * 2;
 
       this_node = Node::build(x, _cut_mesh->n_nodes()).release();
       _cut_mesh->add_node(this_node);

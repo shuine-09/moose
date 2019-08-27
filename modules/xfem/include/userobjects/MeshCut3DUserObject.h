@@ -71,6 +71,8 @@ protected:
   /// Number of steps to grow the mesh
   unsigned int _n_step_growth;
 
+  unsigned int _n_timestep;
+
   /// variables to help control the work flow
   bool _stop;
   bool _grow;

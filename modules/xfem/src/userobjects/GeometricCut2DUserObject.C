@@ -78,6 +78,7 @@ GeometricCut2DUserObject::cutElementByGeometry(const Elem * elem,
             mycut._distance = seg_int_frac;
             mycut._host_side_id = i;
             cut_edges.push_back(mycut);
+            std::cout << "Element Edge Being Cut: " << elem->id() << ", " << i << std::endl;
           }
           else if (seg_int_frac < Xfem::tol)
           {
