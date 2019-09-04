@@ -668,9 +668,15 @@ EFAElement3D::shouldDuplicateForCrackTip(const std::set<EFAElement *> & CrackTip
     std::set<EFAElement *>::iterator sit;
     sit = CrackTipElements.find(this);
     if (sit == CrackTipElements.end() && isCrackTipElement())
+    {
+      std::cout << "id = " << this->id() << ", crack tip is isCrackTipElement " << std::endl;
       should_duplicate = true;
+    }
     else if (shouldDuplicateCrackTipSplitElement(CrackTipElements))
+    {
       should_duplicate = true;
+      std::cout << "id = " << this->id() << ", crack tip is isCrackTipSplitElement " << std::endl;
+    }
     else if (shouldDuplicateForPhantomCorner())
       should_duplicate = true;
   }
@@ -776,9 +782,13 @@ EFAElement3D::willCrackTipExtend(std::vector<unsigned int> & split_neighbors) co
   bool will_extend = false;
   if (_fragments.size() == 1 && _crack_tip_split_element)
   {
+    std::cout << "EFAElement3D::willCrackTipExtend" << std::endl;
+    std::cout << "id = " << this->id() << std::endl;
+    std::cout << "_crack_tip_neighbors.size() = " << _crack_tip_neighbors.size() << std::endl;
     for (unsigned int i = 0; i < _crack_tip_neighbors.size(); ++i)
     {
       unsigned int neigh_idx = _crack_tip_neighbors[i]; // essentially a face_id
+      std::cout << "neigh_idx = " << neigh_idx << std::endl;
       if (numFaceNeighbors(neigh_idx) != 1)
         EFAError("in will_crack_tip_extend() element ",
                  _id,
@@ -788,6 +798,8 @@ EFAElement3D::willCrackTipExtend(std::vector<unsigned int> & split_neighbors) co
                  neigh_idx);
 
       EFAElement3D * neighbor_elem = _face_neighbors[neigh_idx][0];
+      std::cout << "neighbor_elem id = " << neighbor_elem->id() << std::endl;
+      std::cout << "num frag = " << neighbor_elem->numFragments() << std::endl;
       if (neighbor_elem->numFragments() > 2)
       {
         EFAError("in will_crack_tip_extend() element ",
@@ -798,6 +810,7 @@ EFAElement3D::willCrackTipExtend(std::vector<unsigned int> & split_neighbors) co
       }
       else if (neighbor_elem->numFragments() == 2)
       {
+        std::cout << "neighbor_elem->numFragments() == 2" << std::endl;
         EFAFragment3D * neigh_frag1 = neighbor_elem->getFragment(0);
         EFAFragment3D * neigh_frag2 = neighbor_elem->getFragment(1);
         std::vector<EFANode *> neigh_cut_nodes = neigh_frag1->getCommonNodes(neigh_frag2);
@@ -900,7 +913,8 @@ EFAElement3D::updateFragments(const std::set<EFAElement *> & CrackTipElements,
 
   // split one fragment into one or two new fragments
   std::vector<EFAFragment3D *> new_frags = _fragments[0]->split();
-  std::cout << "        == split 3d: _fragments[0]->split(), size: " << new_frags.size() << std::endl;
+  std::cout << "        == split 3d: _fragments[0]->split(), size: " << new_frags.size()
+            << std::endl;
 
   if (new_frags.size() == 1 || new_frags.size() == 2)
   {
@@ -987,7 +1001,8 @@ EFAElement3D::createChild(const std::set<EFAElement *> & CrackTipElements,
   if (_children.size() != 0)
     EFAError("Element cannot have existing children in createChildElements");
 
-  std::cout << _fragments.size() << ", " << shouldDuplicateForCrackTip(CrackTipElements) << std::endl;
+  std::cout << _fragments.size() << ", " << shouldDuplicateForCrackTip(CrackTipElements)
+            << std::endl;
   if (_fragments.size() > 1 || shouldDuplicateForCrackTip(CrackTipElements))
   {
     if (_fragments.size() > 2)
@@ -1172,7 +1187,8 @@ EFAElement3D::connectNeighbors(std::map<unsigned int, EFANode *> & PermanentNode
           if (!childOfNeighborElem)
             EFAError("dynamic cast childOfNeighborElem fails");
 
-          // Check to see if the nodes are already merged.  There's nothing else to do in that case.
+          // Check to see if the nodes are already merged.  There's nothing else to do in that
+          // case.
           EFAFace * neighborChildFace = childOfNeighborElem->getFace(neighbor_face_id);
           if (_faces[j]->equivalent(neighborChildFace))
             continue;
@@ -1261,8 +1277,8 @@ EFAElement3D::connectNeighbors(std::map<unsigned int, EFANode *> & PermanentNode
     if (childNode->category() == EFANode::N_CATEGORY_TEMP)
     {
       // if current child element does not have siblings, and if current temp node is a lone one
-      // this temp node should be merged back to its parent permanent node. Otherwise we would have
-      // permanent nodes that are not connected to any element
+      // this temp node should be merged back to its parent permanent node. Otherwise we would
+      // have permanent nodes that are not connected to any element
       std::set<EFAElement *> patch_elems = InverseConnectivityMap[childNode->parent()];
       if (parent3d->numFragments() == 1 && patch_elems.size() == 1)
         switchNode(childNode->parent(), childNode, false);
@@ -1803,6 +1819,8 @@ EFAElement3D::isPhysicalEdgeCut(unsigned int ElemFaceID,
   }
   else if (getFragmentFaceEdgeID(ElemFaceID, ElemFaceEdgeID, FragFaceID, FragFaceEdgeID))
   {
+    std::cout << "Fragment cut" << std::endl;
+
     EFAEdge * elem_edge = _faces[ElemFaceID]->getEdge(ElemFaceEdgeID);
     EFAEdge * frag_edge = getFragmentFace(0, FragFaceID)->getEdge(FragFaceEdgeID);
     double xi[2] = {-1.0, -1.0}; // relative coords of two frag edge nodes
@@ -2004,7 +2022,9 @@ EFAElement3D::addFaceEdgeCut(unsigned int face_id,
                              bool add_to_neighbor,
                              bool add_to_adjacent)
 {
-  std::cout << "        before addFaceEdgeCut: face, edge: " << face_id << ", " << edge_id << " ,inter: " << _faces[face_id]->getEdge(edge_id)->hasIntersection() << ", embed: " << _faces[face_id]->getEdge(edge_id)->numEmbeddedNodes() << std::endl;
+  std::cout << "        before addFaceEdgeCut: face, edge: " << face_id << ", " << edge_id
+            << " ,inter: " << _faces[face_id]->getEdge(edge_id)->hasIntersection()
+            << ", embed: " << _faces[face_id]->getEdge(edge_id)->numEmbeddedNodes() << std::endl;
 
   // Purpose: add intersection on Edge edge_id of Face face_id
   EFANode * local_embedded = NULL;
@@ -2037,6 +2057,11 @@ EFAElement3D::addFaceEdgeCut(unsigned int face_id,
     cut_exist = true;
   }
 
+  std::cout << "id = " << this->id() << ", face id = " << face_id << ", edge id = " << edge_id
+            << ", position = " << position
+            << ", isPhysicalEdgeCut = " << isPhysicalEdgeCut(face_id, edge_id, position)
+            << std::endl;
+
   if (!cut_exist && !fragmentFaceAlreadyCut(face_id) &&
       isPhysicalEdgeCut(face_id, edge_id, position))
   {
@@ -2056,6 +2081,21 @@ EFAElement3D::addFaceEdgeCut(unsigned int face_id,
     cut_edge->addIntersection(position, local_embedded, edge_node1);
     if (cut_edge->numEmbeddedNodes() > 2)
       EFAError("element edge can't have >2 embedded nodes");
+
+    unsigned int FragFaceID = 99999, FragFaceEdgeID = 99999;
+    if (getFragmentFaceEdgeID(face_id, edge_id, FragFaceID, FragFaceEdgeID))
+    {
+      EFAEdge * elem_edge = _faces[face_id]->getEdge(edge_id);
+      EFAEdge * frag_edge = getFragmentFace(0, FragFaceID)->getEdge(FragFaceEdgeID);
+      double xi[2] = {-1.0, -1.0}; // relative coords of two frag edge nodes
+      xi[0] = elem_edge->distanceFromNode1(frag_edge->getNode(0));
+      xi[1] = elem_edge->distanceFromNode1(frag_edge->getNode(1));
+      double frag_pos = (position - xi[0]) / (xi[1] - xi[0]);
+      EFANode * frag_edge_node1 = frag_edge->getNode(0);
+
+      if (!frag_edge->hasIntersection())
+        frag_edge->addIntersection(frag_pos, local_embedded, frag_edge_node1);
+    }
 
     // add to adjacent face edge
     if (add_to_adjacent)
@@ -2103,7 +2143,9 @@ EFAElement3D::addFaceEdgeCut(unsigned int face_id,
     }
   } // If add_to_neighbor required
 
-  std::cout << "        after  addFaceEdgeCut: face, edge: " << face_id << ", " << edge_id << " ,inter: " << _faces[face_id]->getEdge(edge_id)->hasIntersection() << ", embed: " << _faces[face_id]->getEdge(edge_id)->numEmbeddedNodes() << std::endl;
+  std::cout << "        after  addFaceEdgeCut: face, edge: " << face_id << ", " << edge_id
+            << " ,inter: " << _faces[face_id]->getEdge(edge_id)->hasIntersection()
+            << ", embed: " << _faces[face_id]->getEdge(edge_id)->numEmbeddedNodes() << std::endl;
 }
 
 void

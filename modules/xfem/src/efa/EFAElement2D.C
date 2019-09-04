@@ -626,9 +626,15 @@ EFAElement2D::shouldDuplicateForCrackTip(const std::set<EFAElement *> & CrackTip
     std::set<EFAElement *>::iterator sit;
     sit = CrackTipElements.find(this);
     if (sit == CrackTipElements.end() && isCrackTipElement())
+    {
+      std::cout << "id = " << this->id() << ", crack tip is isCrackTipElement " << std::endl;
       should_duplicate = true;
+    }
     else if (shouldDuplicateCrackTipSplitElement(CrackTipElements))
+    {
+      std::cout << "id = " << this->id() << ", crack tip is isCrackTipSplitElement " << std::endl;
       should_duplicate = true;
+    }
     else if (shouldDuplicateForPhantomCorner())
       should_duplicate = true;
   }
@@ -647,7 +653,10 @@ EFAElement2D::shouldDuplicateCrackTipSplitElement(const std::set<EFAElement *> &
   {
     std::vector<unsigned int> split_neighbors;
     if (willCrackTipExtend(split_neighbors))
+    {
+      std::cout << "willCrackTipExtend" << std::endl;
       should_duplicate = true;
+    }
     else
     {
       // The element may not be at the crack tip, but could have a non-physical node
@@ -673,6 +682,7 @@ EFAElement2D::shouldDuplicateCrackTipSplitElement(const std::set<EFAElement *> &
             if (neigh_elem->numEdgeNeighbors(i) == 2 &&
                 Efa::numCommonElems(neigh_edge_nodes, non_physical_nodes) > 0)
             {
+              std::cout << "should_duplicate = true" << std::endl;
               should_duplicate = true;
               break;
             }
@@ -734,9 +744,13 @@ EFAElement2D::willCrackTipExtend(std::vector<unsigned int> & split_neighbors) co
   bool will_extend = false;
   if (_fragments.size() == 1 && _crack_tip_split_element)
   {
+    std::cout << "EFAElement2D::willCrackTipExtend" << std::endl;
+    std::cout << "id = " << this->id() << std::endl;
+    std::cout << "_crack_tip_neighbors.size() = " << _crack_tip_neighbors.size() << std::endl;
     for (unsigned int i = 0; i < _crack_tip_neighbors.size(); ++i)
     {
       unsigned int neigh_idx = _crack_tip_neighbors[i];
+      std::cout << "neigh_idx = " << neigh_idx << std::endl;
       if (numEdgeNeighbors(neigh_idx) != 1)
         EFAError("in will_crack_tip_extend() element: ",
                  _id,
@@ -746,6 +760,8 @@ EFAElement2D::willCrackTipExtend(std::vector<unsigned int> & split_neighbors) co
                  neigh_idx);
 
       EFAElement2D * neighbor_elem = _edge_neighbors[neigh_idx][0];
+      std::cout << "neighbor_elem id = " << neighbor_elem->id() << std::endl;
+      std::cout << "num frag = " << neighbor_elem->numFragments() << std::endl;
       if (neighbor_elem->numFragments() > 2)
         EFAError("in will_crack_tip_extend() element: ",
                  neighbor_elem->id(),
@@ -754,6 +770,7 @@ EFAElement2D::willCrackTipExtend(std::vector<unsigned int> & split_neighbors) co
                  " fragments");
       else if (neighbor_elem->numFragments() == 2)
       {
+        std::cout << "neighbor_elem->numFragments() == 2" << std::endl;
         EFAFragment2D * frag1 = neighbor_elem->getFragment(0);
         EFAFragment2D * frag2 = neighbor_elem->getFragment(1);
         std::vector<EFANode *> neigh_cut_nodes = frag1->getCommonNodes(frag2);
@@ -858,10 +875,11 @@ EFAElement2D::updateFragments(const std::set<EFAElement *> & CrackTipElements,
   if (num_cut_frag_edges == 3)
     new_frags = branchingSplit(EmbeddedNodes);
   else
-    {
-      new_frags = _fragments[0]->split();
-      std::cout << "        == split 2d: _fragments[0]->split(), size: " << new_frags.size() << std::endl;
-    }
+  {
+    new_frags = _fragments[0]->split();
+    std::cout << "        == split 2d: _fragments[0]->split(), size: " << new_frags.size()
+              << std::endl;
+  }
 
   delete _fragments[0]; // delete the old fragment
   _fragments.clear();
@@ -1003,7 +1021,8 @@ EFAElement2D::createChild(const std::set<EFAElement *> & CrackTipElements,
       shouldDuplicateForCutNodeElement = true;
   }
 
-  std::cout << _fragments.size() << ", " << shouldDuplicateForCrackTip(CrackTipElements) << ", " << shouldDuplicateForCutNodeElement << std::endl;
+  std::cout << _fragments.size() << ", " << shouldDuplicateForCrackTip(CrackTipElements) << ", "
+            << shouldDuplicateForCutNodeElement << std::endl;
   if (_fragments.size() > 1 || shouldDuplicateForCrackTip(CrackTipElements) ||
       shouldDuplicateForCutNodeElement)
   {
@@ -1720,7 +1739,8 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
                          std::map<unsigned int, EFANode *> & EmbeddedNodes,
                          bool add_to_neighbor)
 {
-  std::cout << "before addEdgeCut: inter: " << _edges[edge_id]->hasIntersection() << ", embed: " << _edges[edge_id]->numEmbeddedNodes() << std::endl;
+  std::cout << "before addEdgeCut: inter: " << _edges[edge_id]->hasIntersection()
+            << ", embed: " << _edges[edge_id]->numEmbeddedNodes() << std::endl;
 
   EFANode * local_embedded = NULL;
   EFANode * edge_node1 = _edges[edge_id]->getNode(0);
@@ -1760,6 +1780,7 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
       frag_edge = getFragmentEdge(0, frag_edge_id);
       if (!fragmentEdgeAlreadyCut(edge_id))
       {
+        std::cout << "edge id = " << edge_id << std::endl;
         double xi[2] = {-1.0, -1.0}; // relative coords of two frag edge nodes
         xi[0] = _edges[edge_id]->distanceFromNode1(frag_edge->getNode(0));
         xi[1] = _edges[edge_id]->distanceFromNode1(frag_edge->getNode(1));
@@ -1785,6 +1806,7 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
     // add to elem edge (IMPORTANT to do it AFTER the above fragment check)
     if (add2elem)
     {
+      std::cout << "add2elem : elem id = " << this->id() << ", edge id = " << edge_id << std::endl;
       if (!local_embedded) // need to create new embedded node
       {
         unsigned int new_node_id = Efa::getNewID(EmbeddedNodes);
@@ -1800,7 +1822,9 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
     // add to frag edge
     if (add2frag)
     {
+      std::cout << "add2frag : elem id = " << this->id() << ", edge id = " << edge_id << std::endl;
       std::cout << "    addEdgeCut -> add2elem & add2frag: " << std::endl;
+      std::cout << "id = " << this->id() << std::endl;
       frag_edge->addIntersection(frag_pos, local_embedded, frag_edge_node1);
       if (frag_edge->numEmbeddedNodes() > 1)
         EFAError("fragment edge can't have >1 embedded nodes");
@@ -1816,10 +1840,13 @@ EFAElement2D::addEdgeCut(unsigned int edge_id,
       if (edge_neighbor->getEdge(neighbor_edge_id)->getNode(0) == edge_node1) // same direction
         EFAError("neighbor edge has the same direction as this edge");
       double neigh_pos = 1.0 - position; // get emb node's postion on neighbor edge
+      std::cout << "add edge neighbor before" << std::endl;
       edge_neighbor->addEdgeCut(neighbor_edge_id, neigh_pos, local_embedded, EmbeddedNodes, false);
+      std::cout << "add edge neighbor end" << std::endl;
     }
   } // If add_to_neighbor required
-  std::cout << "after  addEdgeCut: inter: " << _edges[edge_id]->hasIntersection() << ", embed: " << _edges[edge_id]->numEmbeddedNodes() << std::endl;
+  std::cout << "after  addEdgeCut: inter: " << _edges[edge_id]->hasIntersection()
+            << ", embed: " << _edges[edge_id]->numEmbeddedNodes() << std::endl;
 }
 
 void

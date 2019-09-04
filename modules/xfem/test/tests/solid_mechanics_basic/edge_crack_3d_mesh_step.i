@@ -13,13 +13,13 @@
 [Mesh]
   type = GeneratedMesh
   dim = 3
-  nx = 3
-  ny = 3
-  nz = 1
+  nx = 5
+  ny = 5
+  nz = 2
   xmin = 0.0
-  xmax = 3.0
+  xmax = 3
   ymin = 0.0
-  ymax = 3.0
+  ymax = 3
   zmin = 0.0
   zmax = 1.0
   elem_type = HEX8
@@ -183,8 +183,11 @@
   type = Transient
 
   solve_type = 'PJFNK'
-  petsc_options_iname = '-ksp_gmres_restart -pc_type -pc_hypre_type -pc_hypre_boomeramg_max_iter'
-  petsc_options_value = '201                hypre    boomeramg      8'
+  # petsc_options_iname = '-ksp_gmres_restart -pc_type -pc_hypre_type -pc_hypre_boomeramg_max_iter'
+  # petsc_options_value = '201                hypre    boomeramg      8'
+
+  petsc_options_iname = '-pc_type'
+  petsc_options_value = 'lu'
 
   line_search = 'none'
 
@@ -197,10 +200,12 @@
   l_max_its = 100
   l_tol = 1e-2
 
+
+
 # controls for nonlinear iterations
   nl_max_its = 15
-  nl_rel_tol = 1e-12
-  nl_abs_tol = 1e-10
+  nl_rel_tol = 1e-8
+  nl_abs_tol = 1e-8
 
 # time control
   start_time = 0.0
