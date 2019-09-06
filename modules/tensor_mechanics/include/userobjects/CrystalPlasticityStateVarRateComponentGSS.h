@@ -26,7 +26,8 @@ public:
   CrystalPlasticityStateVarRateComponentGSS(const InputParameters & parameters);
 
   virtual bool calcStateVariableEvolutionRateComponent(unsigned int qp,
-                                                       std::vector<Real> & val, Real factor = 1.0) const;
+                                                       std::vector<Real> & val,
+                                                       Real factor = 1.0) const;
 
 protected:
   const MaterialProperty<std::vector<Real>> & _mat_prop_slip_rate;
@@ -36,6 +37,8 @@ protected:
   FileName _slip_sys_hard_prop_file_name;
 
   std::vector<Real> _hprops;
+  const Real _Hall_Petch_const;
+  const Real _grain_size;
 };
 
 #endif // CRYSTALPLASTICITYSTATEVARRATECOMPONENTGSS_H

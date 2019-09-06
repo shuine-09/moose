@@ -297,7 +297,7 @@ FiniteStrainUObasedCPPF::computeQpStress()
         break;
       }
     }
-    if (substep_iter > _max_substep_iter && _err_tol)
+    if (substep_iter > _max_substep_iter && _err_tol && _fe_problem.getNonlinearSystemBase().getCurrentNonlinearIterationNumber() > 0)
       throw MooseException("FiniteStrainUObasedCPPF: Constitutive failure.");
   } while (_err_tol);
 

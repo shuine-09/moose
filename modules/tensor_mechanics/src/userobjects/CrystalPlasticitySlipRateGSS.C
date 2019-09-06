@@ -199,13 +199,13 @@ CrystalPlasticitySlipRateGSS::calcPlasticWork(unsigned int qp, Real dt) const
 
   Real plastic_work = 0.0;
 
-  std::vector<Real> eigval;
-  RankTwoTensor eigvec;
-  RankFourTensor Ppos = _pk2[qp].positiveProjectionEigenDecomposition(eigval, eigvec);
-  RankTwoTensor pk2_pos = Ppos * _pk2[qp];
+  //std::vector<Real> eigval;
+  //RankTwoTensor eigvec;
+  //RankFourTensor Ppos = _pk2[qp].positiveProjectionEigenDecomposition(eigval, eigvec);
+  //RankTwoTensor pk2_pos = Ppos * _pk2[qp];
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    tau(i) = pk2_pos.doubleContraction(_flow_direction[qp][i]);
+    tau(i) = _pk2[qp].doubleContraction(_flow_direction[qp][i]);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {

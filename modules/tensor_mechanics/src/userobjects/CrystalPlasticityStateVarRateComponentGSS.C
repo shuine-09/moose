@@ -31,6 +31,9 @@ validParams<CrystalPlasticityStateVarRateComponentGSS>()
   params.addParam<std::vector<Real>>("hprops", "Hardening properties");
   params.addClassDescription("Phenomenological constitutive model state variable evolution rate "
                              "component base class.  Override the virtual functions in your class");
+  params.addParam<Real>("Hall_Petch_const", 0, "Hall_Petch_const");
+  params.addParam<Real>("grain_size", 1, "Grain size");
+
   return params;
 }
 
@@ -42,7 +45,9 @@ CrystalPlasticityStateVarRateComponentGSS::CrystalPlasticityStateVarRateComponen
     _mat_prop_state_var(
         getMaterialProperty<std::vector<Real>>(parameters.get<std::string>("uo_state_var_name"))),
     _slip_sys_hard_prop_file_name(getParam<FileName>("slip_sys_hard_prop_file_name")),
-    _hprops(getParam<std::vector<Real>>("hprops"))
+    _hprops(getParam<std::vector<Real>>("hprops")),
+    _Hall_Petch_const(getParam<Real>("Hall_Petch_const")),
+    _grain_size(getParam<Real>("grain_size"))
 {
 }
 
@@ -53,7 +58,7 @@ CrystalPlasticityStateVarRateComponentGSS::calcStateVariableEvolutionRateCompone
   val.assign(_variable_size, 0.0);
 
   Real r = _hprops[0];
-  Real h0 = _hprops[1];
+  Real h0 = _hprops[1] + _Hall_Petch_const / std::sqrt(_grain_size);
   Real tau_sat = _hprops[2];
 
   DenseVector<Real> hb(_variable_size);
@@ -62,7 +67,7 @@ CrystalPlasticityStateVarRateComponentGSS::calcStateVariableEvolutionRateCompone
 
   for (unsigned int i = 0; i < _variable_size; ++i)
     hb(i) = h0 * std::pow(std::abs(1.0 - factor * _mat_prop_state_var[qp][i] / tau_sat), a) *
-            std::copysign(1.0, 1.0 - factor *_mat_prop_state_var[qp][i] / tau_sat);
+            std::copysign(1.0, 1.0 - factor * _mat_prop_state_var[qp][i] / tau_sat);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
     for (unsigned int j = 0; j < _variable_size; ++j)
