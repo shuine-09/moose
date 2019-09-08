@@ -21,6 +21,8 @@ validParams<ComputePolycrystalElasticityTensor>()
       "Compute an evolving elasticity tensor coupled to a grain growth phase field model.");
   params.addRequiredParam<UserObjectName>(
       "grain_tracker", "Name of GrainTracker user object that provides RankFourTensors");
+  params.addRequiredParam<UserObjectName>(
+      "grain_tracker_rotation", "Name of GrainTracker user object that provides RankFourTensors");
   params.addParam<Real>("length_scale", 1.0e-9, "Lengthscale of the problem, in meters");
   params.addParam<Real>("pressure_scale", 1.0e6, "Pressure scale of the problem, in pa");
   params.addRequiredCoupledVarWithAutoBuild(
@@ -34,10 +36,13 @@ ComputePolycrystalElasticityTensor::ComputePolycrystalElasticityTensor(
     _length_scale(getParam<Real>("length_scale")),
     _pressure_scale(getParam<Real>("pressure_scale")),
     _grain_tracker(getUserObject<GrainDataTracker<RankFourTensor>>("grain_tracker")),
+    _grain_tracker_rotation(
+        getUserObject<GrainDataTracker<RankTwoTensor>>("grain_tracker_rotation")),
     _op_num(coupledComponents("v")),
     _vals(_op_num),
     _D_elastic_tensor(_op_num),
-    _JtoeV(6.24150974e18)
+    _JtoeV(6.24150974e18),
+    _crysrot(declareProperty<RankTwoTensor>("crysrot"))
 {
   // Loop over variables (ops)
   for (MooseIndex(_op_num) op_index = 0; op_index < _op_num; ++op_index)
@@ -56,9 +61,11 @@ ComputePolycrystalElasticityTensor::computeQpElasticityTensor()
 {
   // Get list of active order parameters from grain tracker
   const auto & op_to_grains = _grain_tracker.getVarToFeatureVector(_current_elem->id());
+  const auto & op_to_grains2 = _grain_tracker_rotation.getVarToFeatureVector(_current_elem->id());
 
   // Calculate elasticity tensor
   _elasticity_tensor[_qp].zero();
+  _crysrot[_qp].zero();
   Real sum_h = 0.0;
   for (MooseIndex(op_to_grains) op_index = 0; op_index < op_to_grains.size(); ++op_index)
   {
@@ -96,4 +103,22 @@ ComputePolycrystalElasticityTensor::computeQpElasticityTensor()
     // Convert from XPa to eV/(xm)^3, where X is pressure scale and x is length scale;
     C_deriv *= _JtoeV * (_length_scale * _length_scale * _length_scale) * _pressure_scale;
   }
+
+  sum_h = 0.0;
+  for (MooseIndex(op_to_grains2) op_index = 0; op_index < op_to_grains2.size(); ++op_index)
+  {
+    auto grain_id = op_to_grains2[op_index];
+    if (grain_id == FeatureFloodCount::invalid_id)
+      continue;
+
+    // Interpolation factor for elasticity tensors
+    Real h = (1.0 + std::sin(libMesh::pi * ((*_vals[op_index])[_qp] - 0.5))) / 2.0;
+
+    // Sum all rotated elasticity tensors
+    _crysrot[_qp] += _grain_tracker_rotation.getData(grain_id) * h;
+    sum_h += h;
+  }
+
+  sum_h = std::max(sum_h, tol);
+  _crysrot[_qp] /= sum_h;
 }

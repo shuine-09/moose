@@ -7,8 +7,7 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef COMPUTEPOLYCRYSTALELASTICITYTENSOR_H
-#define COMPUTEPOLYCRYSTALELASTICITYTENSOR_H
+#pragma once
 
 #include "ComputeElasticityTensorBase.h"
 #include "GrainDataTracker.h"
@@ -37,6 +36,9 @@ protected:
   /// Grain tracker object
   const GrainDataTracker<RankFourTensor> & _grain_tracker;
 
+  /// Grain tracker object
+  const GrainDataTracker<RankTwoTensor> & _grain_tracker_rotation;
+
   /// Number of order parameters
   const unsigned int _op_num;
 
@@ -48,6 +50,7 @@ protected:
 
   /// Conversion factor from J to eV
   const Real _JtoeV;
-};
 
-#endif // COMPUTEPOLYCRYSTALELASTICITYTENSOR_H
+  /// Crystal Rotation Matrix
+  MaterialProperty<RankTwoTensor> & _crysrot;
+};
