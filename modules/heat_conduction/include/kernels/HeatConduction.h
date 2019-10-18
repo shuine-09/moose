@@ -35,9 +35,15 @@ protected:
 
   virtual Real computeQpJacobian();
 
+  virtual Real computeQpOffDiagJacobian(unsigned int jvar);
+
 private:
   const MaterialProperty<Real> & _diffusion_coefficient;
   const MaterialProperty<Real> * const _diffusion_coefficient_dT;
+  bool _coupled_to_damage;
+  const VariableValue & _c;
+  const unsigned int _c_var;
+  Real _kdamage;
 };
 
 #endif // HEATCONDUCTIONKERNEL_H

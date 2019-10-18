@@ -28,6 +28,9 @@ validParams<HeatConductionKernel>()
       "thermal_conductivity_dT",
       "Property name of the derivative of the diffusivity with respect "
       "to the variable (Default: thermal_conductivity_dT)");
+  params.addParam<bool>("coupled_to_damage", false, "Coupled to damage.");
+  params.addCoupledVar("c", "Phase field damage variable");
+  params.addParam<Real>("kdamage", 0.0, "Stiffness of damaged matrix");
   params.set<bool>("use_displaced_mesh") = true;
   return params;
 }
@@ -37,21 +40,48 @@ HeatConductionKernel::HeatConductionKernel(const InputParameters & parameters)
     _diffusion_coefficient(getMaterialProperty<Real>("diffusion_coefficient")),
     _diffusion_coefficient_dT(hasMaterialProperty<Real>("diffusion_coefficient_dT")
                                   ? &getMaterialProperty<Real>("diffusion_coefficient_dT")
-                                  : NULL)
+                                  : NULL),
+    _coupled_to_damage(getParam<bool>("coupled_to_damage")),
+    _c(coupledValue("c")),
+    _c_var(coupled("c")),
+    _kdamage(getParam<Real>("kdamage"))
 {
 }
 
 Real
 HeatConductionKernel::computeQpResidual()
 {
-  return _diffusion_coefficient[_qp] * Diffusion::computeQpResidual();
+  if (_coupled_to_damage)
+    return _diffusion_coefficient[_qp] *
+           ((1.0 - _c[_qp]) * (1.0 - _c[_qp]) * (1 - _kdamage) + _kdamage) *
+           Diffusion::computeQpResidual();
+  else
+    return _diffusion_coefficient[_qp] * Diffusion::computeQpResidual();
 }
 
 Real
 HeatConductionKernel::computeQpJacobian()
 {
   Real jac = _diffusion_coefficient[_qp] * Diffusion::computeQpJacobian();
+
+  if (_coupled_to_damage)
+    jac = _diffusion_coefficient[_qp] * Diffusion::computeQpJacobian() *
+          ((1.0 - _c[_qp]) * (1.0 - _c[_qp]) * (1 - _kdamage) + _kdamage);
+
   if (_diffusion_coefficient_dT)
     jac += (*_diffusion_coefficient_dT)[_qp] * _phi[_j][_qp] * Diffusion::computeQpResidual();
   return jac;
+}
+
+Real
+HeatConductionKernel::computeQpOffDiagJacobian(unsigned int jvar)
+{
+  if (_coupled_to_damage && jvar == _c_var)
+  {
+    return _diffusion_coefficient[_qp] * Diffusion::computeQpResidual() * (-2.0 * _phi[_j][_qp]) *
+           (1.0 - _c[_qp]) * (1 - _kdamage);
+  }
+
+  // Returns if coupled variable is not c (damage variable)
+  return 0.0;
 }
