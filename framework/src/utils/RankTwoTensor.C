@@ -580,6 +580,34 @@ RankTwoTensor::mixedProductIlJk(const RankTwoTensor & b) const
 }
 
 RankFourTensor
+RankTwoTensor::mixedProductkJli(const RankTwoTensor & b) const
+{
+  RankFourTensor result;
+
+  for (unsigned int i = 0; i < N; ++i)
+    for (unsigned int j = 0; j < N; ++j)
+      for (unsigned int k = 0; k < N; ++k)
+        for (unsigned int l = 0; l < N; ++l)
+          result(i, j, k, l) = (*this)(k, j) * b(l, i);
+
+  return result;
+}
+
+RankFourTensor
+RankTwoTensor::mixedProductJIkl(const RankTwoTensor & b) const
+{
+  RankFourTensor result;
+
+  for (unsigned int i = 0; i < N; ++i)
+    for (unsigned int j = 0; j < N; ++j)
+      for (unsigned int k = 0; k < N; ++k)
+        for (unsigned int l = 0; l < N; ++l)
+          result(i, j, k, l) = (*this)(j, i) * b(k, l);
+
+  return result;
+}
+
+RankFourTensor
 RankTwoTensor::mixedProductJkIl(const RankTwoTensor & b) const
 {
   RankFourTensor result;

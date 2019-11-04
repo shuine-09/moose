@@ -318,6 +318,8 @@ FiniteStrainUObasedCPCreep::preSolveQp()
 
   _pk2[_qp] = _pk2_old[_qp];
   _fp_old_inv = _fp_old[_qp].inverse();
+  _fe.zero();
+  _fe.addIa(1.0);
 }
 
 void
@@ -621,9 +623,14 @@ FiniteStrainUObasedCPCreep::calcResidual()
     for (unsigned int j = 0; j < _uo_slip_rates[i]->variableSize(); ++j)
       eqv_slip_incr += (*_flow_direction[i])[_qp][j] * (*_mat_prop_slip_rates[i])[_qp][j] * _dt;
 
-  // RankTwoTensor r = _fe.inverse() * (_stress_old[_qp].deviatoric()) * _fe[_qp];
-  RankTwoTensor r = (_stress_old[_qp].deviatoric());
-  Real eff = std::sqrt(3.0 / 2 * _stress_old[_qp].doubleContraction(_stress_old[_qp]));
+  // RankTwoTensor r = _fe.inverse() * (_stress_old[_qp].deviatoric()) * _fe;
+
+  RankTwoTensor cauchy_stress = _fe * _pk2[_qp] * _fe.transpose() / _fe.det();
+  RankTwoTensor r = _fe.inverse() * (cauchy_stress.deviatoric()) * _fe;
+
+  // RankTwoTensor cauchy_stress = _pk2[_qp];
+  // RankTwoTensor r = cauchy_stress.deviatoric();
+  Real eff = std::sqrt(3.0 / 2 * cauchy_stress.doubleContraction(cauchy_stress));
 
   // std::cout << "TERM 0 = " << std::endl;
   // eqv_slip_incr.print();
@@ -705,8 +712,45 @@ FiniteStrainUObasedCPCreep::calcJacobian()
     for (unsigned int j = 0; j < nss; j++)
       dfpinvdpk2 += (dfpinvdslip[j] * dslipdtau[j] * _dt).outerProduct(dtaudpk2[j]);
   }
-  _jac =
-      RankFourTensor::IdentityFour() - (_elasticity_tensor[_qp] * deedfe * dfedfpinv * dfpinvdpk2);
+
+  RankTwoTensor iden;
+  iden.addIa(1.0);
+  // RankFourTensor drdstress =
+  //     (_fe.inverse())
+  //         .outerProduct((iden.mixedProductkJli(iden) - 1.0 / 3 * iden.mixedProductJIkl(iden)) *
+  //                       _fe);
+  // RankFourTensor dstressdpk2 = _fe.outerProduct(_fe) / _fe.det();
+
+  RankFourTensor drdstress = iden.mixedProductkJli(iden) - 1.0 / 3 * iden.mixedProductJIkl(iden);
+  RankFourTensor dstressdpk2 = RankFourTensor::initIdentityFour;
+
+  RankTwoTensor cauchy_stress = _pk2[_qp];
+  RankTwoTensor r = cauchy_stress.deviatoric();
+  Real J2 = 0.5 * cauchy_stress.doubleContraction(cauchy_stress);
+
+  Real d_eqv_slip_incr_dr = 0;
+  d_eqv_slip_incr_dr += 9.0 / 2 * libMesh::pi * _xi * std::pow(_l / _d, 3.0) * _dt;
+  d_eqv_slip_incr_dr += 9.0 / 2 * _xi * _Dv / _Db * std::pow(_l, 3.0) / std::pow(_d, 2.0) * _dt;
+  d_eqv_slip_incr_dr += _xi * _l / _d / std::log(1.0 / _w_bd_old[_qp]) * 3.0 / 2 * _dt;
+  d_eqv_slip_incr_dr += _xi * _alpha * std::sqrt(_w_sd_old[_qp]) / pow(1.0 - _w_sd_old[_qp], 3.0) *
+                        3.0 / 2 * std::sqrt(3 * J2) * _dt;
+
+  d_eqv_slip_incr_dr = 0.0;
+
+  RankFourTensor drdpk2 =
+      (-d_eqv_slip_incr_dr) * (_fp_old_inv.outerProduct(iden)) * drdstress * dstressdpk2;
+  // RankFourTensor drdpk2 =
+  //     (-d_eqv_slip_incr_dr) * (_fp_old_inv.outerProduct(iden)) * drdstress * dstressdpk2 +
+  //     (_xi * _alpha * std::sqrt(_w_sd_old[_qp]) / pow(1.0 - _w_sd_old[_qp], 3.0) * 3.0 / 2 * 0.5
+  //     *
+  //      1.0 / std::sqrt(3 * J2) * _dt) *
+  //         (cauchy_stress.deviatoric()).outerProduct(r) * (-_fp_old_inv.outerProduct(iden));
+
+  // RankTwoTensor cauchy_stress = _fe * _pk2[_qp] * _fe.transpose() / _fe.det();
+  // RankTwoTensor r = _fe.inverse() * (cauchy_stress.deviatoric()) * _fe;
+
+  _jac = RankFourTensor::IdentityFour() -
+         (_elasticity_tensor[_qp] * deedfe * dfedfpinv * (dfpinvdpk2 + 0 * drdpk2));
 }
 
 void
