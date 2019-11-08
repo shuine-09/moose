@@ -49,7 +49,7 @@ XFEMC4OxideVelocity::computeMovingInterfaceVelocity(unsigned int point_id) const
 
   Real delta = std::abs(xt - _x0);
 
-  std::cout << "delta: " << delta << std::endl;
+//  std::cout << "delta: " << delta << std::endl;
 
   // Current implementation only supports the case that the interface is moving horizontally
   //  return std::abs((_diffusivity_at_positive_level_set * grad_positive(0) -
@@ -90,12 +90,10 @@ XFEMC4OxideVelocity::computeMovingInterfaceVelocity(unsigned int point_id) const
   const Real J_v = mobil_v * potential * (con_v_ox_w - con_v_ox_m * pow(eta, 2)) /
                    (1 - pow(eta, 2)) / delta;
   const Real J_o = zircaloy_density * Na / (zirconium_atmass * 1e-3) *
-                   _diffusivity_at_positive_level_set * grad_negative(0);
-
-  std::cout << "grad_negative: " << grad_negative(0) << " ; J_o: " << J_o << std::endl;
+                   _diffusivity_at_positive_level_set * (grad_positive(0) + grad_positive(1) + grad_positive(2)) / 3 * 1e-6;
 
   if (delta == 0)
-    return sqrt(0.01126 * exp(-35890 / (1.987 * temperature)) / (4 * _t)) * (-1e-2);
+    return sqrt(0.01126 * exp(-35890 / (1.987 * temperature)) / (2 * _t)) * (-1e-2);
   else
-    return -zirconium_PBR * (J_v) / (zirconium_PBR * con_o_ox_m - con_o_m_ox);
+    return -zirconium_PBR * (J_v - J_o) / (zirconium_PBR * con_o_ox_m - con_o_m_ox);
 }
