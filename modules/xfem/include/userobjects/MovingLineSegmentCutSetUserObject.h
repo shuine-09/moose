@@ -37,6 +37,8 @@ public:
 
   virtual Real cutFraction(unsigned int cut_num, Real time) const override;
 
+  virtual Real getCutDataXCoord(unsigned int i) const { return _cut_data[i * 6]; };
+
   /// Pointer to XFEMMovingInterfaceVelocityBase object
   const XFEMMovingInterfaceVelocityBase * _interface_velocity;
 };
