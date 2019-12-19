@@ -7,7 +7,7 @@ import math
 
 ax = plt.gca()
 
-CP = pandas.read_csv('moving_oxide_CP_weak_out.csv')
+CP = pandas.read_csv('moving_oxide_CP_weak_mechanics_out.csv')
 time_cp = CP['time']
 thickness_cp = CP['cut_data_x']
 
