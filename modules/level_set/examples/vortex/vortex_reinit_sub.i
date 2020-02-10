@@ -1,13 +1,15 @@
 [Mesh]
-  type = GeneratedMesh
-  dim = 2
-  xmax = 1
-  ymax = 1
-  nx = 16
-  ny = 16
-  uniform_refine = 2
-  elem_type = QUAD9
-  second_order = true
+  # type = GeneratedMesh
+  # dim = 2
+  # xmax = 1
+  # ymax = 1
+  # nx = 16
+  # ny = 16
+  # uniform_refine = 3
+  # elem_type = QUAD4
+  # second_order = true
+  type = FileMesh
+  file = 'tri_mesh.e'
 []
 
 [Variables/phi]
@@ -33,7 +35,7 @@
     type = LevelSetOlssonReinitialization
     variable = phi
     phi_0 = phi_0
-    epsilon = 0.03
+    epsilon = 0.0063
   []
 []
 
@@ -44,8 +46,8 @@
 [UserObjects]
   [arnold]
     type = LevelSetOlssonTerminator
-    tol = 0.5
-    min_steps = 3
+    tol = 0.1
+    min_steps = 10
   []
 []
 
@@ -62,7 +64,7 @@
   nl_abs_tol = 1e-14
   scheme = crank-nicolson
   line_search = none
-  dt = 0.003
+  dt = 0.01
 []
 
 [Outputs]

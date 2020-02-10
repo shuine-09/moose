@@ -29,6 +29,10 @@ ADRealVectorValue
 LevelSetAdvectionSUPG<compute_stage>::precomputeQpResidual()
 {
   computeQpVelocity();
-  ADReal tau = _current_elem->hmin() / (2 * _velocity.norm());
+  ADReal tau;
+  if (_velocity.norm() > 1.0e-10)
+    tau = _current_elem->hmin() / (2 * _velocity.norm());
+  else
+    tau = 0.0;
   return (tau * _velocity) * (_velocity * _grad_u[_qp]);
 }

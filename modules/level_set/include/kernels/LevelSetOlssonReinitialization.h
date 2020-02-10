@@ -36,7 +36,8 @@ protected:
   /// Interface thickness
   const PostprocessorValue & _epsilon;
 
+  const ADVectorVariableValue & _grad_c;
+
   usingKernelGradMembers;
   using ADKernelGrad<compute_stage>::getPostprocessorValue;
 };
-

@@ -1,13 +1,15 @@
 [Mesh]
-  type = GeneratedMesh
-  dim = 2
-  xmax = 1
-  ymax = 1
-  nx = 16
-  ny = 16
-  uniform_refine = 2
-  elem_type = QUAD9
-  second_order = true
+  # type = GeneratedMesh
+  # dim = 2
+  # xmax = 1
+  # ymax = 1
+  # nx = 16
+  # ny = 16
+  # uniform_refine = 3
+  # elem_type = QUAD4
+  # second_order = true
+  type = FileMesh
+  file = 'tri_mesh.e'
 []
 
 [AuxVariables]
@@ -43,7 +45,7 @@
 [Functions]
   [phi_exact]
     type = LevelSetOlssonBubble
-    epsilon = 0.03
+    epsilon = 0.0063
     center = '0.5 0.75 0'
     radius = 0.15
   []
@@ -122,7 +124,7 @@
   solve_type = NEWTON
   start_time = 0
   end_time = 2
-  scheme = crank-nicolson
+  #scheme = crank-nicolson
   [TimeStepper]
     type = PostprocessorDT
     postprocessor = cfl
