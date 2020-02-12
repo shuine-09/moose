@@ -37,5 +37,7 @@ ADReal
 LevelSetAdvection<compute_stage>::precomputeQpResidual()
 {
   computeQpVelocity();
+  // if (_velocity.norm() > 1.0e-6)
   return _velocity * _grad_u[_qp];
+  // return 0;
 }

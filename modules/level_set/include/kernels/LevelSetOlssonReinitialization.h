@@ -35,11 +35,16 @@ protected:
   /// Gradient of the level set variable at time, \tau = 0.
   const ADVariableGradient & _grad_levelset_0;
 
+  const ADVariableValue & _levelset_0;
+
   /// Interface thickness
   const PostprocessorValue & _epsilon;
 
-  /// Use modified reinitilization formulation (see Olsson et. al. (2007), section 2.2.1)
-  const bool _use_modified_reinitilization_formulation;
+  const ADVectorVariableValue & _grad_c;
+
+  const VariableValue & _vel_x;
+  const VariableValue & _vel_y;
+  const PostprocessorValue & _master_time;
 
   usingKernelGradMembers;
   using ADKernelGrad<compute_stage>::getPostprocessorValue;

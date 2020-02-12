@@ -59,6 +59,7 @@ INSADMaterial<compute_stage>::INSADMaterial(const InputParameters & parameters)
     _gravity_strong_residual(declareADProperty<RealVectorValue>("gravity_strong_residual")),
     _mms_function_strong_residual(declareProperty<RealVectorValue>("mms_function_strong_residual")),
     _momentum_strong_residual(declareADProperty<RealVectorValue>("momentum_strong_residual")),
+    _ded_momentum(getADMaterialProperty<RealVectorValue>("ded_momentum")),
     _x_vel_fn(getFunction("function_x")),
     _y_vel_fn(getFunction("function_y")),
     _z_vel_fn(getFunction("function_z"))

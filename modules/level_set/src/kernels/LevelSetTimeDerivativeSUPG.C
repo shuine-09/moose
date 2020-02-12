@@ -36,6 +36,6 @@ ADRealVectorValue
 LevelSetTimeDerivativeSUPG<compute_stage>::precomputeQpResidual()
 {
   computeQpVelocity();
-  Real tau = _current_elem->hmin() / (2 * _velocity.norm());
+  Real tau = _current_elem->hmin() / (2 * (_velocity + RealVectorValue(1.0e-10)).norm());
   return tau * _velocity * _u_dot[_qp];
 }

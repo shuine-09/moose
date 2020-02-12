@@ -91,8 +91,12 @@ INSADTauMaterial<compute_stage>::computeQpProperties()
 
   auto && nu = _mu[_qp] / _rho[_qp];
   auto && transient_part = _transient_term ? 4. / (_dt * _dt) : 0.;
-  _tau[_qp] = _alpha / std::sqrt(transient_part +
-                                 (2. * _velocity[_qp].norm() / _hmax) *
-                                     (2. * _velocity[_qp].norm() / _hmax) +
-                                 9. * (4. * nu / (_hmax * _hmax)) * (4. * nu / (_hmax * _hmax)));
+  _tau[_qp] =
+      _alpha /
+      std::sqrt(
+          transient_part +
+          (2. * (_velocity[_qp] + RealVectorValue(1e-10)).norm() / _hmax) *
+              (2. * (_velocity[_qp] + RealVectorValue(1e-10)).norm() /
+               _hmax) +
+          9. * (4. * nu / (_hmax * _hmax)) * (4. * nu / (_hmax * _hmax)));
 }

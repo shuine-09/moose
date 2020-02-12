@@ -87,6 +87,9 @@ protected:
   /// The strong residual of the momentum equation
   ADMaterialProperty(RealVectorValue) & _momentum_strong_residual;
 
+  /// The strong residual of the momentum equation
+  const ADMaterialProperty(RealVectorValue) & _ded_momentum;
+
   /// The x velocity mms forcing function
   const Function & _x_vel_fn;
 

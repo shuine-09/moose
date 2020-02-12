@@ -34,7 +34,7 @@ protected:
   virtual ADRealVectorValue precomputeQpStrongResidual() override;
 
   const ADMaterialProperty(RealVectorValue) & _momentum_strong_residual;
+  const ADMaterialProperty(RealVectorValue) & _ded_momentum;
 
   usingVectorKernelSUPGMembers;
 };
-
