@@ -37,8 +37,10 @@ LevelSetOlssonBubble::LevelSetOlssonBubble(const InputParameters & parameters)
 Real
 LevelSetOlssonBubble::value(Real /*t*/, const Point & p) const
 {
-  const Real x = ((p - _center).norm() - _radius) / _epsilon;
-  return 1.0 / (1 + std::exp(x));
+  RealVectorValue center(0.005 + 12.7 * 1e-4 * _t, 0.005, 0);
+  const Real x = -(p - center).norm_sq() / 0.00025 / 0.00025;
+  return 2000 * std::exp(x);
+  // return 1.0 / (1 + std::exp(x));
 }
 
 RealGradient

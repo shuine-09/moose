@@ -16,7 +16,9 @@
   using INSADMaterial<compute_stage>::_mu;                                                         \
   using INSADMaterial<compute_stage>::_rho;                                                        \
   using INSADMaterial<compute_stage>::_velocity;                                                   \
-  using INSADMaterial<compute_stage>::_transient_term
+  using INSADMaterial<compute_stage>::_transient_term;                                             \
+  using INSADMaterial<compute_stage>::_momentum_strong_residual;                                   \
+  using INSADMaterial<compute_stage>::_gravity
 
 template <ComputeStage>
 class INSADMaterial;

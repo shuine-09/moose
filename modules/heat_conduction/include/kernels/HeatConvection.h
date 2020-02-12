@@ -9,34 +9,27 @@
 
 #pragma once
 
-// MOOSE includes
 #include "ADKernelGrad.h"
 
-// Forward declarations
 template <ComputeStage>
-class LevelSetOlssonReinitialization;
+class HeatConvection;
 
-declareADValidParams(LevelSetOlssonReinitialization);
+declareADValidParams(HeatConvection);
 
-/**
- * Implements the re-initialization equation proposed by Olsson et. al. (2007).
- */
 template <ComputeStage compute_stage>
-class LevelSetOlssonReinitialization : public ADKernelGrad<compute_stage>
+class HeatConvection : public ADKernelGrad<compute_stage>
 {
 public:
   static InputParameters validParams();
 
-  LevelSetOlssonReinitialization(const InputParameters & parameters);
+  HeatConvection(const InputParameters & parameters);
 
 protected:
   virtual ADRealVectorValue precomputeQpResidual() override;
 
-  /// Interface thickness
-  const PostprocessorValue & _epsilon;
-
-  const ADVectorVariableValue & _grad_c;
+  const ADVectorVariableValue & _velocity;
+  const ADMaterialProperty(Real) & _rho;
+  const ADMaterialProperty(Real) & _cp;
 
   usingKernelGradMembers;
-  using ADKernelGrad<compute_stage>::getPostprocessorValue;
 };
