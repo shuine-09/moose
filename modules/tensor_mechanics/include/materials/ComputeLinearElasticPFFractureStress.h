@@ -65,4 +65,6 @@ protected:
     stress_spectral,
     none
   } _decomposition_type;
+
+  MaterialProperty<RankTwoTensor> & _unmodified_stress;
 };

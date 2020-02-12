@@ -32,7 +32,8 @@ ComputeLinearElasticPFFractureStress::ComputeLinearElasticPFFractureStress(
     const InputParameters & parameters)
   : ComputePFFractureStressBase(parameters),
     GuaranteeConsumer(this),
-    _decomposition_type(getParam<MooseEnum>("decomposition_type").getEnum<Decomposition_type>())
+    _decomposition_type(getParam<MooseEnum>("decomposition_type").getEnum<Decomposition_type>()),
+    _unmodified_stress(declareProperty<RankTwoTensor>("unmodified_stress"))
 {
 }
 
@@ -99,8 +100,12 @@ ComputeLinearElasticPFFractureStress::computeStrainSpectral(Real & F_pos, Real &
     nval += eneg[i] * eneg[i];
   }
 
-  _stress[_qp] = stress0pos * _D[_qp] -
-                 _pressure[_qp] * RankTwoTensor(RankTwoTensor::initIdentity) * _I[_qp] + stress0neg;
+  // _stress[_qp] = stress0pos * _D[_qp] -
+  //                _pressure[_qp] * RankTwoTensor(RankTwoTensor::initIdentity) * _I[_qp] +
+  //                stress0neg;
+
+  _stress[_qp] = stress0pos * _D[_qp] - 0.0 * RankTwoTensor(RankTwoTensor::initIdentity) * _I[_qp] +
+                 stress0neg;
 
   // Energy with positive principal strains
   F_pos = lambda * etrpos * etrpos / 2.0 + mu * pval;
@@ -111,8 +116,10 @@ ComputeLinearElasticPFFractureStress::computeStrainSpectral(Real & F_pos, Real &
     _d2Fdcdstrain[_qp] = stress0pos * _dDdc[_qp];
 
   // Used in StressDivergencePFFracTensors off-diagonal Jacobian
-  _dstress_dc[_qp] = stress0pos * _dDdc[_qp] +
-                     _pressure[_qp] * RankTwoTensor(RankTwoTensor::initIdentity) * _dIdc[_qp];
+  // _dstress_dc[_qp] = stress0pos * _dDdc[_qp] -
+  //                    _pressure[_qp] * RankTwoTensor(RankTwoTensor::initIdentity) * _dIdc[_qp];
+  _dstress_dc[_qp] =
+      stress0pos * _dDdc[_qp] - 0 * RankTwoTensor(RankTwoTensor::initIdentity) * _dIdc[_qp];
 
   _Jacobian_mult[_qp] = (I4sym - (1 - _D[_qp]) * Ppos) * _elasticity_tensor[_qp];
 }
@@ -214,37 +221,53 @@ ComputeLinearElasticPFFractureStress::computeQpStress()
       break;
     default:
     {
-      _stress[_qp] = _D[_qp] * _elasticity_tensor[_qp] * _mechanical_strain[_qp] +
+      _stress[_qp] = _D[_qp] * _elasticity_tensor[_qp] * _mechanical_strain[_qp] -
                      _pressure[_qp] * RankTwoTensor(RankTwoTensor::initIdentity) * _I[_qp];
       F_pos = (_stress[_qp]).doubleContraction(_mechanical_strain[_qp]) / 2.0;
       F_neg = 0.0;
       if (_use_current_hist)
         _d2Fdcdstrain[_qp] = _stress[_qp] * _dDdc[_qp];
 
-      _dstress_dc[_qp] = _stress[_qp] * _dDdc[_qp] +
+      _dstress_dc[_qp] = _stress[_qp] * _dDdc[_qp] -
                          _pressure[_qp] * RankTwoTensor(RankTwoTensor::initIdentity) * _dIdc[_qp];
       _Jacobian_mult[_qp] = _D[_qp] * _elasticity_tensor[_qp];
     }
   }
 
-  // // Assign history variable
-  if (F_pos > _H_old[_qp])
-    _H[_qp] = F_pos;
-  else
-    _H[_qp] = _H_old[_qp];
-
   Real hist_variable = _H_old[_qp];
-  if (_use_current_hist)
-    hist_variable = _H[_qp];
+  if (_use_snes_vi_solver)
+  {
+    _H[_qp] = F_pos;
 
-  if (hist_variable < _barrier[_qp])
-    hist_variable = _barrier[_qp];
+    if (_use_current_hist)
+      hist_variable = _H[_qp];
+  }
+  else
+  {
+    if (F_pos > _H_old[_qp])
+      _H[_qp] = F_pos;
+    else
+      _H[_qp] = _H_old[_qp];
+
+    if (_use_current_hist)
+      hist_variable = _H[_qp];
+
+    if (hist_variable < _barrier[_qp])
+      hist_variable = _barrier[_qp];
+  }
+
+  _unmodified_stress[_qp] =
+      _stress[_qp] + _pressure[_qp] * RankTwoTensor(RankTwoTensor::initIdentity) * _I[_qp];
 
   // Elastic free energy density
-  _E[_qp] =
-      hist_variable * _D[_qp] + F_neg + _pressure[_qp] * _mechanical_strain[_qp].trace() * _I[_qp];
-  _dEdc[_qp] =
-      hist_variable * _dDdc[_qp] + _pressure[_qp] * _mechanical_strain[_qp].trace() * _dIdc[_qp];
-  _d2Ed2c[_qp] = hist_variable * _d2Dd2c[_qp] +
-                 _pressure[_qp] * _mechanical_strain[_qp].trace() * _d2Id2c[_qp];
+  // _E[_qp] =
+  //     hist_variable * _D[_qp] + F_neg - _pressure[_qp] * _mechanical_strain[_qp].trace() *
+  //     _I[_qp];
+  // _dEdc[_qp] =
+  //     hist_variable * _dDdc[_qp] - _pressure[_qp] * _mechanical_strain[_qp].trace() * _dIdc[_qp];
+  // _d2Ed2c[_qp] = hist_variable * _d2Dd2c[_qp] -
+  //                _pressure[_qp] * _mechanical_strain[_qp].trace() * _d2Id2c[_qp];
+  _E[_qp] = hist_variable * _D[_qp] + F_neg + 0 * _mechanical_strain[_qp].trace() * _I[_qp];
+  _dEdc[_qp] = hist_variable * _dDdc[_qp] + 0 * _mechanical_strain[_qp].trace();
+  _d2Ed2c[_qp] = hist_variable * _d2Dd2c[_qp] + 0 * _mechanical_strain[_qp].trace() * _d2Id2c[_qp];
 }

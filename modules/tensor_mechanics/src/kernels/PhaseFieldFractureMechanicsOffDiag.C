@@ -38,9 +38,18 @@ PhaseFieldFractureMechanicsOffDiag::PhaseFieldFractureMechanicsOffDiag(
     _component(getParam<unsigned int>("component")),
     _c_coupled(isCoupled("c")),
     _c_var(_c_coupled ? coupled("c") : 0),
-    _d_stress_dc(
-        getMaterialPropertyDerivative<RankTwoTensor>(_base_name + "stress", getVar("c", 0)->name()))
+    _d_stress_dc(getMaterialPropertyDerivative<RankTwoTensor>(_base_name + "stress",
+                                                              getVar("c", 0)->name())),
+    _c(coupledValue("c")),
+    _grad_c(coupledGradient("c"))
 {
+}
+
+Real
+PhaseFieldFractureMechanicsOffDiag::computeQpResidual()
+{
+  // return _test[_i][_qp] * (1.0e-3) * _grad_c[_qp](_component);
+  return -(_grad_test[_i][_qp])(_component) * (1.0e-3) * _c[_qp];
 }
 
 Real
@@ -51,7 +60,12 @@ PhaseFieldFractureMechanicsOffDiag::computeQpOffDiagJacobian(unsigned int jvar)
     Real val = 0.0;
     for (unsigned int k = 0; k < 3; ++k)
       val += _d_stress_dc[_qp](_component, k) * _grad_test[_i][_qp](k);
-    return val * _phi[_j][_qp];
+
+    val *= _phi[_j][_qp];
+    // val += _test[_i][_qp] * (-1.0e-3) * _grad_phi[_j][_qp](_component);
+    val += -(_grad_test[_i][_qp])(_component) * (1.0e-3) * _phi[_j][_qp];
+
+    return val;
   }
 
   // Returns if coupled variable is not c (damage variable)

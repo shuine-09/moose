@@ -19,19 +19,35 @@ Diffusion::validParams()
   InputParameters params = Kernel::validParams();
   params.addClassDescription("The Laplacian operator ($-\\nabla \\cdot \\nabla u$), with the weak "
                              "form of $(\\nabla \\phi_i, \\nabla u_h)$.");
+  params.addRequiredCoupledVar(
+      "displacements",
+      "The displacements appropriate for the simulation geometry and coordinate system");
   return params;
 }
 
-Diffusion::Diffusion(const InputParameters & parameters) : Kernel(parameters) {}
+Diffusion::Diffusion(const InputParameters & parameters)
+  : Kernel(parameters), _ndisp(coupledComponents("displacements")), _disp(3)
+{
+  for (unsigned int i = 0; i < _ndisp; ++i)
+  {
+    _disp[i] = &coupledValue("displacements", i);
+  }
+  // set unused dimensions to zero
+  for (unsigned i = _ndisp; i < 3; ++i)
+  {
+    _disp[i] = &_zero;
+  }
+}
 
 Real
 Diffusion::computeQpResidual()
 {
-  return _grad_u[_qp] * _grad_test[_i][_qp];
+  RealVectorValue disp((*_disp[0])[_qp], (*_disp[1])[_qp], (*_disp[2])[_qp]);
+  return _grad_u[_qp] * disp * (1.0e-3);
 }
 
 Real
 Diffusion::computeQpJacobian()
 {
-  return _grad_phi[_j][_qp] * _grad_test[_i][_qp];
+  return 0.0;
 }

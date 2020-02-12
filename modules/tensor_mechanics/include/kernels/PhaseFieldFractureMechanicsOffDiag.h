@@ -32,7 +32,7 @@ public:
   PhaseFieldFractureMechanicsOffDiag(const InputParameters & parameters);
 
 protected:
-  Real computeQpResidual() override { return 0.0; }
+  Real computeQpResidual() override;
 
   Real computeQpJacobian() override { return 0.0; }
 
@@ -47,4 +47,6 @@ protected:
   const bool _c_coupled;
   const unsigned int _c_var;
   const MaterialProperty<RankTwoTensor> & _d_stress_dc;
+  const VariableValue & _c;
+  const VariableGradient & _grad_c;
 };

@@ -9,30 +9,23 @@
 
 #pragma once
 
-#include "Kernel.h"
+#include "AuxKernel.h"
 
-class Diffusion;
+class PFCrackOpeningDisplacement;
 
 template <>
-InputParameters validParams<Diffusion>();
+InputParameters validParams<PFCrackOpeningDisplacement>();
 
-/**
- * This kernel implements the Laplacian operator:
- * $\nabla u \cdot \nabla \phi_i$
- */
-class Diffusion : public Kernel
+class PFCrackOpeningDisplacement : public AuxKernel
 {
 public:
-  static InputParameters validParams();
-
-  Diffusion(const InputParameters & parameters);
+  PFCrackOpeningDisplacement(const InputParameters & parameters);
+  virtual ~PFCrackOpeningDisplacement() {}
 
 protected:
-  virtual Real computeQpResidual() override;
+  virtual Real computeValue();
 
-  virtual Real computeQpJacobian() override;
-
-  /// Coupled displacement variables
   unsigned int _ndisp;
   std::vector<const VariableValue *> _disp;
+  const VariableGradient & _grad_c;
 };
