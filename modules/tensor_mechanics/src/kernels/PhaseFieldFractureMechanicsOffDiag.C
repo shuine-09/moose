@@ -48,8 +48,8 @@ PhaseFieldFractureMechanicsOffDiag::PhaseFieldFractureMechanicsOffDiag(
 Real
 PhaseFieldFractureMechanicsOffDiag::computeQpResidual()
 {
-  // return _test[_i][_qp] * (1.0e-3) * _grad_c[_qp](_component);
-  return -(_grad_test[_i][_qp])(_component) * (1.0e-3) * _c[_qp];
+  return _test[_i][_qp] * (5 * _t) * _grad_c[_qp](_component);
+  // return -(_grad_test[_i][_qp])(_component) * (5 * _t) * _c[_qp];
 }
 
 Real
@@ -62,8 +62,8 @@ PhaseFieldFractureMechanicsOffDiag::computeQpOffDiagJacobian(unsigned int jvar)
       val += _d_stress_dc[_qp](_component, k) * _grad_test[_i][_qp](k);
 
     val *= _phi[_j][_qp];
-    // val += _test[_i][_qp] * (-1.0e-3) * _grad_phi[_j][_qp](_component);
-    val += -(_grad_test[_i][_qp])(_component) * (1.0e-3) * _phi[_j][_qp];
+    val += _test[_i][_qp] * (5 * _t) * _grad_phi[_j][_qp](_component);
+    // val += -(_grad_test[_i][_qp])(_component) * (5 * _t) * _phi[_j][_qp];
 
     return val;
   }

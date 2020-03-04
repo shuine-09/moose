@@ -73,4 +73,31 @@ void
 ComputePFFractureStressBase::initQpStatefulProperties()
 {
   _H[_qp] = 0.0;
+
+  // Real d;
+  // Real x = _q_point[_qp](0);
+  // Real y = _q_point[_qp](1);
+  //
+  // Real x_center = 1.8;
+  // Real y_center = 2;
+  //
+  // Real x_center2 = 2.2;
+  // Real y_center2 = 2;
+  //
+  // // if (x < x_center)
+  // //   d = std::abs(y - y_center);
+  // // else
+  // //   d = std::sqrt((x - x_center) * (x - x_center) + (y - y_center) * (y - y_center));
+  //
+  // if (x < x_center2 && x > x_center)
+  //   d = std::abs(y - y_center);
+  // else if (x < x_center)
+  //   d = std::sqrt((x - x_center) * (x - x_center) + (y - y_center) * (y - y_center));
+  // else
+  //   d = std::sqrt((x - x_center2) * (x - x_center2) + (y - y_center2) * (y - y_center2));
+  //
+  // if (d <= _l[_qp])
+  //   _H[_qp] = 100 * (_gc[_qp] / 2.0 / _l[_qp] * (1 - 2.0 * d / _l[_qp]));
+  // else
+  //   _H[_qp] = 0;
 }
