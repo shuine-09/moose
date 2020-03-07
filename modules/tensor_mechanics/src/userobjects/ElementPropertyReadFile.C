@@ -26,7 +26,7 @@ ElementPropertyReadFile::validParams()
   params.addParam<unsigned int>("ngrain", 0, "Number of grains");
   params.addParam<unsigned int>("nblock", 0, "Number of blocks");
   params.addParam<MooseEnum>("read_type",
-                             MooseEnum("element grain block"),
+                             MooseEnum("element grain block voxel"),
                              "Type of property distribution: element:element by element property "
                              "grain:voronoi grain structure "
                              "block:by mesh block");
@@ -107,6 +107,42 @@ ElementPropertyReadFile::readData()
 }
 
 void
+ElementPropertyReadFile::readBlockData()
+{
+  mooseAssert(_nblock > 0, "Error ElementPropertyReadFile: Provide non-zero number of blocks");
+  _data.resize(_nprop * _nblock);
+
+  MooseUtils::checkFileReadable(_prop_file_name);
+  std::ifstream file_prop;
+  file_prop.open(_prop_file_name.c_str());
+
+  for (unsigned int i = 0; i < _nblock; i++)
+    for (unsigned int j = 0; j < _nprop; j++)
+      if (!(file_prop >> _data[i * _nprop + j]))
+        mooseError("Error ElementPropertyReadFile: Premature end of file");
+
+  file_prop.close();
+}
+
+void
+ElementPropertyReadFile::readVoxelData()
+{
+  _data.resize(_nprop * _nelem);
+
+  MooseUtils::checkFileReadable(_prop_file_name);
+
+  std::ifstream file_prop;
+  file_prop.open(_prop_file_name.c_str());
+
+  for (unsigned int i = 0; i < _nelem; i++)
+    for (unsigned int j = 0; j < _nprop; j++)
+      if (!(file_prop >> _data[i * _nprop + j]))
+        mooseError("Error ElementPropertyReadFile: Premature end of file");
+
+  file_prop.close();
+}
+
+void
 ElementPropertyReadFile::initGrainCenterPoints()
 {
   _center.resize(_ngrain);
@@ -140,6 +176,9 @@ ElementPropertyReadFile::getData(const Elem * elem, unsigned int prop_num) const
     case ReadType::BLOCK:
       data = getBlockData(elem, prop_num);
       break;
+
+    case ReadType::VOXEL::
+      return getVoxelData(elem, prop_num);
   }
   return data;
 }
@@ -166,6 +205,34 @@ ElementPropertyReadFile::getBlockData(const Elem * elem, unsigned int prop_num) 
   return _reader.getData(elem_subdomain_id)[prop_num];
 }
 
+Real ElementPropertyReadFile::getVoxelData(const Elem * elem, unsigned int prop_num) const
+{
+  Point centroid = elem->centroid();
+  Real elem_size = cbrt(elem->volume());
+  unsigned int nelem_x = _range(0) * 1.001 / elem_size;
+  unsigned int nelem_y = _range(1) * 1.001 / elem_size;
+  unsigned int nelem_z = _range(2) * 1.001 / elem_size;
+  unsigned int id_x = centroid(0) / elem_size;
+  unsigned int id_y = centroid(1) / elem_size;
+  unsigned int id_z = centroid(2) / elem_size;
+
+  unsigned int jelem = id_z * (nelem_x * nelem_y) + id_y * (nelem_x) + id_x;
+
+  //  std::cout << "elem centroid = " << centroid << ", id_x = " << id_x << ", id_y = " << id_y
+  //             << ", id_z = " << id_z << ", nelem_x = " << nelem_x << ", elem_size = " <<
+  //             elem_size
+  //             << ", elem_vol = " << elem->volume() << "data = " << _data[jelem * _nprop +
+  //             prop_num] << std::endl;
+
+  mooseAssert(jelem < _nelem,
+              "Error ElementPropertyReadFile: Element "
+                  << jelem << " greater than than total number of element in mesh " << _nelem);
+  mooseAssert(prop_num < _nprop,
+              "Error ElementPropertyReadFile: Property number "
+                  << prop_num << " greater than than total number of properties " << _nprop);
+  return _data[jelem * _nprop + prop_num];
+}
+
 Real
 ElementPropertyReadFile::getGrainData(const Elem * elem, unsigned int prop_num) const
 {
@@ -179,25 +246,25 @@ ElementPropertyReadFile::getGrainData(const Elem * elem, unsigned int prop_num) 
     switch (_rve_type)
     {
       case 0:
-        // Calculates minimum periodic distance when "periodic" is specified
-        // for rve_type
-        dist = minPeriodicDistance(_center[i], centroid);
-        break;
+      // Calculates minimum periodic distance when "periodic" is specified
+      // for rve_type
+      dist = minPeriodicDistance(_center[i], centroid);
+      break;
 
-      default:
-        // Calculates minimum distance when nothing is specified
-        // for rve_type
-        Point dist_vec = _center[i] - centroid;
-        dist = dist_vec.norm();
-    }
-
-    if (dist < min_dist)
-    {
-      min_dist = dist;
-      igrain = i;
-    }
+    default:
+      // Calculates minimum distance when nothing is specified
+      // for rve_type
+      Point dist_vec = _center[i] - centroid;
+      dist = dist_vec.norm();
   }
-  return _reader.getData(igrain)[prop_num];
+
+  if (dist < min_dist)
+  {
+    min_dist = dist;
+    igrain = i;
+  }
+}
+return _reader.getData(igrain)[prop_num];
 }
 
 // TODO: this should probably use the built-in min periodic distance!

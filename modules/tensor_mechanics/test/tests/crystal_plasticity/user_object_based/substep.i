@@ -148,7 +148,11 @@
     block = 0
     stol = 1e-2
     tan_mod_type = exact
+<<<<<<< HEAD:modules/tensor_mechanics/test/tests/cp_user_object/substep.i
     maximum_substep_iteration = 10
+=======
+    maximum_substep_iteration = 8
+>>>>>>> Added dislocation density based glide, climb and apb shear model:modules/tensor_mechanics/test/tests/cp_user_object/crysp.i
     uo_slip_rates = 'slip_rate_gss'
     uo_slip_resistances = 'slip_resistance_gss'
     uo_state_vars = 'state_var_gss'

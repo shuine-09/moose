@@ -278,6 +278,12 @@ public:
   /// returns C_ijkl = a_il * b_jk
   RankFourTensorTempl<T> mixedProductIlJk(const RankTwoTensorTempl<T> & a) const;
 
+  /// returns C_ijkl = a_kj * b_li
+  RankFourTensor mixedProductkJli(const RankTwoTensor & a) const;
+
+  /// returns C_ijkl = a_JI * b_kl
+  RankFourTensor mixedProductJIkl(const RankTwoTensor & a) const;
+
   /// return positive projection tensor of eigen-decomposition
   template <typename T2 = T>
   typename std::enable_if<MooseUtils::IsLikeReal<T2>::value, RankFourTensorTempl<T>>::type

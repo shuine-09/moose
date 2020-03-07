@@ -14,6 +14,7 @@
 #include "CrystalPlasticitySlipResistance.h"
 #include "CrystalPlasticityStateVariable.h"
 #include "CrystalPlasticityStateVarRateComponent.h"
+#include "MooseException.h"
 
 registerMooseObject("TensorMechanicsApp", FiniteStrainUObasedCP);
 
@@ -240,6 +241,15 @@ FiniteStrainUObasedCP::computeQpStress()
     {
       _dfgrd_tmp = (static_cast<Real>(istep) + 1) / num_substep * _delta_dfgrd + _dfgrd_tmp_old;
 
+      // std::cout << "qpstress : dfgrd_temp " << std::endl;
+      //_dfgrd_tmp.print();
+
+      // std::cout << "_delta_dfgrd " << std::endl;
+      //_delta_dfgrd.print();
+
+      // std::cout << "_dfgrd_tmp_old " << std::endl;
+      //_dfgrd_tmp_old.print();
+
       solveQp();
 
       if (_err_tol)
@@ -328,8 +338,12 @@ FiniteStrainUObasedCP::solveStatevar()
 
     postSolveStress();
 
+    // std::cout << "before update state variable = " << _err_tol << std::endl;
+
     // Update slip system resistance and state variable
     updateSlipSystemResistanceAndStateVariable();
+
+    // std::cout << "after update state variable = " << _err_tol << std::endl;
 
     if (_err_tol)
       return;
@@ -357,12 +371,19 @@ FiniteStrainUObasedCP::isStateVariablesConverged()
     unsigned int n = (*_mat_prop_state_vars[i])[_qp].size();
     for (unsigned j = 0; j < n; j++)
     {
-      diff = std::abs((*_mat_prop_state_vars[i])[_qp][j] - _state_vars_prev[i][j]);
+      diff = std::abs((*_mat_prop_state_vars[i])[_qp][j] -
+                      _state_vars_prev[i][j]); // Calculate increment size
 
-      if (std::abs(_state_vars_old_stored[i][j]) < _zero_tol && diff > _zero_tol)
-        return true;
-      if (std::abs(_state_vars_old_stored[i][j]) > _zero_tol &&
-          diff > _stol * std::abs(_state_vars_old_stored[i][j]))
+      // std::cout << "i = " << i << ", j = " << j << ", diff = " << diff
+      //          << ", std::abs((*_mat_prop_state_vars_old[i])[_qp][j] = "
+      //          << std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) << ", zero_tol = " <<
+      //          _zero_tol
+      //          << std::endl;
+
+      // if (std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) < _zero_tol && diff > _zero_tol)
+      //   return true;
+      if (std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) > _zero_tol &&
+          diff > _stol * std::abs((*_mat_prop_state_vars_old[i])[_qp][j]))
         return true;
     }
   }
@@ -407,7 +428,8 @@ FiniteStrainUObasedCP::solveStress()
   rnorm0 = rnorm;
 
   // Check for stress residual tolerance
-  while (rnorm > _rtol * rnorm0 && rnorm0 > _abs_tol && iter < _maxiter)
+  // std::cout << "rnorm0 = " << rnorm0 << ", abs_tol = " << _abs_tol << std::endl;
+  while (rnorm > _rtol * rnorm0 && rnorm > _abs_tol && iter < _maxiter)
   {
     // Calculate stress increment
     dpk2 = -_jac.invSymm() * _resid;
@@ -444,6 +466,14 @@ FiniteStrainUObasedCP::solveStress()
     iter++;
   }
 
+  // std::cout << "pk2[" << _qp << "]  = " << std::endl;
+  //_pk2[_qp].print();
+
+  // std::cout << "rnorm = " << rnorm << ", _rtol = " << _rtol << ", rnorm0 = " << rnorm0 << ",
+  // _abs_tol " << _abs_tol << ", iter = " << iter << ", maxiter = " << _maxiter <<  std::endl;
+
+  // std::cout << "error = " << _err_tol << std::endl;
+
   if (iter >= _maxiter)
   {
 #ifdef DEBUG
@@ -471,9 +501,11 @@ FiniteStrainUObasedCP::updateSlipSystemResistanceAndStateVariable()
 
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
   {
-    if (!_uo_state_vars[i]->updateStateVariable(
-            _qp, _dt, (*_mat_prop_state_vars[i])[_qp], _state_vars_old_stored[i]))
+    if (!_uo_state_vars[i]->updateStateVariable(_qp, _dt, (*_mat_prop_state_vars[i])[_qp]))
+    {
+      // std::cout << "i = " << i << std::endl;
       _err_tol = true;
+    }
   }
 
   for (unsigned int i = 0; i < _num_uo_slip_resistances; ++i)
@@ -500,6 +532,9 @@ FiniteStrainUObasedCP::getSlipRates()
       _err_tol = true;
       return;
     }
+    // for (unsigned int j = 0; j < 12; ++j)
+    //  std::cout << "i = " << i << ", j = " << j << ", slip rate = " <<
+    //  (*_mat_prop_slip_rates[i])[_qp][j] << std::endl;
   }
 }
 
@@ -525,6 +560,21 @@ FiniteStrainUObasedCP::calcResidual()
   ee *= 0.5;
 
   pk2_new = _elasticity_tensor[_qp] * ee;
+
+  // std::cout << "eqv_slip_incr " << std::endl;
+  // eqv_slip_incr.print();
+
+  // std::cout << "fp_old_inv " << std::endl;
+  //_fp_old_inv.print();
+
+  // std::cout << "_dfgrd_tmp " << std::endl;
+  //_dfgrd_tmp.print();
+
+  // std::cout << "new pk2 = " << std::endl;
+  // pk2_new.print();
+
+  // std::cout << "old pk2 = " << std::endl;
+  //_pk2[_qp].print();
 
   _resid = _pk2[_qp] - pk2_new;
 }

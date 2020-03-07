@@ -40,6 +40,13 @@ public:
   void readData();
 
   /**
+   * This function Read block data from file
+   */
+  virtual void readBlockData();
+
+  virtual void readVoxelData();
+
+  /**
    * This function generates grain center point
    * Presently random generated
    */
@@ -62,9 +69,11 @@ public:
   Real getGrainData(const Elem *, unsigned int) const;
 
   /**
-   * This function assigns properties to elements read from file with block  based properties
+   * This function assign properties to element read from file with block  based properties
    */
   Real getBlockData(const Elem *, unsigned int) const;
+
+  Real getVoxelData(const Elem *, unsigned int) const;
 
   /**
    * This function calculates minimum distance between 2 points
@@ -84,7 +93,7 @@ protected:
   ///Number of blocks (for property read based on blocks)
   unsigned int _nblock;
   ///Type of read - element, grain, or block
-  const enum class ReadType { ELEMENT, GRAIN, BLOCK } _read_type;
+  const enum class ReadType { ELEMENT, GRAIN, BLOCK, VOXEL } _read_type;
   ///Random seed - used for generating grain centers
   unsigned int _rand_seed;
   ///Type of grain structure - non-periodic default
