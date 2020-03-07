@@ -115,7 +115,6 @@ FiniteStrainUObasedCP::FiniteStrainUObasedCP(const InputParameters & parameters)
 
   // resize local state variables
   _state_vars_old.resize(_num_uo_state_vars);
-  _state_vars_old_stored.resize(_num_uo_state_vars);
   _state_vars_prev.resize(_num_uo_state_vars);
 
   // resize user objects
@@ -123,6 +122,8 @@ FiniteStrainUObasedCP::FiniteStrainUObasedCP(const InputParameters & parameters)
   _uo_slip_resistances.resize(_num_uo_slip_resistances);
   _uo_state_vars.resize(_num_uo_state_vars);
   _uo_state_var_evol_rate_comps.resize(_num_uo_state_var_evol_rate_comps);
+
+  _state_vars_old_stored.resize(_num_uo_state_vars);
 
   // assign the user objects
   for (unsigned int i = 0; i < _num_uo_slip_rates; ++i)
@@ -349,6 +350,7 @@ FiniteStrainUObasedCP::solveStatevar()
       return;
 
     iter_flag = isStateVariablesConverged();
+
     iterg++;
   }
 
@@ -375,10 +377,10 @@ FiniteStrainUObasedCP::isStateVariablesConverged()
                       _state_vars_prev[i][j]); // Calculate increment size
 
       // std::cout << "i = " << i << ", j = " << j << ", diff = " << diff
-      //          << ", std::abs((*_mat_prop_state_vars_old[i])[_qp][j] = "
-      //          << std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) << ", zero_tol = " <<
-      //          _zero_tol
-      //          << std::endl;
+      //           << ", std::abs((*_mat_prop_state_vars_old[i])[_qp][j] = "
+      //           << std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) << ", zero_tol = " <<
+      //           _zero_tol
+      //           << std::endl;
 
       // if (std::abs((*_mat_prop_state_vars_old[i])[_qp][j]) < _zero_tol && diff > _zero_tol)
       //   return true;
@@ -501,11 +503,9 @@ FiniteStrainUObasedCP::updateSlipSystemResistanceAndStateVariable()
 
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
   {
-    if (!_uo_state_vars[i]->updateStateVariable(_qp, _dt, (*_mat_prop_state_vars[i])[_qp]))
-    {
-      // std::cout << "i = " << i << std::endl;
+    if (!_uo_state_vars[i]->updateStateVariable(
+            _qp, _dt, (*_mat_prop_state_vars[i])[_qp], _state_vars_old_stored[i]))
       _err_tol = true;
-    }
   }
 
   for (unsigned int i = 0; i < _num_uo_slip_resistances; ++i)
@@ -533,8 +533,8 @@ FiniteStrainUObasedCP::getSlipRates()
       return;
     }
     // for (unsigned int j = 0; j < 12; ++j)
-    //  std::cout << "i = " << i << ", j = " << j << ", slip rate = " <<
-    //  (*_mat_prop_slip_rates[i])[_qp][j] << std::endl;
+    //   std::cout << "i = " << i << ", j = " << j
+    //             << ", slip rate = " << (*_mat_prop_slip_rates[i])[_qp][j] << std::endl;
   }
 }
 
@@ -568,7 +568,7 @@ FiniteStrainUObasedCP::calcResidual()
   //_fp_old_inv.print();
 
   // std::cout << "_dfgrd_tmp " << std::endl;
-  //_dfgrd_tmp.print();
+  // _dfgrd_tmp.print();
 
   // std::cout << "new pk2 = " << std::endl;
   // pk2_new.print();

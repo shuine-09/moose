@@ -195,6 +195,9 @@ protected:
   /// Local state variable
   std::vector<std::vector<Real>> _state_vars_old;
 
+  /// Local stored state variable (for sub-stepping)
+  std::vector<std::vector<Real>> _state_vars_old_stored;
+
   /// Local old state variable
   std::vector<std::vector<Real>> _state_vars_prev;
 
@@ -247,6 +250,9 @@ protected:
   MaterialProperty<RankTwoTensor> & _update_rot;
   const MaterialProperty<RankTwoTensor> & _update_rot_old;
 
+  const std::string _elasticity_tensor_name;
+  /// Elasticity tensor material property
+  const MaterialProperty<RankFourTensor> & _elasticity_tensor;
   const MaterialProperty<RankTwoTensor> & _deformation_gradient;
   const MaterialProperty<RankTwoTensor> & _deformation_gradient_old;
 

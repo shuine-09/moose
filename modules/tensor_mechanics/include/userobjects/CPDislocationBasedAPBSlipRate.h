@@ -14,7 +14,7 @@
 
 class CPDislocationBasedAPBSlipRate;
 
-template<>
+template <>
 InputParameters validParams<CPDislocationBasedAPBSlipRate>();
 
 /**
@@ -22,22 +22,23 @@ InputParameters validParams<CPDislocationBasedAPBSlipRate>();
  */
 class CPDislocationBasedAPBSlipRate : public CrystalPlasticitySlipRate
 {
- public:
+public:
   CPDislocationBasedAPBSlipRate(const InputParameters & parameters);
 
   virtual bool calcSlipRate(unsigned int qp, Real dt, std::vector<Real> & val) const;
   virtual bool calcSlipRateDerivative(unsigned int qp, Real dt, std::vector<Real> & val) const;
-  virtual void calcFlowDirection(unsigned int qp, std::vector<RankTwoTensor> & flow_direction) const;
+  virtual void calcFlowDirection(unsigned int qp,
+                                 std::vector<RankTwoTensor> & flow_direction) const;
 
- protected:
-  const MaterialProperty<std::vector<Real> > & _mat_prop_mobile_dislocation_density;
-  const MaterialProperty<std::vector<Real> > & _mat_prop_immobile_dislocation_density;
-  const MaterialProperty<std::vector<Real> > & _mat_prop_apb_slip_resistance;
+protected:
+  const MaterialProperty<std::vector<Real>> & _mat_prop_mobile_dislocation_density;
+  const MaterialProperty<std::vector<Real>> & _mat_prop_immobile_dislocation_density;
+  const MaterialProperty<std::vector<Real>> & _mat_prop_apb_slip_resistance;
   const MaterialProperty<RankTwoTensor> & _pk2;
-  const MaterialProperty<std::vector<RankTwoTensor> > & _flow_direction;
+  const MaterialProperty<std::vector<RankTwoTensor>> & _flow_direction;
 
   Real _b, _lg, _a0, _m;
-  Function * _factor_function;
+  const Function * _factor_function;
 };
 
 #endif // CPDISLOCATIONBASEDAPBSLIPRATE_H

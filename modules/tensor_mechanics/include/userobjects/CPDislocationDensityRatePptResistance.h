@@ -12,24 +12,24 @@
 
 class CPDislocationDensityRatePptResistance;
 
-template<>
+template <>
 InputParameters validParams<CPDislocationDensityRatePptResistance>();
 
 class CPDislocationDensityRatePptResistance : public CrystalPlasticityStateVarRateComponent
 {
- public:
+public:
   CPDislocationDensityRatePptResistance(const InputParameters & parameters);
 
-  virtual bool calcStateVariableEvolutionRateComponent(unsigned int qp, std::vector<Real> & val) const;
+  virtual bool calcStateVariableEvolutionRateComponent(unsigned int qp,
+                                                       std::vector<Real> & val) const;
 
- protected:
-
-  const MaterialProperty<std::vector<Real> > & _mat_prop_rate;
-  const MaterialProperty<std::vector<Real> > & _mat_prop;
+protected:
+  const MaterialProperty<std::vector<Real>> & _mat_prop_rate;
+  const MaterialProperty<std::vector<Real>> & _mat_prop;
 
   Real _number_density;
   Real _size;
-  Function * _factor_function;
+  const Function * _factor_function;
 };
 
 #endif

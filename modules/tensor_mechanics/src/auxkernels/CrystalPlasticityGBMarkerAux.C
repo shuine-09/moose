@@ -47,9 +47,9 @@ CrystalPlasticityGBMarkerAux::computeValue()
   {
     for (unsigned int i = 0; i < _current_elem->n_neighbors(); ++i)
     {
-      if (_current_elem->neighbor(i))
+      if (_current_elem->neighbor_ptr(i) != nullptr)
       {
-        Real gbi = _marker_map->find(_current_elem->neighbor(i)->id())->second;
+        Real gbi = _marker_map->find(_current_elem->neighbor_ptr(i)->id())->second;
         if (gbi != gb0)
         {
           isGB = true;
@@ -62,21 +62,21 @@ CrystalPlasticityGBMarkerAux::computeValue()
   {
     for (unsigned int i = 0; i < _current_elem->n_neighbors(); ++i)
     {
-      if (_current_elem->neighbor(i))
+      if (_current_elem->neighbor_ptr(i) != nullptr)
       {
-        Real gbi = _marker_map->find(_current_elem->neighbor(i)->id())->second;
+        Real gbi = _marker_map->find(_current_elem->neighbor_ptr(i)->id())->second;
         if (gbi != gb0)
         {
           isGB = true;
           break;
         }
 
-        const Elem * neigh_elem = _current_elem->neighbor(i);
+        const Elem * neigh_elem = _current_elem->neighbor_ptr(i);
         for (unsigned int j = 0; j < neigh_elem->n_neighbors(); ++j)
         {
-          if (neigh_elem->neighbor(j))
+          if (neigh_elem->neighbor_ptr(j) != nullptr)
           {
-            Real gbj = _marker_map->find(neigh_elem->neighbor(j)->id())->second;
+            Real gbj = _marker_map->find(neigh_elem->neighbor_ptr(j)->id())->second;
             if (gbj != gb0)
             {
               isGB = true;

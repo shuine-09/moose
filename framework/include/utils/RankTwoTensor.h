@@ -272,17 +272,15 @@ public:
   /// returns C_ijkl = a_ik * b_jl
   RankFourTensorTempl<T> mixedProductIkJl(const RankTwoTensorTempl<T> & a) const;
 
+  RankFourTensorTempl<T> mixedProductkJli(const RankTwoTensorTempl<T> & a) const;
+
+  RankFourTensorTempl<T> mixedProductJIkl(const RankTwoTensorTempl<T> & a) const;
+
   /// returns C_ijkl = a_jk * b_il
   RankFourTensorTempl<T> mixedProductJkIl(const RankTwoTensorTempl<T> & a) const;
 
   /// returns C_ijkl = a_il * b_jk
   RankFourTensorTempl<T> mixedProductIlJk(const RankTwoTensorTempl<T> & a) const;
-
-  /// returns C_ijkl = a_kj * b_li
-  RankFourTensor mixedProductkJli(const RankTwoTensor & a) const;
-
-  /// returns C_ijkl = a_JI * b_kl
-  RankFourTensor mixedProductJIkl(const RankTwoTensor & a) const;
 
   /// return positive projection tensor of eigen-decomposition
   template <typename T2 = T>

@@ -23,7 +23,7 @@ public:
   virtual bool calcSlipResistance(unsigned int qp, std::vector<Real> & val) const;
 
 protected:
-  Function & _precipitate_radius;
+  const Function & _precipitate_radius;
   Real _precipitate_volume_fraction;
   Real _orowan_strength_factor;
 };

@@ -103,6 +103,8 @@ FiniteStrainUObasedCPCreep::FiniteStrainUObasedCPCreep(const InputParameters & p
     _update_rot(declareProperty<RankTwoTensor>(
         "update_rot")), // Rotation tensor considering material rotation and crystal orientation
     _update_rot_old(getMaterialPropertyOld<RankTwoTensor>("update_rot")),
+    _elasticity_tensor_name(_base_name + "elasticity_tensor"),
+    _elasticity_tensor(getMaterialPropertyByName<RankFourTensor>(_elasticity_tensor_name)),
     _deformation_gradient(getMaterialProperty<RankTwoTensor>("deformation_gradient")),
     _deformation_gradient_old(getMaterialPropertyOld<RankTwoTensor>("deformation_gradient")),
     _crysrot(getMaterialProperty<RankTwoTensor>("crysrot")),
@@ -147,6 +149,8 @@ FiniteStrainUObasedCPCreep::FiniteStrainUObasedCPCreep(const InputParameters & p
   _uo_slip_resistances.resize(_num_uo_slip_resistances);
   _uo_state_vars.resize(_num_uo_state_vars);
   _uo_state_var_evol_rate_comps.resize(_num_uo_state_var_evol_rate_comps);
+
+  _state_vars_old_stored.resize(_num_uo_state_vars);
 
   // assign the user objects
   for (unsigned int i = 0; i < _num_uo_slip_rates; ++i)
@@ -204,10 +208,8 @@ FiniteStrainUObasedCPCreep::initQpStatefulProperties()
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
   {
     (*_mat_prop_state_vars[i])[_qp].resize(_uo_state_vars[i]->variableSize());
-    // TODO: remove this nasty const_cast if you can figure out how
-    const_cast<MaterialProperty<std::vector<Real>> &>(*_mat_prop_state_vars_old[i])[_qp].resize(
-        _uo_state_vars[i]->variableSize());
     _state_vars_old[i].resize(_uo_state_vars[i]->variableSize());
+    _state_vars_old_stored[i].resize(_uo_state_vars[i]->variableSize());
     _state_vars_prev[i].resize(_uo_state_vars[i]->variableSize());
   }
 
@@ -310,11 +312,8 @@ FiniteStrainUObasedCPCreep::computeQpStress()
 void
 FiniteStrainUObasedCPCreep::preSolveQp()
 {
-  // TODO: remove this nasty const_cast if you can figure out how
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
-    (*_mat_prop_state_vars[i])[_qp] =
-        const_cast<MaterialProperty<std::vector<Real>> &>(*_mat_prop_state_vars_old[i])[_qp] =
-            _state_vars_old[i];
+    (*_mat_prop_state_vars[i])[_qp] = _state_vars_old_stored[i] = _state_vars_old[i];
 
   _pk2[_qp] = _pk2_old[_qp];
   _fp_old_inv = _fp_old[_qp].inverse();
@@ -379,7 +378,7 @@ void
 FiniteStrainUObasedCPCreep::preSolveStatevar()
 {
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
-    (*_mat_prop_state_vars[i])[_qp] = (*_mat_prop_state_vars_old[i])[_qp];
+    (*_mat_prop_state_vars[i])[_qp] = _state_vars_old_stored[i];
 
   for (unsigned int i = 0; i < _num_uo_slip_resistances; ++i)
     _uo_slip_resistances[i]->calcSlipResistance(_qp, (*_mat_prop_slip_resistances[i])[_qp]);
@@ -458,10 +457,8 @@ FiniteStrainUObasedCPCreep::isStateVariablesConverged()
 void
 FiniteStrainUObasedCPCreep::postSolveStatevar()
 {
-  // TODO: remove this nasty const_cast if you can figure out how
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
-    const_cast<MaterialProperty<std::vector<Real>> &>(*_mat_prop_state_vars_old[i])[_qp] =
-        (*_mat_prop_state_vars[i])[_qp];
+    _state_vars_old_stored[i] = (*_mat_prop_state_vars[i])[_qp];
 
   _fp_old_inv = _fp_inv;
 }
@@ -567,11 +564,9 @@ FiniteStrainUObasedCPCreep::updateSlipSystemResistanceAndStateVariable()
 
   for (unsigned int i = 0; i < _num_uo_state_vars; ++i)
   {
-    if (!_uo_state_vars[i]->updateStateVariable(_qp, _dt, (*_mat_prop_state_vars[i])[_qp]))
-    {
-      // std::cout << "i = " << i << std::endl;
+    if (!_uo_state_vars[i]->updateStateVariable(
+            _qp, _dt, (*_mat_prop_state_vars[i])[_qp], _state_vars_old_stored[i]))
       _err_tol = true;
-    }
   }
 
   for (unsigned int i = 0; i < _num_uo_slip_resistances; ++i)

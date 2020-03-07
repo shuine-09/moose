@@ -152,13 +152,6 @@ CrystalPlasticityStateVariable::updateStateVariable(unsigned int qp,
                                                     std::vector<Real> & val,
                                                     std::vector<Real> & val_old) const
 {
-  // if (_variable_size == 1)
-  //{
-  //  std::cout << "material properity state var evol rate comp = " <<
-  //  (*_mat_prop_state_var_evol_rate_comps[0])[qp][0] << ", dt = " << dt << ", scale_factor = " <<
-  //  _scale_factor[0] << std::endl;
-  //}
-
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
     val[i] = 0.0;
@@ -168,23 +161,13 @@ CrystalPlasticityStateVariable::updateStateVariable(unsigned int qp,
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
-    // std::cout << "i = " << i << ", old = " << _mat_prop_state_var_old[qp][i] << ", increment = "
-    // << val[i] << ", new = " << _mat_prop_state_var_old[qp][i] + val[i] << std::endl;
-    if ((_mat_prop_state_var_old[qp][i] + val[i]) < _zero && val[i] < 0.0)
-      // if ((_mat_prop_state_var_old[qp][i]) < _zero && val[i] < 0.0)
-      val[i] = _mat_prop_state_var_old[qp][i];
+    if ((val_old[i] + val[i]) < _zero && val[i] < 0.0)
+      val[i] = val_old[i];
     else
       val[i] = val_old[i] + val[i];
 
-    // std::cout << "new material property = " << val[i] << std::endl;
-
     if (val[i] < 0.0)
-    {
-      // std::cout << "val[i] = " << val[i] << std::endl;
-      // std::cout << "old = " << _mat_prop_state_var_old[qp][i] << std::endl;
-      // val[i] = 0.0;
       return false;
-    }
   }
   return true;
 }
