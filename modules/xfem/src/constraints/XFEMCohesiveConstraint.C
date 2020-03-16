@@ -15,6 +15,8 @@
 // // libMesh includes
 // #include "libMesh/quadrature.h"
 
+registerMooseObject("XFEMApp", XFEMCohesiveConstraint);
+
 template <>
 InputParameters
 validParams<XFEMCohesiveConstraint>()
@@ -52,7 +54,8 @@ XFEMCohesiveConstraint::XFEMCohesiveConstraint(const InputParameters & parameter
 void
 XFEMCohesiveConstraint::initialSetup()
 {
-  _max_normal_separation_old = getMaterialPropertyOld<Real>(_base_name + "max_normal_separation");
+  _max_normal_separation_old =
+      getXFEMInterfaceMaterialPropertyOld<Real>(_base_name + "max_normal_separation");
 }
 
 XFEMCohesiveConstraint::~XFEMCohesiveConstraint() {}
@@ -91,7 +94,7 @@ XFEMCohesiveConstraint::computeQpResidual(Moose::DGResidualType type)
   //                  (_disp_y_neighbor[_qp] - _disp_y[_qp]) * interface_tangent(1);
 
   Real stiffness_deg = _stiffness; // Initializing stiffness
-  Real alpha = 1.0e5;
+  Real alpha = 1.0e3;
 
   // Calculating Normal and tengential tractions on crack surface:
   Real t_n = 0.0;
@@ -99,7 +102,7 @@ XFEMCohesiveConstraint::computeQpResidual(Moose::DGResidualType type)
   // std::cout << "separation = " << delta_m_n << ", max_normal_separation = " <<
   // max_normal_separation
   //           << ", delta_0 = " << delta_0 << ", delta_f = " << delta_f << std::endl;
-
+  //
   // std::cout << "delta_0 = " << delta_0 << ", delta_f = " << delta_f
   //           << ", max_normal_separation = " << max_normal_separation << std::endl;
 
@@ -211,7 +214,7 @@ XFEMCohesiveConstraint::computeQpJacobian(Moose::DGJacobianType type)
   //                  (_disp_y_neighbor[_qp] - _disp_y[_qp]) * interface_tangent(1);
 
   Real factor = _stiffness; // jacobian factor
-  Real alpha = 1.0e5;
+  Real alpha = 1.0e3;
 
   if (max_normal_separation < delta_0)
   {

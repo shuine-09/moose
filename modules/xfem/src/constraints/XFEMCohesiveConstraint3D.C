@@ -55,7 +55,8 @@ XFEMCohesiveConstraint3D::XFEMCohesiveConstraint3D(const InputParameters & param
 void
 XFEMCohesiveConstraint3D::initialSetup()
 {
-  _max_normal_separation_old = getMaterialPropertyOld<Real>(_base_name + "max_normal_separation");
+  _max_normal_separation_old =
+      getXFEMInterfaceMaterialPropertyOld<Real>(_base_name + "max_normal_separation");
 }
 
 XFEMCohesiveConstraint3D::~XFEMCohesiveConstraint3D() {}

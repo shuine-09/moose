@@ -30,7 +30,6 @@ public:
 private:
   EFAElement2D * _host_elem;
   std::vector<EFAEdge *> _boundary_edges;
-  unsigned int _cut_edge;
 
 public:
   // override pure virtual methods
@@ -50,10 +49,7 @@ public:
   unsigned int numEdges() const;
   EFAEdge * getEdge(unsigned int edge_id) const;
   void addEdge(EFAEdge * new_edge);
-  void setCutEdge(unsigned int cut_edge) { _cut_edge = cut_edge; };
-  unsigned int getCutEdge() { return _cut_edge; };
   std::set<EFANode *> getEdgeNodes(unsigned int edge_id) const;
   EFAElement2D * getHostElement() const;
   std::vector<EFAFragment2D *> split();
 };
-

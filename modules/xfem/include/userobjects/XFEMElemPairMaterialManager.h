@@ -10,6 +10,7 @@
 
 #include "GeneralUserObject.h"
 #include "ElementPairLocator.h"
+#include "ExtraQPProvider.h"
 
 class GeometricSearchData;
 
@@ -42,11 +43,11 @@ public:
 
   ///@{ API calls to fetch a materialProperty
   template <typename T>
-  const MaterialProperty<T> & getMaterialProperty(const std::string & name) const;
+  const MaterialProperty<T> & getXFEMInterfaceMaterialProperty(const std::string & name) const;
   template <typename T>
-  const MaterialProperty<T> & getMaterialPropertyOld(const std::string & name) const;
+  const MaterialProperty<T> & getXFEMInterfaceMaterialPropertyOld(const std::string & name) const;
   template <typename T>
-  const MaterialProperty<T> & getMaterialPropertyOlder(const std::string & name) const;
+  const MaterialProperty<T> & getXFEMInterfaceMaterialPropertyOlder(const std::string & name) const;
   ///@}
 
 protected:
@@ -62,7 +63,7 @@ protected:
   //@}
 
   ///@{ Materials managed by this object and their properties
-  std::vector<Material *> _materials;
+  std::vector<MaterialBase *> _materials;
   MaterialProperties _properties;
   ///@}
 
@@ -88,7 +89,7 @@ InputParameters validParams<XFEMElemPairMaterialManager>();
 
 template <typename T>
 const MaterialProperty<T> &
-XFEMElemPairMaterialManager::getMaterialProperty(const std::string & name) const
+XFEMElemPairMaterialManager::getXFEMInterfaceMaterialProperty(const std::string & name) const
 {
   auto prop = dynamic_cast<MaterialProperty<T> *>(_props[materialPropertyIndex(name)]);
   if (prop == nullptr)
@@ -99,7 +100,7 @@ XFEMElemPairMaterialManager::getMaterialProperty(const std::string & name) const
 
 template <typename T>
 const MaterialProperty<T> &
-XFEMElemPairMaterialManager::getMaterialPropertyOld(const std::string & name) const
+XFEMElemPairMaterialManager::getXFEMInterfaceMaterialPropertyOld(const std::string & name) const
 {
   auto prop = dynamic_cast<MaterialProperty<T> *>(_props_old[materialPropertyIndex(name)]);
   if (prop == nullptr)
@@ -110,7 +111,7 @@ XFEMElemPairMaterialManager::getMaterialPropertyOld(const std::string & name) co
 
 template <typename T>
 const MaterialProperty<T> &
-XFEMElemPairMaterialManager::getMaterialPropertyOlder(const std::string & name) const
+XFEMElemPairMaterialManager::getXFEMInterfaceMaterialPropertyOlder(const std::string & name) const
 {
   auto prop = dynamic_cast<MaterialProperty<T> *>(_props_older[materialPropertyIndex(name)]);
   if (prop == nullptr)

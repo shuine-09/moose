@@ -10,6 +10,8 @@
 #include "GeometricSearchData.h"
 #include "ElementPairLocator.h"
 
+registerMooseObject("XFEMApp", MaximumNormalSeparation);
+
 template <>
 InputParameters
 validParams<MaximumNormalSeparation>()

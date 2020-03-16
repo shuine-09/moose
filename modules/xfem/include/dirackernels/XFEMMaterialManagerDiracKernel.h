@@ -25,11 +25,11 @@ public:
   virtual void computeJacobian();
 
   template <typename T>
-  const MaterialProperty<T> * getMaterialProperty(const std::string & name) const;
+  const MaterialProperty<T> * getXFEMInterfaceMaterialProperty(const std::string & name) const;
   template <typename T>
-  const MaterialProperty<T> * getMaterialPropertyOld(const std::string & name) const;
+  const MaterialProperty<T> * getXFEMInterfaceMaterialPropertyOld(const std::string & name) const;
   template <typename T>
-  const MaterialProperty<T> * getMaterialPropertyOlder(const std::string & name) const;
+  const MaterialProperty<T> * getXFEMInterfaceMaterialPropertyOlder(const std::string & name) const;
 
 protected:
   const XFEMMaterialManager & _manager;
@@ -40,23 +40,24 @@ InputParameters validParams<XFEMMaterialManagerDiracKernel>();
 
 template <typename T>
 const MaterialProperty<T> *
-XFEMMaterialManagerDiracKernel::getMaterialProperty(const std::string & name) const
+XFEMMaterialManagerDiracKernel::getXFEMInterfaceMaterialProperty(const std::string & name) const
 {
-  return &_manager.getMaterialProperty<T>(name);
+  return &_manager.getXFEMInterfaceMaterialProperty<T>(name);
 }
 
 template <typename T>
 const MaterialProperty<T> *
-XFEMMaterialManagerDiracKernel::getMaterialPropertyOld(const std::string & name) const
+XFEMMaterialManagerDiracKernel::getXFEMInterfaceMaterialPropertyOld(const std::string & name) const
 {
-  return &_manager.getMaterialPropertyOld<T>(name);
+  return &_manager.getXFEMInterfaceMaterialPropertyOld<T>(name);
 }
 
 template <typename T>
 const MaterialProperty<T> *
-XFEMMaterialManagerDiracKernel::getMaterialPropertyOlder(const std::string & name) const
+XFEMMaterialManagerDiracKernel::getXFEMInterfaceMaterialPropertyOlder(
+    const std::string & name) const
 {
-  return &_manager.getMaterialPropertyOlder<T>(name);
+  return &_manager.getXFEMInterfaceMaterialPropertyOlder<T>(name);
 }
 
 #endif // XFEMMATERIALMANAGERDIRACKERNEL_H

@@ -1174,32 +1174,9 @@ XFEM::cutMeshWithEFA(NonlinearSystemBase & nl, AuxiliarySystem & aux)
       }
     }
 
-    std::cout << "new_elements[" << i << "] = " << new_elements[i]->id()
-              << ", parent id = " << new_elements[i]->getParent()->id()
-              << ", number children = " << new_elements[i]->getParent()->numChildren() << std::endl;
-
     // parent has at least two children
     if (new_elements[i]->getParent()->numChildren() > 1)
-      temporary_parent_children_map[parent_id].push_back(libmesh_elem);
-    else if (new_elements[i]->getParent()->numChildren() == 1)
-    {
-      Elem * parent_new_elem = _mesh->elem(new_elements[i]->getParent()->id());
-      unsigned int cut_edge =
-          (dynamic_cast<EFAElement2D *>(new_elements[i]))->getFragment(0)->getCutEdge();
-      bool found = false;
-
-      Elem * neighbor = parent_new_elem->neighbor(cut_edge - 1);
-      if (neighbor != nullptr)
-      {
-        if (temporary_parent_children_map.find(neighbor->id()) !=
-                temporary_parent_children_map.end() &&
-            temporary_parent_children_map[neighbor->id()].size() == 1)
-        {
-          temporary_parent_children_map[neighbor->id()].push_back(libmesh_elem);
-          found = true;
-        }
-      }
-    }
+      temporary_parent_children_map[parent_elem->id()].push_back(libmesh_elem);
 
     Elem * parent_elem2 = NULL;
     Elem * libmesh_elem2 = NULL;

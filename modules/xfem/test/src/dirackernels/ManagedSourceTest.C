@@ -27,8 +27,8 @@ ManagedSourceTest::ManagedSourceTest(const InputParameters & parameters)
 void
 ManagedSourceTest::initialSetup()
 {
-  _prop1 = getMaterialProperty<Real>("prop1");
-  _prop3 = getMaterialProperty<Real>("prop3");
+  _prop1 = getXFEMInterfaceMaterialProperty<Real>("prop1");
+  _prop3 = getXFEMInterfaceMaterialProperty<Real>("prop3");
 }
 
 Real

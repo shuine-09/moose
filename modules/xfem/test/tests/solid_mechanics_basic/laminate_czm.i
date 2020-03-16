@@ -25,8 +25,8 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 30
-  ny = 3
+  nx = 190
+  ny = 19
   xmin = 0.0
   xmax = 10.
   ymin = 0.0
@@ -320,7 +320,7 @@
   start_time = 0.0
   dt = 1
   end_time = 1000.0
-  num_steps = 5000
+  num_steps = 500
 
   max_xfem_update = 1
 []

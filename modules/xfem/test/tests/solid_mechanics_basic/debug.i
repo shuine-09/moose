@@ -12,7 +12,7 @@
 [UserObjects]
   [./line_seg_cut_uo]
     type = LineSegmentCutUserObject
-    cut_data = '0.0 5 2.5 5'
+    cut_data = '0.0 5 5 5'
     #cut_data = '0.0 5. 5 5.'
     time_start_cut = 0.0
     time_end_cut = 0.0

@@ -12,6 +12,8 @@
 
 #include "libmesh/mesh_base.h"
 
+registerMooseObject("XFEMApp", XFEMElemPairMaterialManager);
+
 template <>
 InputParameters
 validParams<XFEMElemPairMaterialManager>()
@@ -20,7 +22,7 @@ validParams<XFEMElemPairMaterialManager>()
   params.addClassDescription("Manage the execution of stateful materials on extra QPs");
   params.addRequiredParam<std::vector<std::string>>("material_names",
                                                     "List of recompute material objects manage");
-  params.set<MultiMooseEnum>("execute_on") = "initial linear";
+  params.set<ExecFlagEnum>("execute_on") = "INITIAL LINEAR";
   return params;
 }
 
@@ -145,7 +147,7 @@ void
 XFEMElemPairMaterialManager::execute()
 {
   // fetch all variable dependencies
-  std::set<MooseVariable *> var_dependencies;
+  std::set<MooseVariableFEBase *> var_dependencies;
   for (auto & material : _materials)
   {
     auto & material_var_dependencies = material->getMooseVariableDependencies();

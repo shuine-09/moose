@@ -14,7 +14,6 @@ XFEMElementPairLocator::XFEMElementPairLocator(std::shared_ptr<XFEM> xfem,
                                                bool use_displaced_mesh)
   : ElementPairLocator(interface_id), _xfem(xfem), _use_displaced_mesh(use_displaced_mesh)
 {
-  std::cout << "use displaced mesh = " << _use_displaced_mesh << std::endl;
   if (_use_displaced_mesh)
     _elem_pairs = _xfem->getXFEMDisplacedCutElemPairs(interface_id);
   else

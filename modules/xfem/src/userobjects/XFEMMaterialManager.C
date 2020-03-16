@@ -22,7 +22,7 @@ validParams<XFEMMaterialManager>()
   params.addRequiredParam<std::vector<std::string>>("material_names",
                                                     "List of recompute material objects manage");
   params.addRequiredParam<UserObjectName>("extra_qps", "Object that provides the extra QPs");
-  params.set<MultiMooseEnum>("execute_on") = "initial linear";
+  params.set<ExecFlagEnum>("execute_on") = "INITIAL LINEAR";
   return params;
 }
 
@@ -108,7 +108,7 @@ void
 XFEMMaterialManager::execute()
 {
   // fetch all variable dependencies
-  std::set<MooseVariable *> var_dependencies;
+  std::set<MooseVariableFEBase *> var_dependencies;
   for (auto & material : _materials)
   {
     auto & material_var_dependencies = material->getMooseVariableDependencies();

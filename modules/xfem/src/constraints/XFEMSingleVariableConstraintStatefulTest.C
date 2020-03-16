@@ -43,8 +43,8 @@ XFEMSingleVariableConstraintStatefulTest::~XFEMSingleVariableConstraintStatefulT
 void
 XFEMSingleVariableConstraintStatefulTest::initialSetup()
 {
-  _prop_jump = getMaterialProperty<Real>(_base_name + "jump");
-  _prop_jump_old = getMaterialPropertyOld<Real>(_base_name + "jump");
+  _prop_jump = getXFEMInterfaceMaterialProperty<Real>(_base_name + "jump");
+  _prop_jump_old = getXFEMInterfaceMaterialPropertyOld<Real>(_base_name + "jump");
 }
 
 void
