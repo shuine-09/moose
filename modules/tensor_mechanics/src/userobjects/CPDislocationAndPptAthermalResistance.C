@@ -32,7 +32,7 @@ bool
 CPDislocationAndPptAthermalResistance::calcSlipResistance(unsigned int qp,
                                                           std::vector<Real> & val) const
 {
-  const Real radius = 13e-3; //_precipitate_radius.value(_t, _q_point[qp]);
+  Real radius = _precipitate_radius.value(_t, _q_point[qp]);
 
   if (CPDislocationBasedAthermalSlipResistance::calcSlipResistance(qp, val))
   {

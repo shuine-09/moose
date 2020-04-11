@@ -46,8 +46,8 @@ validParams<FiniteStrainUObasedCPCreep>()
   params.addParam<Real>("xi", 5e-12, "xi");
   params.addParam<Real>("l", 0.1, "volid diameter.");
   params.addParam<Real>("d", 0.1, "grain diameter.");
-  params.addParam<Real>("Dv", 9.2e-5, "self-diffusion coefficient.");
-  params.addParam<Real>("Db", 7.7e-14, "bulk-diffusion coefficient.");
+  params.addParam<FunctionName>("Dv", "self-diffusion coefficient.");
+  params.addParam<FunctionName>("Db", "bulk-diffusion coefficient.");
   params.addParam<Real>("alpha", 0.5, "boundary-diffusion coefficient.");
   params.addParam<Real>("gamma", 2, "surface energy.");
   params.addParam<Real>("D", 0.02, "damage evolution parameter.");
@@ -120,8 +120,8 @@ FiniteStrainUObasedCPCreep::FiniteStrainUObasedCPCreep(const InputParameters & p
     _xi(getParam<Real>("xi")),
     _l(getParam<Real>("l")),
     _d(getParam<Real>("d")),
-    _Dv(getParam<Real>("Dv")),
-    _Db(getParam<Real>("Db")),
+    _Dv(getFunction("Dv")),
+    _Db(getFunction("Db")),
     _alpha(getParam<Real>("alpha")),
     _gamma(getParam<Real>("gamma")),
     _D(getParam<Real>("D"))
@@ -630,8 +630,11 @@ FiniteStrainUObasedCPCreep::calcResidual()
   // std::cout << "TERM 0 = " << std::endl;
   // eqv_slip_incr.print();
 
+  Real Dv = _Dv.value(_t, _q_point[_qp]);
+  Real Db = _Db.value(_t, _q_point[_qp]);
+
   eqv_slip_incr += 9.0 / 2 * libMesh::pi * _xi * std::pow(_l / _d, 3.0) * r * _dt;
-  eqv_slip_incr += 9.0 / 2 * _xi * _Dv / _Db * std::pow(_l, 3.0) / std::pow(_d, 2.0) * r * _dt;
+  eqv_slip_incr += 9.0 / 2 * _xi * Dv / Db * std::pow(_l, 3.0) / std::pow(_d, 2.0) * r * _dt;
   eqv_slip_incr += _xi * _l / _d / std::log(1.0 / _w_bd_old[_qp]) * 3.0 / 2 * r * _dt;
   eqv_slip_incr += _xi * _alpha * std::sqrt(_w_sd_old[_qp]) / pow(1.0 - _w_sd_old[_qp], 3.0) * 3.0 /
                    2 * eff * r * _dt;
@@ -723,9 +726,12 @@ FiniteStrainUObasedCPCreep::calcJacobian()
   RankTwoTensor r = cauchy_stress.deviatoric();
   Real J2 = 0.5 * cauchy_stress.doubleContraction(cauchy_stress);
 
+  Real Dv = _Dv.value(_t, _q_point[_qp]);
+  Real Db = _Db.value(_t, _q_point[_qp]);
+
   Real d_eqv_slip_incr_dr = 0;
   d_eqv_slip_incr_dr += 9.0 / 2 * libMesh::pi * _xi * std::pow(_l / _d, 3.0) * _dt;
-  d_eqv_slip_incr_dr += 9.0 / 2 * _xi * _Dv / _Db * std::pow(_l, 3.0) / std::pow(_d, 2.0) * _dt;
+  d_eqv_slip_incr_dr += 9.0 / 2 * _xi * Dv / Db * std::pow(_l, 3.0) / std::pow(_d, 2.0) * _dt;
   d_eqv_slip_incr_dr += _xi * _l / _d / std::log(1.0 / _w_bd_old[_qp]) * 3.0 / 2 * _dt;
   d_eqv_slip_incr_dr += _xi * _alpha * std::sqrt(_w_sd_old[_qp]) / pow(1.0 - _w_sd_old[_qp], 3.0) *
                         3.0 / 2 * std::sqrt(3 * J2) * _dt;

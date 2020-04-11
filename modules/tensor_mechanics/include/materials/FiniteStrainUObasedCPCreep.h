@@ -292,9 +292,9 @@ protected:
 
   Real _d;
 
-  Real _Dv;
+  const Function & _Dv;
 
-  Real _Db;
+  const Function & _Db;
 
   Real _alpha;
 

@@ -105,7 +105,7 @@ CPDislocationBasedGlideSlipRate::calcSlipRate(unsigned int qp,
     w = (*_w_old)[qp];
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) * _b / (1 - w);
+    tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) / (1 - w);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
@@ -150,7 +150,7 @@ CPDislocationBasedGlideSlipRate::calcSlipRateDerivative(unsigned int qp,
     w = (*_w_old)[qp];
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) * _b / (1 - w);
+    tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) / (1 - w);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
