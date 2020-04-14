@@ -140,7 +140,7 @@ CPDislocationBasedClimbRate::calcSlipRate(unsigned int qp, Real dt, std::vector<
 
     if (abs(vc) > 1.0e10)
     {
-      vc = 0.0;
+      // vc = 0.0;
       // std::cout << "Dv_sd = " << Dv_sd << ", prefactor = "
       //           << std::exp(-_stress_factor * tau(i) * _atom_volume / (_boltz_const * _b *
       //           _temp))
@@ -150,9 +150,11 @@ CPDislocationBasedClimbRate::calcSlipRate(unsigned int qp, Real dt, std::vector<
     // val[i] = -_prefactor * (_rho_m[qp][i] + _rho_i[qp][i]) * _b * vc;
     val[i] = -_prefactor * _precipitate_volume_fraction * (_rho_m[qp][i]) * _b * vc;
 
-    // std::cout << "slip system(" << i << ") : climb velocity = " << vc << ", climb rate = " <<
-    // val[i]
-    //           << ", resolved stress = " << tau(i) << " Pk2 yy = " << _pk2[qp](1, 1) << std::endl;
+    // if (i == 0)
+    //   std::cout << "slip system(" << i << ") : climb velocity = " << vc
+    //             << ", climb rate = " << val[i] << ", resolved stress = " << tau(i)
+    //             << " Pk2 yy = " << _pk2[qp](1, 1) << ", rho_m[" << i << "] = " << _rho_m[qp][i]
+    //             << " prefactor = " << _prefactor << std::endl;
 
     if (std::abs(val[i] * dt) > _slip_incr_tol)
     {
@@ -162,6 +164,7 @@ CPDislocationBasedClimbRate::calcSlipRate(unsigned int qp, Real dt, std::vector<
       return false;
     }
   }
+
   return true;
 }
 
@@ -203,7 +206,7 @@ CPDislocationBasedClimbRate::calcSlipRateDerivative(unsigned int qp,
 
     if (abs(dvc_dtau) > 1.0e10)
     {
-      dvc_dtau = 0.0;
+      // = 0.0;
       // std::cout << "Dv_sd = " << Dv_sd << ", prefactor = "
       //           << std::exp(-_stress_factor * tau(i) * _atom_volume / (_boltz_const * _b *
       //           _temp))

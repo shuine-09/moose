@@ -372,6 +372,10 @@ FiniteStrainUObasedCPCreep::postSolveQp()
   // Calculate material rotation
   _deformation_gradient[_qp].getRUDecompositionRotation(rot);
   _update_rot[_qp] = rot * _crysrot[_qp];
+
+  // for (unsigned int j = 0; j < 12; ++j)
+  //   std::cout << "i = " << 0 << ", j = " << j
+  //             << ", slip rate = " << (*_mat_prop_slip_rates[0])[_qp][j] << std::endl;
 }
 
 void
@@ -413,6 +417,7 @@ FiniteStrainUObasedCPCreep::solveStatevar()
       return;
 
     iter_flag = isStateVariablesConverged();
+    // iter_flag = false;
     iterg++;
   }
 
@@ -594,8 +599,8 @@ FiniteStrainUObasedCPCreep::getSlipRates()
       return;
     }
     // for (unsigned int j = 0; j < 12; ++j)
-    //  std::cout << "i = " << i << ", j = " << j << ", slip rate = " <<
-    //  (*_mat_prop_slip_rates[i])[_qp][j] << std::endl;
+    //   std::cout << "i = " << i << ", j = " << j
+    //             << ", slip rate = " << (*_mat_prop_slip_rates[i])[_qp][j] << std::endl;
   }
 }
 

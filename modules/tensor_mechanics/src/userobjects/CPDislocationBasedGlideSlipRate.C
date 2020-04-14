@@ -105,7 +105,7 @@ CPDislocationBasedGlideSlipRate::calcSlipRate(unsigned int qp,
     w = (*_w_old)[qp];
 
   for (unsigned int i = 0; i < _variable_size; ++i)
-    tau(i) = -_pk2[qp].doubleContraction(_flow_direction[qp][i]) / (1 - w);
+    tau(i) = _pk2[qp].doubleContraction(_flow_direction[qp][i]) / (1 - w);
 
   for (unsigned int i = 0; i < _variable_size; ++i)
   {
@@ -120,6 +120,7 @@ CPDislocationBasedGlideSlipRate::calcSlipRate(unsigned int qp,
     Real v2 = (std::abs(c) - c) / 2.0;
 
     Real v1p = std::pow(v1, _p);
+
     if (v1p > 1.0)
     {
 #ifdef DEBUG
@@ -134,6 +135,25 @@ CPDislocationBasedGlideSlipRate::calcSlipRate(unsigned int qp,
     Real b = _enthal / (_k * _temp);
 
     val[i] = _prefactor * a * std::exp(-b * c2) * sgn_tau;
+
+    // if (val[i] > 1)
+    // {
+    //   std::cout << "val[" << i << "] = " << val[i] << std::endl;
+    //   std::cout << "w = " << w << std::endl;
+    //   std::cout << "tau = " << tau(i) << std::endl;
+    //   std::cout << " _mat_prop_athermal_slip_resistance[qp][i] = "
+    //             << _mat_prop_athermal_slip_resistance[qp][i] << std::endl;
+    //   std::cout << "v1p = " << v1p << std::endl;
+    //
+    //   _pk2[qp].print();
+    //
+    //   for (unsigned int j = 0; j < 12; j++)
+    //   {
+    //     std::cout << "==>tau = " << tau(j) << std::endl;
+    //     std::cout << " _mat_prop_athermal_slip_resistance[qp][i] = "
+    //               << _mat_prop_athermal_slip_resistance[qp][j] << std::endl;
+    //   }
+    // }
   }
 
   return true;

@@ -46,7 +46,7 @@ CPDislocationDensityRateCompGeneral::calcStateVariableEvolutionRateComponent(
 
   for (unsigned int i = 0; i < _variable_size; ++i)
     if (_use_dislocation_density)
-      val[i] = _prefactor * _mat_prop[qp][i] * std::abs(_mat_prop_rate[qp][i]);
+      val[i] = _prefactor * std::pow(_mat_prop[qp][i], 1.5) * std::abs(_mat_prop_rate[qp][i]);
     else
       val[i] = _prefactor * std::abs(_mat_prop_rate[qp][i]);
 

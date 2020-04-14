@@ -308,6 +308,8 @@ FiniteStrainUObasedCP::postSolveQp()
   // Calculate material rotation
   _deformation_gradient[_qp].getRUDecompositionRotation(rot);
   _update_rot[_qp] = rot * _crysrot[_qp];
+
+  // std::cout << "stree_yy = " << _stress[_qp](1, 1) << std::endl;
 }
 
 void
@@ -350,6 +352,7 @@ FiniteStrainUObasedCP::solveStatevar()
       return;
 
     iter_flag = isStateVariablesConverged();
+    // iter_flag = false;
 
     iterg++;
   }
