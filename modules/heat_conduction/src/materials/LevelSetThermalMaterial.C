@@ -56,9 +56,14 @@ LevelSetThermalMaterial<compute_stage>::computeQpProperties()
 
   ADReal k_s = 0.0138 * _temp[_qp] + 9.13;
 
-  ADReal c_m = (_f_s[_qp] * _c_s + _f_l[_qp] * _c_l) * (1 - _ls[_qp]);
-  ADReal k_m = 1.0 / (_g_s[_qp] / k_s + _g_l[_qp] / _k_l);
-  ADReal h_m = c_m * _temp[_qp] + _f_l[_qp] * (1 - _ls[_qp]) * delta_l;
+  ADReal f_l = _f_l[_qp] * (1 - _ls[_qp]);
+  ADReal f_s = _f_s[_qp] * (1 - _ls[_qp]);
+  ADReal g_l = _g_l[_qp];
+  ADReal g_s = _g_s[_qp];
+
+  ADReal c_m = (f_s * _c_s + f_l * _c_l) * (1 - _ls[_qp]);
+  ADReal k_m = 1.0 / (g_s / k_s + g_l / _k_l);
+  ADReal h_m = c_m * _temp[_qp] + f_l * (1 - _ls[_qp]) * delta_l;
   ADReal h_g = _c_g * _temp[_qp];
 
   _h[_qp] = (1 - _ls[_qp]) * h_m + _ls[_qp] * h_g;

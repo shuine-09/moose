@@ -35,6 +35,8 @@ protected:
   /// Density
   const ADMaterialProperty(Real) & _rho;
 
+  const ADVectorVariableValue & _grad_ls;
+
   /// Mass rate
   const Real & _mass_rate;
 

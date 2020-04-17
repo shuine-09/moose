@@ -16,6 +16,7 @@ defineADValidParams(
     MeltPoolLevelSetINSMaterial,
     INSADTauMaterial,
     params.addRequiredCoupledVar("level_set", "Level set variable");
+    params.addRequiredCoupledVar("grad_level_set", "Regularized gradient of Level set variable");
     params.addRequiredCoupledVar("temperature", "Temperature variable");
     params.addRequiredCoupledVar("curvature", "Level set variable");
     params.addRequiredParam<Real>("surface_tension", "surface tension coefficient.");
@@ -30,7 +31,7 @@ MeltPoolLevelSetINSMaterial<compute_stage>::MeltPoolLevelSetINSMaterial(
     const InputParameters & parameters)
   : INSADTauMaterial<compute_stage>(parameters),
     _ls(adCoupledValue("level_set")),
-    _grad_ls(adCoupledGradient("level_set")),
+    _grad_ls(adCoupledVectorValue("grad_level_set")),
     _temp(adCoupledValue("temperature")),
     _grad_temp(adCoupledGradient("temperature")),
     _curvature(adCoupledValue("curvature")),

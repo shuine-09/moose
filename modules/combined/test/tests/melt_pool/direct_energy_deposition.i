@@ -47,6 +47,12 @@
     y_value = 1e-15
     variable = velocity
   []
+  [grad_ls]
+    type = VectorConstantIC
+    x_value = 1e-15
+    y_value = 1e-15
+    variable = grad_ls
+  []
 []
 
 [Variables]
@@ -65,6 +71,9 @@
   [temp]
     initial_condition = 300
   []
+  [./grad_ls]
+    family = LAGRANGE_VEC
+  [../]
 []
 
 [AuxVariables]
@@ -199,6 +208,12 @@
 []
 
 [Kernels]
+  [./grad_ls]
+    type = LevelSetGradientRegulization
+    level_set = ls
+    variable = grad_ls
+  [../]
+
   [curvature]
     type = LevelSetCurvatureRegulization
     level_set = ls
@@ -211,34 +226,35 @@
     variable = ls
   []
 
-  # [advection_supg]
-  #   type = LevelSetAdvectionSUPG
-  #   velocity_x = vel_x
-  #   velocity_y = vel_y
-  #   variable = ls
-  # []
-  #
-  # [time_supg]
-  #   type = LevelSetTimeDerivativeSUPG
-  #   velocity_x = vel_x
-  #   velocity_y = vel_y
-  #   variable = ls
-  # []
-  #
-  # [advection]
-  #   type = LevelSetAdvection
-  #   velocity_x = vel_x
-  #   velocity_y = vel_y
-  #   variable = ls
-  # []
-  #
-  # [mass_addition]
-  #   type = LevelSetPowderMass
-  #   variable = ls
-  #   mass_rate = 40.0e-4
-  #   mass_radius = 0.25e-3
-  #   laser_location = location
-  # []
+  [advection_supg]
+    type = LevelSetAdvectionSUPG
+    velocity_x = vel_x
+    velocity_y = vel_y
+    variable = ls
+  []
+
+  [time_supg]
+    type = LevelSetTimeDerivativeSUPG
+    velocity_x = vel_x
+    velocity_y = vel_y
+    variable = ls
+  []
+
+  [advection]
+    type = LevelSetAdvection
+    velocity_x = vel_x
+    velocity_y = vel_y
+    variable = ls
+  []
+
+  [mass_addition]
+    type = LevelSetPowderMass
+    variable = ls
+    grad_level_set = grad_ls
+    mass_rate = 40.0e-4
+    mass_radius = 0.25e-3
+    laser_location = location
+  []
 
   [heat_time]
     type = ADHeatConductionTimeDerivative
@@ -265,6 +281,7 @@
     type = MeltPoolHeatSource
     variable = temp
     level_set = ls
+    grad_level_set = grad_ls
     laser_power = 75
     effective_beam_radius = 0.25e-3
     absorption_coefficient = 0.27
@@ -376,6 +393,7 @@
     thermal_expansion = 1.45e-6
     reference_temperature = 300
     rho_l = 8000
+    grad_level_set = grad_ls
   []
 []
 
@@ -401,51 +419,51 @@
   []
 []
 
-# [MultiApps]
-#   [reinit]
-#     type = LevelSetReinitializationMultiApp
-#     input_files = 'ls_reinit.i'
-#     execute_on = TIMESTEP_END
-#   []
-# []
-#
-#
-#
-# [Transfers]
-#   # [marker_to_sub]
-#   #   type = LevelSetMeshRefinementTransfer
-#   #   multi_app = reinit
-#   #   source_variable = marker
-#   #   variable = marker
-#   #   check_multiapp_execute_on = false
-#   # []
-#   [to_sub]
-#     type = MultiAppCopyTransfer
-#     source_variable = ls
-#     variable = ls
-#     direction = to_multiapp
-#     multi_app = reinit
-#     execute_on = 'timestep_end'
-#   []
-#
-#   [to_sub_init]
-#     type = MultiAppCopyTransfer
-#     source_variable = ls
-#     variable = ls_0
-#     direction = to_multiapp
-#     multi_app = reinit
-#     execute_on = 'timestep_end'
-#   []
-#
-#   [from_sub]
-#     type = MultiAppCopyTransfer
-#     source_variable = ls
-#     variable = ls
-#     direction = from_multiapp
-#     multi_app = reinit
-#     execute_on = 'timestep_end'
-#   []
-# []
+[MultiApps]
+  [reinit]
+    type = LevelSetReinitializationMultiApp
+    input_files = 'ls_reinit.i'
+    execute_on = TIMESTEP_END
+  []
+[]
+
+
+
+[Transfers]
+  # [marker_to_sub]
+  #   type = LevelSetMeshRefinementTransfer
+  #   multi_app = reinit
+  #   source_variable = marker
+  #   variable = marker
+  #   check_multiapp_execute_on = false
+  # []
+  [to_sub]
+    type = MultiAppCopyTransfer
+    source_variable = ls
+    variable = ls
+    direction = to_multiapp
+    multi_app = reinit
+    execute_on = 'timestep_end'
+  []
+
+  [to_sub_init]
+    type = MultiAppCopyTransfer
+    source_variable = ls
+    variable = ls_0
+    direction = to_multiapp
+    multi_app = reinit
+    execute_on = 'timestep_end'
+  []
+
+  [from_sub]
+    type = MultiAppCopyTransfer
+    source_variable = ls
+    variable = ls
+    direction = from_multiapp
+    multi_app = reinit
+    execute_on = 'timestep_end'
+  []
+[]
 
 [Executioner]
   type = Transient

@@ -110,12 +110,6 @@
   [../]
 []
 
-[Postprocessors]
-  [./time]
-    type = Receiver
-  [../]
-[]
-
 [Executioner]
   type = Transient
   solve_type = NEWTON
@@ -125,10 +119,8 @@
   nl_max_its = 10
   #scheme = crank-nicolson
   line_search = none
-  # petsc_options_iname = '-pc_type -pc_sub_type'
-  # petsc_options_value = 'asm      ilu'
-  petsc_options_iname = '-pc_type'
-  petsc_options_value = 'lu'
+  petsc_options_iname = '-pc_type -pc_sub_type'
+  petsc_options_value = 'asm      ilu'
   dt = 0.00001
   # [./TimeStepper]
   #   type = IterationAdaptiveDT

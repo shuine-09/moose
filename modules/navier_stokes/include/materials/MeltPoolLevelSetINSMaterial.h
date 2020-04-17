@@ -32,7 +32,7 @@ protected:
   const ADVariableValue & _ls;
 
   /// Gradient o level set variable
-  const ADVariableGradient & _grad_ls;
+  const ADVectorVariableValue & _grad_ls;
 
   /// Temperature variable
   const ADVariableValue & _temp;

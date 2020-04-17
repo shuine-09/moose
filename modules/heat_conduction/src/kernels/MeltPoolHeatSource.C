@@ -20,6 +20,7 @@ MeltPoolHeatSource<compute_stage>::validParams()
 {
   InputParameters params = ADKernel<compute_stage>::validParams();
   params.addRequiredCoupledVar("level_set", "Level set variable");
+  params.addRequiredCoupledVar("grad_level_set", "Regularized gradient of Level set variable");
   params.addRequiredParam<UserObjectName>("laser_location", "Userobject name of laser location.");
   params.addRequiredParam<Real>("laser_power", "Laser power.");
   params.addRequiredParam<Real>("effective_beam_radius", "Effective beam radius.");
@@ -34,7 +35,7 @@ MeltPoolHeatSource<compute_stage>::validParams()
 template <ComputeStage compute_stage>
 MeltPoolHeatSource<compute_stage>::MeltPoolHeatSource(const InputParameters & parameters)
   : ADKernel<compute_stage>(parameters),
-    _grad_ls(adCoupledGradient("level_set")),
+    _grad_ls(adCoupledVectorValue("grad_level_set")),
     _power(getParam<Real>("laser_power")),
     _alpha(getParam<Real>("absorption_coefficient")),
     _Rb(getParam<Real>("effective_beam_radius")),

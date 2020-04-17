@@ -15,6 +15,8 @@ registerADMooseObject("LevelSetApp", LevelSetPowderMass);
 defineADValidParams(LevelSetPowderMass,
                     ADKernelValue,
                     params.addClassDescription("Implement powder material mass addition.");
+                    params.addRequiredCoupledVar("grad_level_set",
+                                                 "Regularized gradient of Level set variable");
                     params.addParam<Real>("mass_rate", 2.5e-4, "Mass rate.");
                     params.addParam<Real>("mass_radius", 0.25e-3, "Mass radius.");
                     params.addRequiredParam<UserObjectName>("laser_location",
@@ -24,6 +26,7 @@ template <ComputeStage compute_stage>
 LevelSetPowderMass<compute_stage>::LevelSetPowderMass(const InputParameters & parameters)
   : ADKernelValue<compute_stage>(parameters),
     _rho(getADMaterialProperty<Real>("rho")),
+    _grad_ls(adCoupledVectorValue("grad_level_set")),
     _mass_rate(getParam<Real>("mass_rate")),
     _mass_radius(getParam<Real>("mass_radius")),
     _location(
@@ -42,5 +45,5 @@ LevelSetPowderMass<compute_stage>::precomputeQpResidual()
   if (r <= _mass_radius)
     power_feed = _mass_rate * std::exp(-Utility::pow<2>(r / _mass_radius));
 
-  return (_grad_u[_qp] + RealVectorValue(1.0e-10)).norm() * power_feed;
+  return (_grad_ls[_qp] + RealVectorValue(1.0e-10)).norm() * power_feed;
 }

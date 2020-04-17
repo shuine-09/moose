@@ -29,7 +29,7 @@ protected:
   virtual ADReal computeQpResidual();
 
   /// Gradient o level set variable
-  const ADVariableGradient & _grad_ls;
+  const ADVectorVariableValue & _grad_ls;
 
   /// Laser power
   const Real & _power;
