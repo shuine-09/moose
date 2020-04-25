@@ -226,35 +226,35 @@
     variable = ls
   []
 
-  [advection_supg]
-    type = LevelSetAdvectionSUPG
-    velocity_x = vel_x
-    velocity_y = vel_y
-    variable = ls
-  []
-
-  [time_supg]
-    type = LevelSetTimeDerivativeSUPG
-    velocity_x = vel_x
-    velocity_y = vel_y
-    variable = ls
-  []
-
-  [advection]
-    type = LevelSetAdvection
-    velocity_x = vel_x
-    velocity_y = vel_y
-    variable = ls
-  []
-
-  [mass_addition]
-    type = LevelSetPowderMass
-    variable = ls
-    grad_level_set = grad_ls
-    mass_rate = 40.0e-4
-    mass_radius = 0.25e-3
-    laser_location = location
-  []
+  # [advection_supg]
+  #   type = LevelSetAdvectionSUPG
+  #   velocity_x = vel_x
+  #   velocity_y = vel_y
+  #   variable = ls
+  # []
+  #
+  # [time_supg]
+  #   type = LevelSetTimeDerivativeSUPG
+  #   velocity_x = vel_x
+  #   velocity_y = vel_y
+  #   variable = ls
+  # []
+  #
+  # [advection]
+  #   type = LevelSetAdvection
+  #   velocity_x = vel_x
+  #   velocity_y = vel_y
+  #   variable = ls
+  # []
+  #
+  # [mass_addition]
+  #   type = LevelSetPowderMass
+  #   variable = ls
+  #   grad_level_set = grad_ls
+  #   mass_rate = 40.0e-4
+  #   mass_radius = 0.25e-3
+  #   laser_location = location
+  # []
 
   [heat_time]
     type = ADHeatConductionTimeDerivative
@@ -419,51 +419,64 @@
   []
 []
 
-[MultiApps]
-  [reinit]
-    type = LevelSetReinitializationMultiApp
-    input_files = 'ls_reinit.i'
-    execute_on = TIMESTEP_END
+[Postprocessors]
+  [height]
+    type = MeltPoolHeight
+    execute_on = 'initial timestep_end'
+    level_set = ls
+  []
+  [length]
+    type = MeltPoolLength
+    execute_on = 'initial timestep_end'
+    level_set = ls
   []
 []
 
-
-
-[Transfers]
-  # [marker_to_sub]
-  #   type = LevelSetMeshRefinementTransfer
-  #   multi_app = reinit
-  #   source_variable = marker
-  #   variable = marker
-  #   check_multiapp_execute_on = false
-  # []
-  [to_sub]
-    type = MultiAppCopyTransfer
-    source_variable = ls
-    variable = ls
-    direction = to_multiapp
-    multi_app = reinit
-    execute_on = 'timestep_end'
-  []
-
-  [to_sub_init]
-    type = MultiAppCopyTransfer
-    source_variable = ls
-    variable = ls_0
-    direction = to_multiapp
-    multi_app = reinit
-    execute_on = 'timestep_end'
-  []
-
-  [from_sub]
-    type = MultiAppCopyTransfer
-    source_variable = ls
-    variable = ls
-    direction = from_multiapp
-    multi_app = reinit
-    execute_on = 'timestep_end'
-  []
-[]
+# [MultiApps]
+#   [reinit]
+#     type = LevelSetReinitializationMultiApp
+#     input_files = 'ls_reinit.i'
+#     execute_on = TIMESTEP_END
+#   []
+# []
+#
+#
+#
+# [Transfers]
+#   # [marker_to_sub]
+#   #   type = LevelSetMeshRefinementTransfer
+#   #   multi_app = reinit
+#   #   source_variable = marker
+#   #   variable = marker
+#   #   check_multiapp_execute_on = false
+#   # []
+#   [to_sub]
+#     type = MultiAppCopyTransfer
+#     source_variable = ls
+#     variable = ls
+#     direction = to_multiapp
+#     multi_app = reinit
+#     execute_on = 'timestep_end'
+#   []
+#
+#   [to_sub_init]
+#     type = MultiAppCopyTransfer
+#     source_variable = ls
+#     variable = ls_0
+#     direction = to_multiapp
+#     multi_app = reinit
+#     execute_on = 'timestep_end'
+#   []
+#
+#   [from_sub]
+#     type = MultiAppCopyTransfer
+#     source_variable = ls
+#     variable = ls
+#     direction = from_multiapp
+#     multi_app = reinit
+#     execute_on = 'timestep_end'
+#   []
+# []
 
 [Executioner]
   type = Transient
@@ -488,4 +501,5 @@
 
 [Outputs]
   exodus = true
+  csv = true
 []
