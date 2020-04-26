@@ -21,6 +21,9 @@ public:
 protected:
   virtual ADReal computeQpResidual();
 
-  const Real _scalar;
-  const ADMaterialProperty<Real> & _material_property;
+  const Real _heat_convection_coef;
+  const Real _ambient_temperature;
+  const Real _emissivity;
+  const Real _stefan_boltzmann;
+  const Real _substrate_thickness;
 };

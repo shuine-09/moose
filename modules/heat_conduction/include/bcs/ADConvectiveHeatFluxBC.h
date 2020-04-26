@@ -25,9 +25,13 @@ public:
 protected:
   virtual ADReal computeQpResidual() override;
 
-  /// Far-field temperature variable
-  const ADMaterialProperty<Real> & _T_infinity;
-
-  /// Convective heat transfer coefficient
-  const ADMaterialProperty<Real> & _htc;
+  const Real _heat_convection_coef;
+  const Real _ambient_temperature;
+  const Real _emissivity;
+  const Real _stefan_boltzmann;
+  const Real _substrate_thickness;
+  const Real _absorptivity;
+  const Real _laser_power;
+  const Real _laser_radius;
+  const Real _laser_velocity;
 };
