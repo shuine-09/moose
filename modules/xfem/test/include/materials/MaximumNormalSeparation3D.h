@@ -8,7 +8,7 @@
 #ifndef MAXIMUMNORMALSEPARATION3D_H
 #define MAXIMUMNORMALSEPARATION3D_H
 
-#include "Material.h"
+#include "InterfaceMaterial.h"
 
 class MaximumNormalSeparation3D;
 
@@ -18,7 +18,7 @@ InputParameters validParams<MaximumNormalSeparation3D>();
 /**
  *
  */
-class MaximumNormalSeparation3D : public Material
+class MaximumNormalSeparation3D : public InterfaceMaterial
 {
 public:
   MaximumNormalSeparation3D(const InputParameters & parameters);

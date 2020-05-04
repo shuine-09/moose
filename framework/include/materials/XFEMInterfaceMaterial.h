@@ -15,20 +15,22 @@
 #include "MaterialPropertyInterface.h"
 
 // forward declarations
-class Material;
+class XFEMInterfaceMaterial;
 
 template <>
-InputParameters validParams<Material>();
+InputParameters validParams<XFEMInterfaceMaterial>();
 
 /**
  * Materials compute MaterialProperties.
  */
-class Material : public MaterialBase, public Coupleable, public MaterialPropertyInterface
+class XFEMInterfaceMaterial : public MaterialBase,
+                              public NeighborCoupleable,
+                              public MaterialPropertyInterface
 {
 public:
   static InputParameters validParams();
 
-  Material(const InputParameters & parameters);
+  XFEMInterfaceMaterial(const InputParameters & parameters);
 
   virtual void computeProperties() override;
 
@@ -100,13 +102,13 @@ protected:
     SUBDOMAIN
   };
 
-  /// Options of the constantness level of the material
+  /// Options of the constantness level of the XFEMInterfaceMaterial
   const ConstantTypeEnum _constant_option;
 };
 
 template <typename T>
 const MaterialProperty<T> &
-Material::getMaterialPropertyTempl(const std::string & name)
+XFEMInterfaceMaterial::getMaterialPropertyTempl(const std::string & name)
 {
   // Check if the supplied parameter is a valid imput parameter key
   std::string prop_name = deducePropertyName(name);
@@ -121,7 +123,7 @@ Material::getMaterialPropertyTempl(const std::string & name)
 
 template <typename T>
 const ADMaterialPropertyObject<T> &
-Material::getADMaterialPropertyTempl(const std::string & name)
+XFEMInterfaceMaterial::getADMaterialPropertyTempl(const std::string & name)
 {
   // Check if the supplied parameter is a valid imput parameter key
   std::string prop_name = deducePropertyName(name);
@@ -136,7 +138,7 @@ Material::getADMaterialPropertyTempl(const std::string & name)
 
 template <typename T>
 const MaterialProperty<T> &
-Material::getMaterialPropertyOldTempl(const std::string & name)
+XFEMInterfaceMaterial::getMaterialPropertyOldTempl(const std::string & name)
 {
   // Check if the supplied parameter is a valid imput parameter key
   std::string prop_name = deducePropertyName(name);
@@ -151,7 +153,7 @@ Material::getMaterialPropertyOldTempl(const std::string & name)
 
 template <typename T>
 const MaterialProperty<T> &
-Material::getMaterialPropertyOlderTempl(const std::string & name)
+XFEMInterfaceMaterial::getMaterialPropertyOlderTempl(const std::string & name)
 {
   // Check if the supplied parameter is a valid imput parameter key
   std::string prop_name = deducePropertyName(name);
@@ -166,7 +168,7 @@ Material::getMaterialPropertyOlderTempl(const std::string & name)
 
 template <typename T>
 const MaterialProperty<T> &
-Material::getMaterialPropertyByNameTempl(const std::string & prop_name)
+XFEMInterfaceMaterial::getMaterialPropertyByNameTempl(const std::string & prop_name)
 {
   MaterialBase::checkExecutionStage();
   // The property may not exist yet, so declare it (declare/getMaterialProperty are referencing the
@@ -178,19 +180,19 @@ Material::getMaterialPropertyByNameTempl(const std::string & prop_name)
 
 template <typename T>
 const ADMaterialPropertyObject<T> &
-Material::getADMaterialPropertyByNameTempl(const std::string & prop_name)
+XFEMInterfaceMaterial::getADMaterialPropertyByNameTempl(const std::string & prop_name)
 {
   MaterialBase::checkExecutionStage();
   // The property may not exist yet, so declare it (declare/getADMaterialProperty are referencing
   // the same memory)
   _requested_props.insert(prop_name);
-  registerPropName(prop_name, true, Material::CURRENT);
+  registerPropName(prop_name, true, XFEMInterfaceMaterial::CURRENT);
   return MaterialPropertyInterface::getADMaterialPropertyByNameTempl<T>(prop_name);
 }
 
 template <typename T>
 const MaterialProperty<T> &
-Material::getMaterialPropertyOldByNameTempl(const std::string & prop_name)
+XFEMInterfaceMaterial::getMaterialPropertyOldByNameTempl(const std::string & prop_name)
 {
   registerPropName(prop_name, true, MaterialBase::OLD);
   return MaterialPropertyInterface::getMaterialPropertyOldByNameTempl<T>(prop_name);
@@ -198,8 +200,8 @@ Material::getMaterialPropertyOldByNameTempl(const std::string & prop_name)
 
 template <typename T>
 const MaterialProperty<T> &
-Material::getMaterialPropertyOlderByNameTempl(const std::string & prop_name)
+XFEMInterfaceMaterial::getMaterialPropertyOlderByNameTempl(const std::string & prop_name)
 {
-  registerPropName(prop_name, true, Material::OLDER);
+  registerPropName(prop_name, true, XFEMInterfaceMaterial::OLDER);
   return MaterialPropertyInterface::getMaterialPropertyOlderByNameTempl<T>(prop_name);
 }

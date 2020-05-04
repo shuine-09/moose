@@ -230,6 +230,7 @@
     compute = false
     disp_x = disp_x
     disp_y = disp_y
+    block = 0
   [../]
 []
 
@@ -300,7 +301,7 @@
    petsc_options_iname = '-pc_type -pc_factor_mat_solver_package'
    petsc_options_value = 'lu     superlu_dist'
 
-   line_search = bt
+   line_search = 'none'
 
   #[./Predictor]
   #  type = SimplePredictor

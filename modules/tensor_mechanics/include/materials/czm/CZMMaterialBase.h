@@ -33,6 +33,14 @@ public:
 protected:
   virtual void computeQpProperties() override;
 
+  virtual bool isBoundaryMaterial() const override { return false; };
+  virtual bool isInterfaceMaterial() override { return false; };
+  virtual void computeProperties() override{};
+  virtual void subdomainSetup() override{};
+
+  virtual void resetQpProperties() override;
+  virtual void initQpStatefulProperties() override;
+
   /// normal to the interface
   const MooseArray<Point> & _normals;
 
@@ -68,4 +76,6 @@ protected:
   MaterialProperty<RankTwoTensor> & _traction_derivatives_global;
   MaterialProperty<RankTwoTensor> & _traction_derivatives;
   ///@}
+  MaterialProperty<Real> & _max_normal_separation;
+  const MaterialProperty<Real> & _max_normal_separation_old;
 };

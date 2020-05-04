@@ -19,7 +19,8 @@ InterfaceMaterial::validParams()
   InputParameters params = MaterialBase::validParams();
   params += TwoMaterialPropertyInterface::validParams();
   params.set<bool>("_interface") = true;
-  params.set<Moose::MaterialDataType>("_material_data_type") = Moose::INTERFACE_MATERIAL_DATA;
+  // params.set<Moose::MaterialDataType>("_material_data_type") = Moose::INTERFACE_MATERIAL_DATA;
+  params.set<Moose::MaterialDataType>("_material_data_type") = Moose::BLOCK_MATERIAL_DATA;
 
   // Interface materials always need one layer of ghosting to be safe
   params.addRelationshipManager("ElementSideNeighborLayers",
@@ -32,9 +33,12 @@ InterfaceMaterial::InterfaceMaterial(const InputParameters & parameters)
   : MaterialBase(parameters),
     NeighborCoupleable(this, false, false),
     TwoMaterialPropertyInterface(this, blockIDs(), boundaryIDs()),
-    _q_point(_assembly.qPointsFace()),
-    _qrule(_assembly.qRuleFace()),
-    _JxW(_assembly.JxWFace()),
+    // _q_point(_assembly.qPointsFace()),
+    // _qrule(_assembly.qRuleFace()),
+    // _JxW(_assembly.JxWFace()),
+    _q_point(_assembly.qPoints()),
+    _qrule(_assembly.qRule()),
+    _JxW(_assembly.JxW()),
     _current_elem(_assembly.elem()),
     _neighbor_elem(_assembly.neighbor()),
     _current_side(_assembly.side()),

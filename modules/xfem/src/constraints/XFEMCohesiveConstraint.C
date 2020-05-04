@@ -99,12 +99,11 @@ XFEMCohesiveConstraint::computeQpResidual(Moose::DGResidualType type)
   // Calculating Normal and tengential tractions on crack surface:
   Real t_n = 0.0;
 
-  // std::cout << "separation = " << delta_m_n << ", max_normal_separation = " <<
-  // max_normal_separation
-  //           << ", delta_0 = " << delta_0 << ", delta_f = " << delta_f << std::endl;
-  //
-  // std::cout << "delta_0 = " << delta_0 << ", delta_f = " << delta_f
-  //           << ", max_normal_separation = " << max_normal_separation << std::endl;
+  std::cout << "separation = " << delta_m_n << ", max_normal_separation = " << max_normal_separation
+            << ", delta_0 = " << delta_0 << ", delta_f = " << delta_f << std::endl;
+
+  std::cout << "delta_0 = " << delta_0 << ", delta_f = " << delta_f
+            << ", max_normal_separation = " << max_normal_separation << std::endl;
 
   if (max_normal_separation < delta_0)
   {

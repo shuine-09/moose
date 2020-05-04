@@ -8,12 +8,12 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 // MOOSE includes
-#include "Material.h"
+#include "XFEMInterfaceMaterial.h"
 
-defineLegacyParams(Material);
+defineLegacyParams(XFEMInterfaceMaterial);
 
 InputParameters
-Material::validParams()
+XFEMInterfaceMaterial::validParams()
 {
 
   InputParameters params = MaterialBase::validParams();
@@ -31,9 +31,9 @@ Material::validParams()
   return params;
 }
 
-Material::Material(const InputParameters & parameters)
+XFEMInterfaceMaterial::XFEMInterfaceMaterial(const InputParameters & parameters)
   : MaterialBase(parameters),
-    Coupleable(this, false),
+    NeighborCoupleable(this, false, false),
     MaterialPropertyInterface(this, blockIDs(), boundaryIDs()),
     _bnd(_material_data_type != Moose::BLOCK_MATERIAL_DATA),
     _neighbor(_material_data_type == Moose::NEIGHBOR_MATERIAL_DATA),
@@ -53,7 +53,7 @@ Material::Material(const InputParameters & parameters)
 }
 
 void
-Material::subdomainSetup()
+XFEMInterfaceMaterial::subdomainSetup()
 {
   if (_constant_option == ConstantTypeEnum::SUBDOMAIN)
   {
@@ -75,16 +75,16 @@ Material::subdomainSetup()
 }
 
 void
-Material::computeProperties()
+XFEMInterfaceMaterial::computeProperties()
 {
   if (_constant_option == ConstantTypeEnum::SUBDOMAIN)
     return;
 
   // Reference to *all* the MaterialProperties in the MaterialData object, not
-  // just the ones for this Material.
+  // just the ones for this XFEMInterfaceMaterial.
   MaterialProperties & props = _material_data->props();
 
-  // If this Material has the _constant_on_elem flag set, we take the
+  // If this XFEMInterfaceMaterial has the _constant_on_elem flag set, we take the
   // value computed for _qp==0 and use it at all the quadrature points
   // in the Elem.
   if (_constant_option == ConstantTypeEnum::ELEMENT)

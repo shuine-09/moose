@@ -204,8 +204,8 @@
     type = FunctionPresetBC
     boundary = top
     variable = disp_y
-    function = '-0.001*t'
-    #function = pull_up_and_down
+    #function = '-0.001*t'
+    function = pull_up_and_down
   [../]
 []
 
@@ -220,11 +220,22 @@
     thermal_expansion = 0.02
     t_ref = 0.5
   [../]
+  # [./material1]
+  #   type = MaximumNormalSeparation
+  #   compute = false
+  #   disp_x = disp_x
+  #   disp_y = disp_y
+  # [../]
   [./material1]
-    type = MaximumNormalSeparation
+    type = SalehaniIrani3DCTraction
+    block = 0
     compute = false
-    disp_x = disp_x
-    disp_y = disp_y
+    #boundary = 'interface'
+    normal_gap_at_maximum_normal_traction = 1
+    tangential_gap_at_maximum_shear_traction = 0.5
+    maximum_normal_traction = 100
+    maximum_shear_traction = 70
+    displacements = 'disp_x disp_y'
   [../]
 []
 

@@ -14,7 +14,7 @@ template <>
 InputParameters
 validParams<MaximumNormalSeparation3D>()
 {
-  InputParameters params = validParams<Material>();
+  InputParameters params = validParams<InterfaceMaterial>();
   params.addClassDescription("");
   params.addRequiredCoupledVar("disp_x", "Name of the variable to couple");
   params.addRequiredCoupledVar("disp_y", "Name of the variable to couple");
@@ -26,7 +26,7 @@ validParams<MaximumNormalSeparation3D>()
 }
 
 MaximumNormalSeparation3D::MaximumNormalSeparation3D(const InputParameters & parameters)
-  : Material(parameters),
+  : InterfaceMaterial(parameters),
     _base_name(isParamValid("base_name") ? getParam<std::string>("base_name") + "_" : ""),
     _max_normal_separation(declareProperty<Real>(_base_name + "max_normal_separation")),
     _max_normal_separation_old(getMaterialPropertyOld<Real>(_base_name + "max_normal_separation")),
