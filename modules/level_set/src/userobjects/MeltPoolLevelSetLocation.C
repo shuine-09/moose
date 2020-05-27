@@ -131,7 +131,14 @@ MeltPoolLevelSetLocation::threadJoin(const UserObject & uo)
 void
 MeltPoolLevelSetLocation::finalize()
 {
-  gatherSum(_location_x);
-  gatherSum(_location_y);
-  gatherSum(_location_z);
+  // gatherSum(_location_x);
+  // gatherSum(_location_y);
+  // gatherSum(_location_z);
+
+  Point p(0, 0, 0);
+  _location_x = _laser_center_x.value(_t, p);
+  _location_y = _laser_center_y.value(_t, p);
+  _location_z = _laser_center_z.value(_t, p);
+  std::cout << "location_x = " << _location_x << ", location_y = " << _location_y
+            << ", location_z = " << _location_z << std::endl;
 }
