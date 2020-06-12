@@ -3,53 +3,69 @@
   [gen]
     type = GeneratedMeshGenerator
     dim = 2
-    nx = 20
-    ny = 20
-    xmax = 1
+    nx = 200
+    ny = 1
+    xmax = 200
     ymax = 1
   []
+  [./center]
+    type = BoundingBoxNodeSetGenerator
+    input = 'gen'
+    bottom_left = '199.5 0 0'
+    top_right = '200.5 1 0'
+    new_boundary = 'center'
+  [../]
 []
 
 [GlobalParams]
   displacements = 'disp_x disp_y'
 []
 
-[Modules]
-  [./PhaseField]
-    [./Nonconserved]
-      [./c]
-        free_energy = F
-        kappa = kappa_op
-        mobility = L
-      [../]
-    [../]
+[Variables]
+  [./c]
+    order = FIRST
+    family = LAGRANGE
   [../]
+[]
+
+[ICs]
+  [./c]
+    type = ConstantIC
+    boundary = center
+    value = 1e-3
+    variable = c
+  [../]
+[]
+
+[Modules]
+  # [./PhaseField]
+  #   [./Nonconserved]
+  #     [./c]
+  #       free_energy = F
+  #       kappa = kappa_op
+  #       mobility = L
+  #     [../]
+  #   [../]
+  # [../]
   [./TensorMechanics]
     [./Master]
       [./mech]
         add_variables = true
         strain = SMALL
-        additional_generate_output = 'stress_yy'
+        additional_generate_output = 'stress_xx stress_zz'
         save_in = 'resid_x resid_y'
+        #out_of_plane_strain = strain_zz
       [../]
     [../]
   [../]
 []
 
-[ICs]
-  [./c_ic]
-    type = FunctionIC
-    function = ic
-    variable = c
-  [../]
-[]
-
-[Functions]
-  [./ic]
-    type = ParsedFunction
-    value = 'if(x<0.5 & y < 0.55 & y > 0.45,1, 0)'
-  [../]
-[]
+# [Variables]
+#   [./strain_zz]
+#     family = MONOMIAL
+#     order = CONSTANT
+#   [../]
+# []
 
 [AuxVariables]
   [./resid_x]
@@ -63,52 +79,73 @@
 []
 
 [Kernels]
-  [./solid_x]
-    type = PhaseFieldFractureMechanicsOffDiag
-    variable = disp_x
-    component = 0
-    c = c
+  # [./solid_x]
+  #   type = PhaseFieldFractureMechanicsOffDiag
+  #   variable = disp_x
+  #   component = 0
+  #   c = c
+  # [../]
+  # [./solid_y]
+  #   type = PhaseFieldFractureMechanicsOffDiag
+  #   variable = disp_y
+  #   component = 1
+  #   c = c
+  # [../]
+  # [./solid_z]
+  #   type = WeakPlaneStress
+  #   variable = strain_zz
+  # [../]
+  [./ACBulk]
+    type = AllenCahn
+    variable = c
+    f_name = F
   [../]
-  [./solid_y]
-    type = PhaseFieldFractureMechanicsOffDiag
-    variable = disp_y
-    component = 1
-    c = c
+  [./ACInterface]
+    type = ACInterface
+    variable = c
+    kappa_name = kappa_op
   [../]
 []
 
 [BCs]
-  [./ydisp]
-    type = FunctionDirichletBC
-    variable = disp_y
-    boundary = top
-    function = 't'
-  [../]
   [./yfix]
     type = DirichletBC
     variable = disp_y
-    boundary = bottom
+    boundary = left
     value = 0
   [../]
   [./xfix]
     type = DirichletBC
     variable = disp_x
-    boundary = 'top bottom'
+    boundary = left
     value = 0
   [../]
+  [./xdisp]
+    type = FunctionDirichletBC
+    variable = disp_x
+    boundary = right
+    function = t
+  [../]
+  # [./c]
+  #   type = DirichletBC
+  #   variable = c
+  #   boundary = 'left right'
+  #   value = 0
+  # [../]
 []
 
 [Materials]
   [./pfbulkmat]
     type = GenericConstantMaterial
     prop_names = 'gc_prop l visco'
-    prop_values = '1e-3 0.04 1e-4'
+    prop_values = '0.12 5 1.0e-10'
   [../]
   [./define_mobility]
     type = ParsedMaterial
     material_property_names = 'gc_prop visco'
     f_name = L
-    function = '1.0/(gc_prop * visco)'
+    #function = '1.0/(gc_prop * visco)'
+    function = '1.0'
   [../]
   [./define_kappa]
     type = ParsedMaterial
@@ -118,17 +155,19 @@
   [../]
   [./elasticity_tensor]
     type = ComputeIsotropicElasticityTensor
-    youngs_modulus = 100
-    poissons_ratio = 0.3
+    youngs_modulus = 30000
+    poissons_ratio = 0.2
   [../]
-  [./damage_stress]
+  [./elastic]
     type = ComputeLinearElasticPFFractureStress
     c = c
     E_name = 'elastic_energy'
+    F_name = 'fracture_energy'
     D_name = 'degradation'
-    F_name = 'local_fracture_energy'
-    decomposition_type = strain_spectral
+    decomposition_type = none #strain_spectral
+    use_current_history_variable = true
     use_snes_vi_solver = true
+    outputs = all
   [../]
   [./degradation]
     type = DerivativeParsedMaterial
@@ -136,10 +175,10 @@
     args = 'c'
     function = '(1.0-c)^2*(1.0 - eta) + eta'
     constant_names       = 'eta'
-    constant_expressions = '0.0'
+    constant_expressions = '1.0e-6'
     derivative_order = 2
   [../]
-  [./local_fracture_energy]
+  [./fracture_energy]
     type = DerivativeParsedMaterial
     f_name = local_fracture_energy
     args = 'c'
@@ -153,6 +192,7 @@
     sum_materials = 'elastic_energy local_fracture_energy'
     derivative_order = 2
     f_name = F
+    outputs = all
   [../]
 []
 
@@ -160,12 +200,12 @@
   [./resid_x]
     type = NodalSum
     variable = resid_x
-    boundary = 2
+    boundary = right
   [../]
   [./resid_y]
     type = NodalSum
     variable = resid_y
-    boundary = 2
+    boundary = right
   [../]
 []
 
@@ -199,15 +239,18 @@
   petsc_options_iname = '-pc_type  -snes_type'
   petsc_options_value = 'lu vinewtonrsls'
 
-  nl_rel_tol = 1e-8
+  nl_rel_tol = 1e-6
+  nl_abs_tol = 1e-6
   l_max_its = 10
-  nl_max_its = 10
+  nl_max_its = 30
 
   dt = 1e-4
-  dtmin = 1e-4
-  num_steps = 2
+  end_time = 0.08
+  dtmin = 1e-10
+  automatic_scaling = true
 []
 
 [Outputs]
   exodus = true
+  csv = true
 []

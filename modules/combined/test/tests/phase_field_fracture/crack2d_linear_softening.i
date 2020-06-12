@@ -1,14 +1,42 @@
 #This input uses PhaseField-Nonconserved Action to add phase field fracture bulk rate kernels
 [Mesh]
-  [gen]
-    type = GeneratedMeshGenerator
-    dim = 2
-    nx = 20
-    ny = 20
-    xmax = 1
-    ymax = 1
+  # [gen]
+  #   type = GeneratedMeshGenerator
+  #   dim = 2
+  #   nx = 200
+  #   ny = 100
+  #   ymax = 50
+  #   xmax = 100
+  # []
+  # [./noncrack]
+  #   type = BoundingBoxNodeSetGenerator
+  #   new_boundary = noncrack
+  #   bottom_left = '50 0 0'
+  #   top_right = '100 0 0'
+  #   input = gen
+  # [../]
+  [file]
+    type = FileMeshGenerator
+    file = crack.e
   []
 []
+
+# [Adaptivity]
+#   steps = 2
+#   marker = box
+#   max_h_level = 2
+#   initial_steps = 2
+#   stop_time = 1.0e-10
+#   [Markers]
+#     [box]
+#       bottom_left = '40 0 0'
+#       inside = refine
+#       top_right = '100 5 0'
+#       outside = do_nothing
+#       type = BoxMarker
+#     []
+#   []
+# []
 
 [GlobalParams]
   displacements = 'disp_x disp_y'
@@ -33,21 +61,6 @@
         save_in = 'resid_x resid_y'
       [../]
     [../]
-  [../]
-[]
-
-[ICs]
-  [./c_ic]
-    type = FunctionIC
-    function = ic
-    variable = c
-  [../]
-[]
-
-[Functions]
-  [./ic]
-    type = ParsedFunction
-    value = 'if(x<0.5 & y < 0.55 & y > 0.45,1, 0)'
   [../]
 []
 
@@ -81,19 +94,19 @@
   [./ydisp]
     type = FunctionDirichletBC
     variable = disp_y
-    boundary = top
+    boundary = 2#top
     function = 't'
   [../]
   [./yfix]
     type = DirichletBC
     variable = disp_y
-    boundary = bottom
+    boundary = 1#noncrack
     value = 0
   [../]
   [./xfix]
     type = DirichletBC
     variable = disp_x
-    boundary = 'top bottom'
+    boundary = 2#top
     value = 0
   [../]
 []
@@ -102,7 +115,7 @@
   [./pfbulkmat]
     type = GenericConstantMaterial
     prop_names = 'gc_prop l visco'
-    prop_values = '1e-3 0.04 1e-4'
+    prop_values = '2 0.5 1e-4'
   [../]
   [./define_mobility]
     type = ParsedMaterial
@@ -114,19 +127,19 @@
     type = ParsedMaterial
     material_property_names = 'gc_prop l'
     f_name = kappa_op
-    function = 'gc_prop * l'
+    function = 'gc_prop * l / 3.14159 * 2'
   [../]
   [./elasticity_tensor]
     type = ComputeIsotropicElasticityTensor
-    youngs_modulus = 100
+    youngs_modulus = 385000
     poissons_ratio = 0.3
   [../]
-  [./damage_stress]
+  [./elastic]
     type = ComputeLinearElasticPFFractureStress
     c = c
     E_name = 'elastic_energy'
     D_name = 'degradation'
-    F_name = 'local_fracture_energy'
+    F_name = 'fracture_energy'
     decomposition_type = strain_spectral
     use_snes_vi_solver = true
   [../]
@@ -134,23 +147,24 @@
     type = DerivativeParsedMaterial
     f_name = degradation
     args = 'c'
-    function = '(1.0-c)^2*(1.0 - eta) + eta'
-    constant_names       = 'eta'
-    constant_expressions = '0.0'
+    function = '(1.0-c)^2/((1.0-c)^2+c*(1-0.5*c)*(4/3.14159/l*E*gc_prop/sigma^2))'
+    material_property_names = 'gc_prop l'
+    constant_names       = 'E sigma'
+    constant_expressions = '385000 130'
     derivative_order = 2
   [../]
-  [./local_fracture_energy]
+  [./fracture_energy]
     type = DerivativeParsedMaterial
-    f_name = local_fracture_energy
+    f_name = fracture_energy
     args = 'c'
     material_property_names = 'gc_prop l'
-    function = 'c^2 * gc_prop / 2 / l'
+    function = 'gc_prop/l/3.14159*(2*c-c^2)'
     derivative_order = 2
   [../]
   [./fracture_driving_energy]
     type = DerivativeSumMaterial
     args = c
-    sum_materials = 'elastic_energy local_fracture_energy'
+    sum_materials = 'elastic_energy fracture_energy'
     derivative_order = 2
     f_name = F
   [../]
@@ -201,11 +215,11 @@
 
   nl_rel_tol = 1e-8
   l_max_its = 10
-  nl_max_its = 10
+  nl_max_its = 30
 
   dt = 1e-4
-  dtmin = 1e-4
-  num_steps = 2
+  dtmin = 1e-5
+  num_steps = 1000
 []
 
 [Outputs]
