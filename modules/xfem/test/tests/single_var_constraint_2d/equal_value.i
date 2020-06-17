@@ -84,15 +84,9 @@
   interval = 1
   execute_on = timestep_end
   exodus = true
-<<<<<<< HEAD
   perf_graph = true
   [./console]
     type = Console
-=======
-  [./console]
-    type = Console
-    perf_log = true
->>>>>>> preliminary development of moving interface capability using XFEM
     output_linear = true
   [../]
 []

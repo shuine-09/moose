@@ -110,12 +110,4 @@
     design = 'XFEMEqualValueAtInterface.md'
     issues = '#11750'
   [../]
-  [./equal_value]
-    type = Exodiff
-    input = equal_value.i
-    exodiff = 'equal_value_out.e'
-    map = false
-    # XFEM requires --enable-unique-ids in libmesh
-    unique_id = true
-  [../]
 []

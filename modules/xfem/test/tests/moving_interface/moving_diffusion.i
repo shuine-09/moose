@@ -57,15 +57,9 @@
 
 [Kernels]
   [./diff]
-<<<<<<< HEAD:modules/xfem/test/tests/moving_interface/moving_diffusion.i
     type = MatDiffusion
     variable = u
     diffusivity = diffusion_coefficient
-=======
-    type = ConcentrationDiffusion
-    variable = u
-    diffusion_coefficient_name = 'diffusion_coefficient'
->>>>>>> preliminary development of moving interface capability using XFEM:modules/xfem/test/tests/moving_interface/moving_diffusion.i
   [../]
   [./time_deriv]
     type = TimeDerivative
