@@ -341,6 +341,8 @@
     laser_center_x = '0.003-3.0e-04+6*1e-3*t'
     laser_center_y = '0.005'
     level_set = ls
+    starting_point = '0.0027 0.005 0'
+    velocity = '6e-3'
     execute_on = 'INITIAL TIMESTEP_BEGIN'
   []
 []

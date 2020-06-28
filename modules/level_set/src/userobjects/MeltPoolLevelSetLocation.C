@@ -29,7 +29,8 @@ MeltPoolLevelSetLocation::validParams()
   params.addParam<FunctionName>("laser_center_x", 0, "The laser center function of x coordinate.");
   params.addParam<FunctionName>("laser_center_y", 0, "The laser center function of y coordinate.");
   params.addParam<FunctionName>("laser_center_z", 0, "The laser center function of z coordinate.");
-
+  params.addParam<Point>("starting_point", Point(0, 0, 0), "starting_point");
+  params.addParam<Real>("velocity", 0, "Velocity");
   return params;
 }
 
@@ -45,7 +46,9 @@ MeltPoolLevelSetLocation::MeltPoolLevelSetLocation(const InputParameters & param
                                            Moose::VarFieldType::VAR_FIELD_STANDARD)
                               .number()),
     _system(_subproblem.getSystem(getParam<VariableName>("level_set"))),
-    _solution(_system.current_local_solution.get())
+    _solution(_system.current_local_solution.get()),
+    _starting_point(getParam<Point>("starting_point")),
+    _velocity(getParam<Real>("velocity"))
 {
 }
 
@@ -139,6 +142,11 @@ MeltPoolLevelSetLocation::finalize()
   _location_x = _laser_center_x.value(_t, p);
   _location_y = _laser_center_y.value(_t, p);
   _location_z = _laser_center_z.value(_t, p);
+
+  _location_x = _starting_point(0) + _velocity * _t;
+  _location_y = _starting_point(1);
+  _location_z = _starting_point(2);
+
   std::cout << "location_x = " << _location_x << ", location_y = " << _location_y
             << ", location_z = " << _location_z << std::endl;
 }

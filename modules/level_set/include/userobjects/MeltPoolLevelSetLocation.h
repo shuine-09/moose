@@ -55,4 +55,7 @@ protected:
   Real _location_x;
   Real _location_y;
   Real _location_z;
+
+  Point _starting_point;
+  Real _velocity;
 };
