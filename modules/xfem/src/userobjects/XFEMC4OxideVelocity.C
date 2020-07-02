@@ -40,8 +40,8 @@ XFEMC4OxideVelocity::XFEMC4OxideVelocity(const InputParameters & parameters)
 Real
 XFEMC4OxideVelocity::computeMovingInterfaceVelocity(unsigned int point_id) const
 {
-  Real value_positive = _value_at_interface_uo->getValueAtPositiveLevelSet()[point_id];
-  Real value_negative = _value_at_interface_uo->getValueAtNegativeLevelSet()[point_id];
+//  Real value_positive = _value_at_interface_uo->getValueAtPositiveLevelSet()[point_id];
+//  Real value_negative = _value_at_interface_uo->getValueAtNegativeLevelSet()[point_id];
   RealVectorValue grad_positive = _value_at_interface_uo->getGradientAtPositiveLevelSet()[point_id];
   RealVectorValue grad_negative = _value_at_interface_uo->getGradientAtNegativeLevelSet()[point_id];
 
@@ -56,8 +56,8 @@ XFEMC4OxideVelocity::computeMovingInterfaceVelocity(unsigned int point_id) const
   //                   _diffusivity_at_negative_level_set * grad_negative(0)) /
   //                  (value_positive - value_negative + _equilibrium_concentration_jump));
   const Real zircaloy_density(6550);
-  const Real zro2_density(5680);
-  const Real oxygen_atmass(16);
+// const Real zro2_density(5680);
+// const Real oxygen_atmass(16);
   const Real zirconium_atmass(91.2);
   const Real zirconium_PBR(1.56);
   const Real Na(6.022140857e23);
@@ -72,7 +72,7 @@ XFEMC4OxideVelocity::computeMovingInterfaceVelocity(unsigned int point_id) const
   const Real con_e_ox_m = 2 * con_v_ox_m;
   const Real con_o_ox_m(5.24e28);
   const Real con_o_m_ox(1.7078e28);
-  
+
 // use fixed temperature at 1200C until we add a temperature diffusion kernel
   const Real temperature(1473);
 

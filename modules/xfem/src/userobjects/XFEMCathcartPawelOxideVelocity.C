@@ -40,8 +40,8 @@ Real
 XFEMCathcartPawelOxideVelocity::computeMovingInterfaceVelocity(
     unsigned int point_id) const
 {
-  Real value_positive = _value_at_interface_uo->getValueAtPositiveLevelSet()[point_id];
-  Real value_negative = _value_at_interface_uo->getValueAtNegativeLevelSet()[point_id];
+  //Real value_positive = _value_at_interface_uo->getValueAtPositiveLevelSet()[point_id];
+  //Real value_negative = _value_at_interface_uo->getValueAtNegativeLevelSet()[point_id];
   RealVectorValue grad_positive = _value_at_interface_uo->getGradientAtPositiveLevelSet()[point_id];
   RealVectorValue grad_negative = _value_at_interface_uo->getGradientAtNegativeLevelSet()[point_id];
 
