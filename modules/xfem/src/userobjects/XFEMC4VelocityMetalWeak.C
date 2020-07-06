@@ -53,18 +53,20 @@ XFEMC4VelocityMetalWeak::computeMovingInterfaceVelocity(unsigned int point_id) c
   //const Real temperature(1473);
 
 
-  const Real J_b_to_a = -_diffusivity_alpha * grad_positive(0) / pow((1 - x_o_a_b),2);
-  const Real J_a_to_b = -_diffusivity_beta * (-grad_negative(0)) / pow((1 - x_o_b_a),2);
+  const Real J_b_to_a = -_diffusivity_alpha * grad_positive(0);
+  const Real J_a_to_b = -_diffusivity_beta * (-grad_negative(0));
 
   const Real c_o_a_b = x_o_a_b / (1 - x_o_a_b);
   const Real c_o_b_a = x_o_b_a / (1 - x_o_b_a);
 
-  std::cout << "J_b_to_a : " << J_b_to_a * 4.33e28<< std::endl;
-  std::cout << "J_a_to_b : " << J_a_to_b * 4.33e28<< std::endl;
+  std::cout << "Grad positive : " << grad_positive(0) << std::endl;
+  std::cout << "Grad negative : " << grad_negative(0) << std::endl;
+  //std::cout << "J_b_to_a : " << J_b_to_a * 4.33e28<< std::endl;
+  //std::cout << "J_a_to_b : " << J_a_to_b * 4.33e28<< std::endl;
 
   const Real v_a_b = (J_b_to_a - J_a_to_b) / (c_o_a_b - c_o_b_a);
 
-  std::cout << "Alpha-beta velocity : " << v_a_b << std::endl;
+  //std::cout << "Alpha-beta velocity : " << v_a_b << std::endl;
 
   return v_a_b;
 

@@ -41,7 +41,8 @@ XFEMC4VelocityOxideWeak::computeMovingInterfaceVelocity(unsigned int point_id) c
 
 //  std::cout << "xt: " << xt << std::endl;
 
-  Real delta = std::abs(xt - 6e-4);
+  const Real zirconium_PBR(1.56);
+  Real delta = zirconium_PBR * std::abs(xt - 6e-4);
   std::cout << "delta : " << delta << std::endl;
 
 
@@ -54,7 +55,6 @@ XFEMC4VelocityOxideWeak::computeMovingInterfaceVelocity(unsigned int point_id) c
   const Real zro2_density(5.62);
   const Real zro2_molmass(123.22);
   const Real con_zro2 = zro2_density * Na / zro2_molmass * 1e6;
-  //const Real zirconium_PBR(1.56);
 
   const Real Kb(8.6173303e-5);
   const Real migr_jp_f(1e13);
@@ -88,7 +88,7 @@ XFEMC4VelocityOxideWeak::computeMovingInterfaceVelocity(unsigned int point_id) c
   const Real potential = Kb * temperature * log(eta)/delta;
 
   const Real J_v = mobil_v * potential * (con_v_ox_w - con_v_ox_m * pow(eta,2)) / (1 - pow(eta,2));
-  const Real J_o = -_diffusivity_alpha * con_zr / pow(1 - x_o_m_ox, 2) * (-grad_negative(0));
+  const Real J_o = -_diffusivity_alpha * con_zr * (-grad_negative(0));
 
   std::cout << "J_v : " << J_v << std::endl;
   std::cout << "J_o : " << J_o << std::endl;

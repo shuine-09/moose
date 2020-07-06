@@ -1,5 +1,6 @@
 # test for an oxide growing on top of a zirconium nuclear fuel cladding
 # using the C4 model to compute the growth rate
+# the variable is the reduced concentration [/m^3] over Czr
 
 [GlobalParams]
   order = FIRST
@@ -74,7 +75,7 @@
   [./ic_u]
     type = FunctionIC
     variable = u
-    function = 'if(x<5.9e-4,if(x<5.7e-4,0.0074,0.0360+(x-5.7e-4)*0.937e4), 0.2393)'
+    function = 'if(x<5.9e-4,if(x<5.7e-4,if(x<5e-4,0.0075,0.0075+(x-5e-4)*425.71),0.0373+(x-5.7e-4)*1.5e4), 0.3679)'
   [../]
 []
 
@@ -96,7 +97,7 @@
     geometric_cut_userobject = 'moving_line_segments_ox_a'
     use_displaced_mesh = false
     variable = u
-    value = 0.2234
+    value = 0.3373
     alpha = 1e5
   [../]
   [./u_constraint_a_b]
@@ -104,7 +105,7 @@
     geometric_cut_userobject = 'moving_line_segments_a_b'
     use_displaced_mesh = false
     variable = u
-    value = 0.0360
+    value = 0.0373
     alpha = 1e5
   [../]
 []
@@ -167,14 +168,14 @@
   [./left_u]
     type = DirichletBC
     variable = u
-    value = 0.0074
+    value = 0.0075
     boundary = left
   [../]
 
   [./right_u]
     type = DirichletBC
     variable = u
-    value = 0.2393
+    value = 0.3679
     boundary = right
   [../]
 []
@@ -194,8 +195,8 @@
   nl_abs_tol = 1e-7
 
   start_time = 0.0
-  end_time = 1500.0
   dt = 10
+  num_steps = 150.0
   max_xfem_update = 1
 
 []
