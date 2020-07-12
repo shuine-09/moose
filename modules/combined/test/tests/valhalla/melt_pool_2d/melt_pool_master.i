@@ -180,11 +180,8 @@
   []
 
   [heat_conv]
-    type = INSADTemperatureAdvection
+    type = INSADEnergyAdvection
     variable = temp
-    velocity = velocity
-    cp_name = specific_heat
-    rho_name = rho
   []
 
   [heat_source]
@@ -310,6 +307,8 @@
     rho_g = 1.184
     outputs = all
     output_properties = melt_pool_mass_rate
+    cp_name = specific_heat
+    k_name = thermal_conductivity
   []
   [mass_transfer]
     type = INSMeltPoolMassTransferMaterial

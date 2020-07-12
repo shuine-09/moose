@@ -5,7 +5,7 @@ registerADMooseObject("NavierStokesApp", INSMeltPoolMaterial);
 InputParameters
 INSMeltPoolMaterial::validParams()
 {
-  InputParameters params = INSADTauMaterial::validParams();
+  InputParameters params = INSADStabilized3Eqn ::validParams();
   params.addClassDescription("Computes extra residuals from melt pool for the INS equations.");
   params.addRequiredCoupledVar("level_set_gradient", "Regularized gradient of Level set variable");
   params.addRequiredCoupledVar("temperature", "Temperature variable");
@@ -18,7 +18,7 @@ INSMeltPoolMaterial::validParams()
 }
 
 INSMeltPoolMaterial::INSMeltPoolMaterial(const InputParameters & parameters)
-  : INSADTauMaterial(parameters),
+  : INSADStabilized3Eqn(parameters),
     _grad_c(adCoupledVectorValue("level_set_gradient")),
     _temp(adCoupledValue("temperature")),
     _grad_temp(adCoupledGradient("temperature")),
@@ -39,7 +39,7 @@ INSMeltPoolMaterial::INSMeltPoolMaterial(const InputParameters & parameters)
 void
 INSMeltPoolMaterial::computeQpProperties()
 {
-  INSADTauMaterial::computeQpProperties();
+  INSADStabilized3Eqn ::computeQpProperties();
 
   _mass_strong_residual[_qp] +=
       _melt_pool_mass_rate[_qp] * _delta_function[_qp] * (1.0 / _rho_g - 1.0 / _rho_l);
