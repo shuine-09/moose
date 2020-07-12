@@ -36,6 +36,9 @@ INSMeltPoolMassTransferMaterial::computeQpProperties()
   ADReal p_sat = _p0 * std::exp(_m * _Lv / _boltzmann / _vaporization_temperature *
                                 (1 - _vaporization_temperature / _temp[_qp]));
 
-  _melt_pool_mass_rate[_qp] = std::sqrt(_m / (2 * libMesh::pi * _boltzmann)) * p_sat /
-                              std::sqrt(_temp[_qp]) * (1 - _beta_r);
+  if (_temp[_qp] > 0.0)
+    _melt_pool_mass_rate[_qp] = std::sqrt(_m / (2 * libMesh::pi * _boltzmann)) * p_sat /
+                                std::sqrt(_temp[_qp]) * (1 - _beta_r);
+  else
+    _melt_pool_mass_rate[_qp] = 0.0;
 }

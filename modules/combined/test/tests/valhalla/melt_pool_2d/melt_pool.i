@@ -77,7 +77,7 @@
   [dts]
     type = PiecewiseLinear
     x = '0   1e-6'
-    y = '1e-6 1e-3'
+    y = '1e-6 1e-4'
   []
 []
 
@@ -85,8 +85,15 @@
   [no_slip]
     type = ADVectorFunctionDirichletBC
     variable = velocity
-    boundary = 'bottom left right top'
+    boundary = 'bottom left top right'
   []
+  # [no_bc]
+  #   type = INSADMomentumNoBCBC
+  #   variable = velocity
+  #   viscous_form = 'traction'
+  #   boundary = 'top'
+  #   p = p
+  # []
   [pressure_pin]
     type = DirichletBC
     variable = p
@@ -340,13 +347,13 @@
   nl_abs_tol = 1e-7
   num_steps = 1000
   line_search = 'none'
-  petsc_options_iname = '-pc_type -sub_pc_type -pc_asm_overlap -pc_factor_mat_solver_package -sub_pc_factor_levels'
-  petsc_options_value = 'asm lu 1 superlu_dist 3'
-  nl_max_its = 20
+  # petsc_options_iname = '-pc_type -sub_pc_type -pc_asm_overlap -pc_factor_mat_solver_package -sub_pc_factor_levels'
+  # petsc_options_value = 'asm lu 1 superlu_dist 3'
+  nl_max_its = 10
   l_max_its = 100
   l_tol = 1e-02
-  # petsc_options_iname = '-pc_type -pc_factor_mat_solver_type -ksp_type'
-  # petsc_options_value = 'lu strumpack preonly'
+  petsc_options_iname = '-pc_type -pc_factor_mat_solver_type -ksp_type'
+  petsc_options_value = 'lu superlu_dist preonly'
   nl_div_tol = 1e20
   automatic_scaling = true
 

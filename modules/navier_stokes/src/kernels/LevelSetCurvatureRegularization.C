@@ -25,6 +25,10 @@ ADReal
 LevelSetCurvatureRegularization::computeQpResidual()
 {
   ADReal s = (_grad_c[_qp] + RealVectorValue(libMesh::TOLERANCE)).norm();
+  // ADRealVectorValue n(0.0);
+  // if (s > libMesh::TOLERANCE)
+  //   n = _grad_c[_qp] / s;
+
   ADRealVectorValue n = _grad_c[_qp] / s;
 
   return _test[_i][_qp] * _u[_qp] - _grad_test[_i][_qp] * (n - _varepsilon * _grad_u[_qp]);

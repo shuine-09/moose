@@ -31,9 +31,9 @@
   [ls]
     order = FIRST
   []
-  [grad_ls]
-    family = LAGRANGE_VEC
-  []
+  # [grad_ls]
+  #   family = LAGRANGE_VEC
+  # []
 []
 
 [AuxVariables]
@@ -43,19 +43,25 @@
 []
 
 [Kernels]
-  [grad_ls]
-    type = VariableGradientRegularization
-    regularized_var = ls_0
-    variable = grad_ls
-  []
+  # [grad_ls]
+  #   type = VariableGradientRegularization
+  #   regularized_var = ls_0
+  #   variable = grad_ls
+  # []
   [time]
     type = TimeDerivative
     variable = ls
   []
+  # [reinit]
+  #   type = LevelSetGradientRegularizationReinitialization
+  #   variable = ls
+  #   level_set_gradient = grad_ls
+  #   epsilon = 0.00004
+  # []
   [reinit]
-    type = LevelSetGradientRegularizationReinitialization
+    type = LevelSetOlssonReinitialization
     variable = ls
-    level_set_gradient = grad_ls
+    phi_0 = ls_0
     epsilon = 0.00004
   []
 []
@@ -72,6 +78,14 @@
   []
 []
 
+[Preconditioning]
+  [SMP]
+    type = SMP
+    full = true
+    solve_type = 'NEWTON'
+  []
+[]
+
 [Executioner]
   type = Transient
   solve_type = NEWTON
@@ -80,8 +94,8 @@
   nl_abs_tol = 1e-14
   nl_max_its = 10
   line_search = none
-  petsc_options_iname = '-pc_type -pc_factor_shift_type -pc_factor_mat_solver_package -ksp_type'
-  petsc_options_value = 'lu NONZERO superlu_dist preonly'
+  petsc_options_iname = '-pc_type -pc_factor_mat_solver_package'
+  petsc_options_value = 'lu superlu_dist'
   dt = 0.00001
 []
 
