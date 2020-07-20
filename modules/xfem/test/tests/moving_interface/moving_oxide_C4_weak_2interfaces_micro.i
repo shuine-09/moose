@@ -10,12 +10,12 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 61
-  ny = 20
+  nx = 201
+  ny = 13
   xmin = 0
-  xmax = 6e-4
+  xmax = 600
   ymin = 0
-  ymax = 1e-3
+  ymax = 40
   elem_type = QUAD4
 []
 
@@ -26,10 +26,9 @@
 
 [UserObjects]
   [./velocity_ox_a]
-    type = XFEMC4VelocityOxideWeak
-    diffusivity_alpha = 1e-11
+    type = XFEMC4VelocityOxideWeakMicro
+    diffusivity_alpha = 8
     value_at_interface_uo = value_uo_ox_a
-    x0 = 5.9e-4
   [../]
   [./value_uo_ox_a]
     type = PointValueAtXFEMInterface
@@ -40,16 +39,15 @@
   [../]
   [./moving_line_segments_ox_a]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '5.9e-4 0 5.9e-4 1e-3 0 0'
+    cut_data = '590.1 0 590.1 40 0 0'
     heal_always = true
     interface_velocity = velocity_ox_a
   [../]
   [./velocity_a_b]
     type = XFEMC4VelocityMetalWeak
-    diffusivity_alpha = 1e-11
-    diffusivity_beta = 6e-11
+    diffusivity_alpha = 8
+    diffusivity_beta = 10
     value_at_interface_uo = value_uo_a_b
-    x0 = 5.7e-4
   [../]
   [./value_uo_a_b]
     type = PointValueAtXFEMInterface
@@ -60,9 +58,47 @@
   [../]
   [./moving_line_segments_a_b]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '5.7e-4 0 5.7e-4 1e-3 0 0'
+    cut_data = '572.3 0 572.3 40 0 0'
     heal_always = true
     interface_velocity = velocity_a_b
+  [../]
+  [./velocity_a0]
+    type = XFEMC4VelocityMetalWeak
+    diffusivity_alpha = 8
+    diffusivity_beta = 8
+    value_at_interface_uo = value_uo_a0
+  [../]
+  [./value_uo_a0]
+    type = PointValueAtXFEMInterface
+    variable = 'u'
+    geometric_cut_userobject = 'moving_line_segments_a0'
+    execute_on = 'nonlinear'
+    level_set_var = ls_a0
+  [../]
+  [./moving_line_segments_a0]
+    type = MovingLineSegmentCutSetUserObject
+    cut_data = '580.5 0 580.5 40 0 0'
+    heal_always = true
+    interface_velocity = velocity_a0
+  [../]
+  [./velocity_b0]
+    type = XFEMC4VelocityMetalWeak
+    diffusivity_alpha = 10
+    diffusivity_beta = 10
+    value_at_interface_uo = value_uo_b0
+  [../]
+  [./value_uo_b0]
+    type = PointValueAtXFEMInterface
+    variable = 'u'
+    geometric_cut_userobject = 'moving_line_segments_b0'
+    execute_on = 'nonlinear'
+    level_set_var = ls_b0
+  [../]
+  [./moving_line_segments_b0]
+    type = MovingLineSegmentCutSetUserObject
+    cut_data = '529.6 0 529.6 40 0 0'
+    heal_always = true
+    interface_velocity = velocity_b0
   [../]
 []
 
@@ -75,7 +111,9 @@
   [./ic_u]
     type = FunctionIC
     variable = u
-    function = 'if(x<5.9e-4,if(x<5.7e-4,if(x<5e-4,0.0075,0.0075+(x-5e-4)*425.71),0.0373+(x-5.7e-4)*1.5e4), 0.3679)'
+    function = 'if(x<590.1,if(x<572.3,if(x<529.6,0.0075,0.0075+(x-529.6)*698e-6),
+                            if(x<580.5,0.0373+(x-572.3)*5618e-6,0.3373+(x-590.1)*26404e-6)),
+                            0.3679)'
   [../]
 []
 
@@ -85,6 +123,14 @@
     family = LAGRANGE
   [../]
   [./ls_a_b]
+    order = FIRST
+    family = LAGRANGE
+  [../]
+  [./ls_a0]
+    order = FIRST
+    family = LAGRANGE
+  [../]
+  [./ls_b0]
     order = FIRST
     family = LAGRANGE
   [../]
@@ -108,6 +154,23 @@
     value = 0.0373
     alpha = 1e5
   [../]
+  [./u_constraint_alpha]
+    type = XFEMEqualValueAtInterface
+    geometric_cut_userobject = 'moving_line_segments_a0'
+    use_displaced_mesh = false
+    variable = u
+    value = 0.0835
+    alpha = 1e5
+  [../]
+  [./u_constraint_beta]
+    type = XFEMEqualValueAtInterface
+    geometric_cut_userobject = 'moving_line_segments_b0'
+    use_displaced_mesh = false
+    variable = u
+    value = 0.0075
+    alpha = 1e5
+  [../]
+
 []
 
 [Kernels]
@@ -133,23 +196,33 @@
     line_segment_cut_set_user_object = 'moving_line_segments_a_b'
     variable = ls_a_b
   [../]
+  [./ls_a0]
+    type = LineSegmentLevelSetAux
+    line_segment_cut_set_user_object = 'moving_line_segments_a0'
+    variable = ls_a0
+  [../]
+  [./ls_b0]
+    type = LineSegmentLevelSetAux
+    line_segment_cut_set_user_object = 'moving_line_segments_b0'
+    variable = ls_b0
+  [../]
 []
 
 [Materials]
   [./diffusivity_beta]
     type = GenericConstantMaterial
     prop_names = beta_diffusion_coefficient
-    prop_values = 6e-11
+    prop_values = 10
   [../]
   [./diffusivity_alpha]
     type = GenericConstantMaterial
     prop_names = alpha_diffusion_coefficient
-    prop_values = 1e-11
+    prop_values = 8
   [../]
   [./diffusivity_oxide]
     type = GenericConstantMaterial
     prop_names = oxide_diffusion_coefficient
-    prop_values = 1e-5
+    prop_values = 10e6
   [../]
   [./diff_combined]
     type = LevelSetTriMaterialReal
@@ -180,6 +253,14 @@
   [../]
 []
 
+[Postprocessors]
+  [./grad_a_ox]
+    type = GradValueAtXFEMInterfacePostprocessor
+    value_at_interface_uo = value_uo_ox_a
+    side = -1
+  [../]
+[]
+
 [Executioner]
   type = Transient
   solve_type = 'PJFNK'
@@ -190,17 +271,27 @@
 
 
   l_tol = 1e-3
+  l_max_its = 10
   nl_max_its = 15
-  nl_rel_tol = 1e-7
-  nl_abs_tol = 1e-7
+  nl_rel_tol = 1e-6
+  nl_abs_tol = 1e-6
 
-  start_time = 0.0
-  dt = 10
-  num_steps = 150.0
+  start_time = 20
+  dt = 1
+  num_steps = 480
   max_xfem_update = 1
 
 []
 
+[Controls]
+  [./steady]
+    type = TimePeriod
+    disable_objects = 'Kernels::time '
+    enable_objects = 'UserObjects::velocity_a0 UserObjects::value_uo_a0 UserObjects::moving_line_segments_a0 Constraints::u_constraint_alpha AuxKernels::ls_a0 UserObjects::velocity_b0 UserObjects::value_uo_b0 UserObjects::moving_line_segments_b0 Constraints::u_constraint_beta AuxKernels::ls_b0 '
+    start_time = '20'
+    end_time = '21'
+  [../]
+[]
 
 [Outputs]
   execute_on = timestep_end

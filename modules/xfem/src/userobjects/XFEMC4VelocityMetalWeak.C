@@ -20,7 +20,7 @@ validParams<XFEMC4VelocityMetalWeak>()
                                 "Diffusivity of oxygen in the alpha phase.");
   params.addRequiredParam<Real>("diffusivity_beta",
                                 "Diffusivity of oxygen in the beta phase.");
-  params.addParam<Real>("x0", 0, "Initial x location.");
+  //params.addParam<Real>("x0", 0, "Initial x location.");
   params.addClassDescription(
       "Calculate the alpha phase/beta phase interface velocity for the 2 interfaces C4 model for Zircaloy-4 corrosion.");
   return params;
@@ -29,8 +29,8 @@ validParams<XFEMC4VelocityMetalWeak>()
 XFEMC4VelocityMetalWeak::XFEMC4VelocityMetalWeak(const InputParameters & parameters)
   : XFEMMovingInterfaceVelocityBase(parameters),
     _diffusivity_alpha(getParam<Real>("diffusivity_alpha")),
-    _diffusivity_beta(getParam<Real>("diffusivity_beta")),
-    _x0(getParam<Real>("x0"))
+    _diffusivity_beta(getParam<Real>("diffusivity_beta"))
+    //_x0(getParam<Real>("x0"))
 {
 }
 
@@ -59,8 +59,9 @@ XFEMC4VelocityMetalWeak::computeMovingInterfaceVelocity(unsigned int point_id) c
   const Real c_o_a_b = x_o_a_b / (1 - x_o_a_b);
   const Real c_o_b_a = x_o_b_a / (1 - x_o_b_a);
 
-  std::cout << "Grad positive : " << grad_positive(0) << std::endl;
-  std::cout << "Grad negative : " << grad_negative(0) << std::endl;
+  std::cout << "ab_grad_negative : " << grad_negative(0) << std::endl;
+  std::cout << "ab_grad_positive : " << grad_positive(0) << std::endl;
+
   //std::cout << "J_b_to_a : " << J_b_to_a * 4.33e28<< std::endl;
   //std::cout << "J_a_to_b : " << J_a_to_b * 4.33e28<< std::endl;
 

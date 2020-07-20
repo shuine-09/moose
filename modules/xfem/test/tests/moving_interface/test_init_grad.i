@@ -1,6 +1,3 @@
-# test for an oxide growing on top of a zirconium nuclear fuel cladding
-# using the C4 model to compute the growth rate
-
 [GlobalParams]
   order = FIRST
   family = LAGRANGE
@@ -9,12 +6,12 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 21
-  ny = 20
+  nx = 4
+  ny = 1
   xmin = 0
-  xmax = 6e-4
+  xmax = 4
   ymin = 0
-  ymax = 1e-3
+  ymax = 1
   elem_type = QUAD4
 []
 
@@ -25,10 +22,11 @@
 
 [UserObjects]
   [./velocity]
-    type = XFEMC4VelocityOxideWeak
-    diffusivity_alpha = 1e-11
+    type = XFEMPhaseTransitionMovingInterfaceVelocity
+    diffusivity_at_positive_level_set = 5
+    diffusivity_at_negative_level_set = 1
+    equilibrium_concentration_jump = 0
     value_at_interface_uo = value_uo
-    x0 = 5.9e-4
   [../]
   [./value_uo]
     type = PointValueAtXFEMInterface
@@ -39,7 +37,7 @@
   [../]
   [./moving_line_segments]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '5.9e-4 0 5.9e-4 1e-3 0 0'
+    cut_data = '1.5 0 1.5 1.0 0 0'
     heal_always = true
     interface_velocity = velocity
   [../]
@@ -54,7 +52,7 @@
   [./ic_u]
     type = FunctionIC
     variable = u
-    function = 'if(x<5.9e-4, 0.0075, 0.4547)'
+    function = 'if(x<1.5, x, 1.5)'
   [../]
 []
 
@@ -63,12 +61,7 @@
     order = FIRST
     family = LAGRANGE
   [../]
-  [./u_discontinuous]
-    order = FIRST
-    family = LAGRANGE
-  [../]
 []
-
 
 [Constraints]
   [./u_constraint]
@@ -76,16 +69,16 @@
     geometric_cut_userobject = 'moving_line_segments'
     use_displaced_mesh = false
     variable = u
-    value = 0.4241
+    value = 1.5
     alpha = 1e5
   [../]
 []
 
 [Kernels]
   [./diff]
-    type = ConcentrationDiffusion
+    type = MatDiffusion
     variable = u
-    diffusion_coefficient_name = 'diffusion_coefficient'
+    diffusivity = diffusion_coefficient
   [../]
   [./time]
     type = TimeDerivative
@@ -99,25 +92,18 @@
     line_segment_cut_set_user_object = 'moving_line_segments'
     variable = ls
   [../]
-  [./u_discontinuous]
-    type = WeakToStrongDiscontinuityAux
-    variable = u_discontinuous
-    weak_variable = u
-    jump_value = 0.8274
-    level_set_var = ls
-  [../]
 []
 
 [Materials]
   [./diffusivity_A]
     type = GenericConstantMaterial
     prop_names = A_diffusion_coefficient
-    prop_values = 1e-5
+    prop_values = 5
   [../]
   [./diffusivity_B]
     type = GenericConstantMaterial
     prop_names = B_diffusion_coefficient
-    prop_values = 1e-11
+    prop_values = 1
   [../]
   [./diff_combined]
     type = LevelSetBiMaterialReal
@@ -133,46 +119,53 @@
   [./left_u]
     type = DirichletBC
     variable = u
-    value = 0.0075
+    value = 0
     boundary = left
   [../]
 
   [./right_u]
     type = DirichletBC
     variable = u
-    value = 0.4547
     boundary = right
+    value = 1.5
   [../]
 []
 
 [Executioner]
   type = Transient
   solve_type = 'PJFNK'
-  petsc_options_iname = '-pc_type'
-  petsc_options_value = 'lu'
+  petsc_options_iname = '-pc_type -pc_hypre_type'
+  petsc_options_value = 'hypre boomeramg'
   line_search = 'none'
-
-
 
   l_tol = 1e-3
   nl_max_its = 15
-  nl_rel_tol = 1e-7
-  nl_abs_tol = 1e-7
+  nl_rel_tol = 1e-12
+  nl_abs_tol = 1e-11
 
   start_time = 0.0
-  dt = 10
-  num_steps = 150
+  dt = 0.01
+  num_steps = 4
   max_xfem_update = 1
+[]
+
+[Controls]
+  [./diff]
+    type = TimePeriod
+    disable_objects = 'Kernel::time'
+    start_time = '0'
+    end_time = '0.01'
+  [../]
 []
 
 
 [Outputs]
   execute_on = timestep_end
   exodus = true
+  perf_graph = true
   [./console]
     type = Console
     output_linear = true
   [../]
   csv = true
-  perf_graph = true
 []

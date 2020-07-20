@@ -29,7 +29,7 @@
     type = XFEMC4VelocityOxideWeak
     diffusivity_alpha = 1e-11
     value_at_interface_uo = value_uo_ox_a
-    x0 = 590.1e-6
+    x0 = 5.992e-4
   [../]
   [./value_uo_ox_a]
     type = PointValueAtXFEMInterface
@@ -40,7 +40,7 @@
   [../]
   [./moving_line_segments_ox_a]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '590.1e-6 0 590.1e-6 2.5e-4 0 0'
+    cut_data = '5.992e-4 0 5.992e-4 1e-4 0 0'
     heal_always = true
     interface_velocity = velocity_ox_a
   [../]
@@ -49,7 +49,7 @@
     diffusivity_alpha = 1e-11
     diffusivity_beta = 6e-11
     value_at_interface_uo = value_uo_a_b
-    x0 = 572.3e-6
+    x0 = 5.963e-4
   [../]
   [./value_uo_a_b]
     type = PointValueAtXFEMInterface
@@ -60,7 +60,7 @@
   [../]
   [./moving_line_segments_a_b]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '572.3e-6 0 572.3e-6 2.5e-4 0 0'
+    cut_data = '5.963e-4 0 5.963e-4 1e-4 0.3 0.3'
     heal_always = true
     interface_velocity = velocity_a_b
   [../]
@@ -75,9 +75,8 @@
   [./ic_u]
     type = FunctionIC
     variable = u
-    function = 'if(x<590.1e-6,if(x<572.3e-6,if(x<529.6e-6,0.0075,0.0075+(x-529.6e-6)*698),
-                            if(x<580.5e-6,0.0373+(x-572.3e-6)*5618,0.3373+(x-590.1e-6)*26404)),
-                            0.3679)'
+    function = 'if(x<597.7e-6,0.0075,
+                if(x<599.2e-6,0.075+(x-597.7e-6)*219867,0.3679))'
   [../]
 []
 
@@ -171,14 +170,14 @@
     type = DirichletBC
     variable = u
     value = 0.0075
-    boundary = 4
+    boundary = left
   [../]
 
   [./right_u]
     type = DirichletBC
     variable = u
     value = 0.3679
-    boundary = 2
+    boundary = right
   [../]
 []
 
@@ -197,9 +196,9 @@
   nl_rel_tol = 2e-12
   nl_abs_tol = 2e-12
 
-  start_time = 20
-  dt = 10
-  num_steps = 48
+  start_time = 0
+  dt = 0.1
+  num_steps = 10
   max_xfem_update = 1
 
 []

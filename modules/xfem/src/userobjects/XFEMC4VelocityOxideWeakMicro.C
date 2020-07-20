@@ -7,32 +7,32 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "XFEMC4VelocityOxideWeak.h"
+#include "XFEMC4VelocityOxideWeakMicro.h"
 
-registerMooseObject("XFEMApp", XFEMC4VelocityOxideWeak);
+registerMooseObject("XFEMApp", XFEMC4VelocityOxideWeakMicro);
 
 template <>
 InputParameters
-validParams<XFEMC4VelocityOxideWeak>()
+validParams<XFEMC4VelocityOxideWeakMicro>()
 {
   InputParameters params = validParams<XFEMMovingInterfaceVelocityBase>();
   params.addRequiredParam<Real>("diffusivity_alpha",
                                 "Diffusivity of oxygen in the Zr alpha phase.");
-  params.addParam<Real>("x0", 0, "Initial position of the interface.");
+  //params.addParam<Real>("x0", 0, "Initial position of the interface.");
   params.addClassDescription(
       "Calculate the metal/oxide interface velocity for the 1 interface C4 model for Zircaloy-4 corrosion.");
   return params;
 }
 
-XFEMC4VelocityOxideWeak::XFEMC4VelocityOxideWeak(const InputParameters & parameters)
+XFEMC4VelocityOxideWeakMicro::XFEMC4VelocityOxideWeakMicro(const InputParameters & parameters)
   : XFEMMovingInterfaceVelocityBase(parameters),
-    _diffusivity_alpha(getParam<Real>("diffusivity_alpha")),
-    _x0(getParam<Real>("x0"))
+    _diffusivity_alpha(getParam<Real>("diffusivity_alpha"))
+    //_x0(getParam<Real>("x0"))
 {
 }
 
 Real
-XFEMC4VelocityOxideWeak::computeMovingInterfaceVelocity(unsigned int point_id) const
+XFEMC4VelocityOxideWeakMicro::computeMovingInterfaceVelocity(unsigned int point_id) const
 {
   RealVectorValue grad_positive = _value_at_interface_uo->getGradientAtPositiveLevelSet()[point_id];
   RealVectorValue grad_negative = _value_at_interface_uo->getGradientAtNegativeLevelSet()[point_id];
@@ -42,7 +42,7 @@ XFEMC4VelocityOxideWeak::computeMovingInterfaceVelocity(unsigned int point_id) c
 //  std::cout << "xt: " << xt << std::endl;
 
   const Real zirconium_PBR(1.56);
-  Real delta = zirconium_PBR * std::abs(xt - 6e-4);
+  Real delta = zirconium_PBR * std::abs(xt - 600);
   std::cout << "delta : " << delta << std::endl;
 
 
@@ -87,17 +87,17 @@ XFEMC4VelocityOxideWeak::computeMovingInterfaceVelocity(unsigned int point_id) c
 
   const Real potential = Kb * temperature * log(eta)/delta;
 
-  const Real J_v = mobil_v * potential * (con_v_ox_w - con_v_ox_m * pow(eta,2)) / (1 - pow(eta,2));
-  const Real J_o = -_diffusivity_alpha * con_zr * (-grad_negative(0));
+  const Real J_v = 1e6 * mobil_v * potential * (con_v_ox_w - con_v_ox_m * pow(eta,2)) / (1 - pow(eta,2));
+  const Real J_o = -_diffusivity_alpha * con_zr * (-grad_negative(0) * 1e-6);
 
-  std::cout << "ox_a_grad_negative(0) : " << grad_negative(0) << std::endl;
-  std::cout << "ox_a_grad_positive(0) : " << grad_positive(0) << std::endl;
+  std::cout << "ox_a_grad_negative : " << grad_negative(0) << std::endl;
+  std::cout << "ox_a_grad_positive : " << grad_positive(0) << std::endl;
 
   //std::cout << "J_v : " << J_v << std::endl;
   //std::cout << "J_o : " << J_o << std::endl;
 
   const Real v_ox_a_init = sqrt(0.01126 * exp(-35890 / (1.987 * temperature)) / (2 * _t)) * (-1e-2);
-  const Real v_ox_a = (J_o - J_v) / (con_zr * (3 * x_o_ox_m - (x_o_m_ox / (1 - x_o_m_ox))));
+  const Real v_ox_a = 1e6 * (J_o - J_v) / (con_zr * (3 * x_o_ox_m - (x_o_m_ox / (1 - x_o_m_ox))));
 
   if (delta == 0)
     {

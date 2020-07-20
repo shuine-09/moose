@@ -44,6 +44,14 @@ XFEMPhaseTransitionMovingInterfaceVelocity::computeMovingInterfaceVelocity(
   RealVectorValue grad_positive = _value_at_interface_uo->getGradientAtPositiveLevelSet()[point_id];
   RealVectorValue grad_negative = _value_at_interface_uo->getGradientAtNegativeLevelSet()[point_id];
 
+  Real xt = (_value_at_interface_uo->getPointCurrentLocation(point_id))(0);
+
+  std::cout << "xt: " << xt << std::endl;
+  std::cout << "value_positive : " << value_positive << std::endl;
+  std::cout << "value_negative : " << value_negative << std::endl;
+  std::cout << "grad_positive : " << grad_positive(0) << std::endl;
+  std::cout << "grad_negative : " << grad_negative(0) << std::endl;
+
   // Current implementation only supports the case that the interface is moving horizontally
   return std::abs((_diffusivity_at_positive_level_set * grad_positive(0) -
                    _diffusivity_at_negative_level_set * grad_negative(0)) /
