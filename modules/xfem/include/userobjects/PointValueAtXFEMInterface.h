@@ -68,6 +68,22 @@ public:
 
   unsigned int numberPoints() const { return _points.size(); };
 
+  /**
+   * get the gradient x component at the positive level set side
+   */
+  Real getGradientXComponentAtPositiveLevelSet() const
+  {
+    return _grad_x_positive_level_set_side;
+  }
+
+  /**
+   * get the gradient x component at the negative level set side
+   */
+  Real getGradientXComponentAtNegativeLevelSet() const
+  {
+    return _grad_x_negative_level_set_side;
+  }
+
 protected:
   /**
    * Find the element in the element pairs that contains the point in its physical domain.
@@ -119,4 +135,10 @@ protected:
 
   /// Mapping from point index and its gradient at the negative level set side
   std::map<unsigned int, RealVectorValue> _grad_values_negative_level_set_side;
+
+  /// Gradient x component at the positive level set side
+  Real _grad_x_positive_level_set_side ;
+
+  /// Gradient x component at the negative level set side
+  Real _grad_x_negative_level_set_side ;
 };

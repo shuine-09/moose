@@ -1,10 +1,9 @@
 #pragma once
 
 #include "PointValueAtXFEMInterface.h"
-//#include "DiscreteElementUserObject.h"
-#include "Postprocessor.h"
+#include "GeneralPostprocessor.h"
 
-class GradValueAtXFEMInterfacePostprocessor : public Postprocessor//,public DiscreteElementUserObject
+class GradValueAtXFEMInterfacePostprocessor : public GeneralPostprocessor
 {
 public:
   static InputParameters validParams();
@@ -13,9 +12,9 @@ public:
 
   virtual void initialize() override;
 
-  virtual void getGradientValue(unsigned int point_id);
+  virtual void execute() override {}
 
-  virtual Real getValue() override ;
+  virtual Real getValue() override;
 
 protected:
   /// Pointer to PointValueAtXFEMInterface object
@@ -24,5 +23,5 @@ protected:
   /// Value to indicate which side of the interface we want the gradient of (+1 or -1)
   const Real _side;
 
-  Real _grad_value;
+//  Real _grad_value;
 };

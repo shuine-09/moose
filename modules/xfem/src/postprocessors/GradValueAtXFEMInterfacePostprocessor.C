@@ -14,8 +14,7 @@ registerMooseObject("XFEMApp", GradValueAtXFEMInterfacePostprocessor);
 InputParameters
 GradValueAtXFEMInterfacePostprocessor::validParams()
 {
-  InputParameters params = Postprocessor::validParams();
-  //params += DiscreteElementUserObject::validParams();
+  InputParameters params = GeneralPostprocessor::validParams();
   params.addClassDescription(
       "Retrieves the gradient value on the specified side of a specified interface ");
   params.addRequiredParam<UserObjectName>("value_at_interface_uo",
@@ -26,8 +25,7 @@ GradValueAtXFEMInterfacePostprocessor::validParams()
 }
 
 GradValueAtXFEMInterfacePostprocessor::GradValueAtXFEMInterfacePostprocessor(const InputParameters & parameters)
-  : //DiscreteElementUserObject(parameters),
-    Postprocessor(parameters),
+  : GeneralPostprocessor(parameters),
     _side(getParam<Real>("side"))
 {
 }
@@ -35,8 +33,6 @@ GradValueAtXFEMInterfacePostprocessor::GradValueAtXFEMInterfacePostprocessor(con
 void
 GradValueAtXFEMInterfacePostprocessor::initialize()
 {
-  _grad_value = 0;
-
   const UserObject * uo =
       &(_fe_problem.getUserObjectBase(getParam<UserObjectName>("value_at_interface_uo")));
 
@@ -46,24 +42,18 @@ GradValueAtXFEMInterfacePostprocessor::initialize()
   _value_at_interface_uo = dynamic_cast<const PointValueAtXFEMInterface *>(uo);
 }
 
-void
-GradValueAtXFEMInterfacePostprocessor::getGradientValue(unsigned int point_id)
-{
-  RealVectorValue grad_positive = _value_at_interface_uo->getGradientAtPositiveLevelSet()[point_id];
-  RealVectorValue grad_negative = _value_at_interface_uo->getGradientAtNegativeLevelSet()[point_id];
-
-  if (_side < 0)
-  {
-    _grad_value = grad_negative(0);
-  }
-  else
-  {
-    _grad_value = grad_positive(0);
-  }
-}
 
 Real
 GradValueAtXFEMInterfacePostprocessor::getValue()
 {
-  return _grad_value;
+  if (_side < 0)
+  {
+    //std::cout << "Negative side" << std::endl;
+    return _value_at_interface_uo->getGradientXComponentAtNegativeLevelSet();
+  }
+  else
+  {
+    //std::cout << "Positive side" << std::endl;
+    return _value_at_interface_uo->getGradientXComponentAtPositiveLevelSet();
+  }
 }

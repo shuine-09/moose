@@ -36,4 +36,6 @@ public:
 
   /// Pointer to XFEMMovingInterfaceVelocityBase object
   const XFEMMovingInterfaceVelocityBase * _interface_velocity;
+
+  //XFEMC4VelocityOxideWeakMicro * _velocity_C4;
 };

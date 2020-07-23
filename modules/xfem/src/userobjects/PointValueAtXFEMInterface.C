@@ -124,6 +124,9 @@ PointValueAtXFEMInterface::execute()
       }
     }
   }
+  // Take the value of the x component at only one point
+  _grad_x_positive_level_set_side = _grad_values_positive_level_set_side[0](0);
+  _grad_x_negative_level_set_side = _grad_values_negative_level_set_side[0](0);
 }
 
 void
@@ -131,8 +134,10 @@ PointValueAtXFEMInterface::finalize()
 {
   _communicator.set_union(_values_positive_level_set_side);
   _communicator.set_union(_grad_values_positive_level_set_side);
+  //_communicator.set_union(_grad_x_positive_level_set_side);
   _communicator.set_union(_values_negative_level_set_side);
   _communicator.set_union(_grad_values_negative_level_set_side);
+  //_communicator.set_union(_grad_x_negative_level_set_side);
 }
 
 const Elem *

@@ -25,6 +25,13 @@ public:
 
   virtual Real computeMovingInterfaceVelocity(unsigned int point_id) const override;
 
+  /** Real getVacancyFlux() const
+  {
+    return _vacancy_flux;
+  }
+  */
+  //void computeVacancyFlux(unsigned int point_id);
+
 protected:
 
   /// Diffusivity of oxygen in the Zr alpha phase
@@ -32,6 +39,8 @@ protected:
 
   // Initial position of the oxide/metal interface
   Real _x0;
+
+  //Real _vacancy_flux;
 };
 
 #endif // XFEMC4VELOCITYOXIDEWEAK_H
