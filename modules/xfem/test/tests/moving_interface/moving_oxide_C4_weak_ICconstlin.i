@@ -1,6 +1,9 @@
-# test for an oxide growing on top of a zirconium nuclear fuel cladding
+# Test for an oxide growing on top of a zirconium nuclear fuel cladding
 # using the C4 model to compute the growth rate
-# the variable is the reduced concentration [/m^3] over Czr
+# The variable is the reduced concentration [/um^3] over Czr
+# The length unit is the micrometer
+# there's 2 moving interfaces (alpha/oxide and alpha/beta)
+# The ICs are set as constants in each phase through ICs, no steady state
 
 [GlobalParams]
   order = FIRST
@@ -11,11 +14,11 @@
   type = GeneratedMesh
   dim = 2
   nx = 601
-  ny = 80
+  ny = 20
   xmin = 0
-  xmax = 6e-4
+  xmax = 600
   ymin = 0
-  ymax = 1e-4
+  ymax = 20
   elem_type = QUAD4
 []
 
@@ -26,10 +29,9 @@
 
 [UserObjects]
   [./velocity_ox_a]
-    type = XFEMC4VelocityOxideWeak
-    diffusivity_alpha = 1e-11
+    type = XFEMC4VelocityOxideWeakMicro
+    diffusivity_alpha = 10
     value_at_interface_uo = value_uo_ox_a
-    x0 = 590.1e-6
   [../]
   [./value_uo_ox_a]
     type = PointValueAtXFEMInterface
@@ -40,16 +42,15 @@
   [../]
   [./moving_line_segments_ox_a]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '590.1e-6 0 590.1e-6 2.5e-4 0 0'
+    cut_data = '590 0 590 20 0 0'
     heal_always = true
     interface_velocity = velocity_ox_a
   [../]
   [./velocity_a_b]
     type = XFEMC4VelocityMetalWeak
-    diffusivity_alpha = 1e-11
-    diffusivity_beta = 6e-11
+    diffusivity_alpha = 10
+    diffusivity_beta = 60
     value_at_interface_uo = value_uo_a_b
-    x0 = 572.3e-6
   [../]
   [./value_uo_a_b]
     type = PointValueAtXFEMInterface
@@ -60,7 +61,7 @@
   [../]
   [./moving_line_segments_a_b]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '572.3e-6 0 572.3e-6 2.5e-4 0 0'
+    cut_data = '572.2 0 572.2 20 0 0'
     heal_always = true
     interface_velocity = velocity_a_b
   [../]
@@ -75,9 +76,7 @@
   [./ic_u]
     type = FunctionIC
     variable = u
-    function = 'if(x<590.1e-6,if(x<572.3e-6,if(x<529.6e-6,0.0075,0.0075+(x-529.6e-6)*698),
-                            if(x<580.5e-6,0.0373+(x-572.3e-6)*5618,0.3373+(x-590.1e-6)*26404)),
-                            0.3679)'
+    function = 'if(x<590.0,if(x<572.2,0.0075,0.0373+(x-572.2)*16853.93e-6),0.3679)'
   [../]
 []
 
@@ -141,17 +140,17 @@
   [./diffusivity_beta]
     type = GenericConstantMaterial
     prop_names = beta_diffusion_coefficient
-    prop_values = 6e-11
+    prop_values = 60
   [../]
   [./diffusivity_alpha]
     type = GenericConstantMaterial
     prop_names = alpha_diffusion_coefficient
-    prop_values = 1e-11
+    prop_values = 10
   [../]
   [./diffusivity_oxide]
     type = GenericConstantMaterial
     prop_names = oxide_diffusion_coefficient
-    prop_values = 1e-5
+    prop_values = 10e6
   [../]
   [./diff_combined]
     type = LevelSetTriMaterialReal
@@ -171,14 +170,35 @@
     type = DirichletBC
     variable = u
     value = 0.0075
-    boundary = 4
+    boundary = left
   [../]
 
   [./right_u]
     type = DirichletBC
     variable = u
     value = 0.3679
-    boundary = 2
+    boundary = right
+  [../]
+[]
+
+[Postprocessors]
+  [./grad_a_ox]
+    type = GradValueAtXFEMInterfacePostprocessor
+    value_at_interface_uo = value_uo_ox_a
+    side = -1
+    execute_on ='initial timestep_begin final'
+  [../]
+  [./grad_a_b]
+    type = GradValueAtXFEMInterfacePostprocessor
+    value_at_interface_uo = value_uo_a_b
+    side = +1
+    execute_on ='initial timestep_begin final'
+  [../]
+  [./grad_b_a]
+    type = GradValueAtXFEMInterfacePostprocessor
+    value_at_interface_uo = value_uo_a_b
+    side = -1
+    execute_on ='initial timestep_begin final'
   [../]
 []
 
@@ -194,12 +214,12 @@
   l_tol = 1e-3
   l_max_its = 10
   nl_max_its = 15
-  nl_rel_tol = 2e-12
-  nl_abs_tol = 2e-12
+  nl_rel_tol = 1e-6
+  nl_abs_tol = 1e-6
 
   start_time = 20
-  dt = 10
-  num_steps = 48
+  dt = 1
+  num_steps = 480
   max_xfem_update = 1
 
 []

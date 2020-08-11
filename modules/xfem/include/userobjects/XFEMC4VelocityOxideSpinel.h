@@ -7,33 +7,32 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef XFEMC4VELOCITYMETALWEAK_H
-#define XFEMC4VELOCITYMETALWEAK_H
+#ifndef XFEMC4VELOCITYOXIDESPINEL_H
+#define XFEMC4VELOCITYOXIDESPINEL_H
 
 #include "XFEMMovingInterfaceVelocityBase.h"
 
-class XFEMC4VelocityMetalWeak;
+class XFEMC4VelocityOxideSpinel;
 
 template <>
-InputParameters validParams<XFEMC4VelocityMetalWeak>();
+InputParameters validParams<XFEMC4VelocityOxideSpinel>();
 
-class XFEMC4VelocityMetalWeak : public XFEMMovingInterfaceVelocityBase
+class XFEMC4VelocityOxideSpinel : public XFEMMovingInterfaceVelocityBase
 {
 public:
-  XFEMC4VelocityMetalWeak(const InputParameters & parameters);
-  virtual ~XFEMC4VelocityMetalWeak() {}
+  XFEMC4VelocityOxideSpinel(const InputParameters & parameters);
+  virtual ~XFEMC4VelocityOxideSpinel() {}
 
   virtual Real computeMovingInterfaceVelocity(unsigned int point_id) const override;
 
+
 protected:
+
   /// Diffusivity of oxygen in the Zr alpha phase
   //Real _diffusivity_alpha;
 
-  /// Diffusivity of oxygen in the Zr beta phase
-  //Real _diffusivity_beta;
-
-  /// Temperature [K]
-  Real _temperature;
+  // Temperature [K]
+  //Real _temperature;
 };
 
-#endif // XFEMC4VELOCITYMETALWEAK_H
+#endif

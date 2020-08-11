@@ -31,7 +31,7 @@ protected:
   virtual void assignQpPropertiesForLevelSetPosPos();
 
   /// Real Material properties for the three separate materials in the tri-material system
-  std::vector<const MaterialProperty<Real> *> _bimaterial_material_prop;
+  std::vector<const MaterialProperty<Real> *> _trimaterial_material_prop;
 
   /// Global Real material property (switch tri-material diffusion coefficient based on level set values)
   MaterialProperty<Real> & _material_prop;

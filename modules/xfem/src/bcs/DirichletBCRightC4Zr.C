@@ -1,0 +1,88 @@
+//* This file is part of the MOOSE framework
+//* https://www.mooseframework.org
+//*
+//* All rights reserved, see COPYRIGHT for full restrictions
+//* https://github.com/idaholab/moose/blob/master/COPYRIGHT
+//*
+//* Licensed under LGPL 2.1, please see LICENSE for details
+//* https://www.gnu.org/licenses/lgpl-2.1.html
+
+#include "DirichletBCRightC4Zr.h"
+
+registerMooseObject("MooseApp", DirichletBCRightC4Zr);
+
+defineLegacyParams(DirichletBCRightC4Zr);
+
+InputParameters
+DirichletBCRightC4Zr::validParams()
+{
+  InputParameters params = DirichletBCBase::validParams();
+  //params.addRequiredParam<Real>("value", "Value of the BC");
+  params.addRequiredParam<bool>("two_interfaces","Boolean specifying if there are two interfaces"
+                                "or not (if not, there's only one)");
+  params.addParam<Real>("temperature_aox",1473.15, "Temperature [K] at the alpha/oxide interface");
+  params.addParam<Real>("temperature_ab",1473.15,"Temperature [K] at the alpha/beta interface");
+  //params.declareControllable("value");
+  params.addClassDescription("Imposes the right boundary condition for the C4 model of Zr."
+                             "$u=g$, where u is the reduced weak discontinuity concentration"
+                             " $g$ is a constant, depending of the number and value of interfacial jumps.");
+  return params;
+}
+
+DirichletBCRightC4Zr::DirichletBCRightC4Zr(const InputParameters & parameters)
+  : DirichletBCBase(parameters),
+    _two_interfaces(getParam<bool>("two_interfaces")),
+    _temperature_aox(getParam<Real>("temperature_aox")),
+    _temperature_ab(getParam<Real>("temperature_ab"))
+{}
+
+Real
+DirichletBCRightC4Zr::computeQpValue()
+{ const Real Zr_PBR = 1.55;
+  const Real x_ox = 0.66666666667;
+  //std::cout<< x_ox << std::endl;
+  const Real C_ox = 3/Zr_PBR * x_ox;
+
+  const Real x_ox_a = 0.667118123 - 1.10606e-5 * _temperature_aox;
+  const Real C_ox_a = 3/Zr_PBR * x_ox_a;
+
+  Real x_a_ox;
+  if (_temperature_aox > 473.15 && _temperature_aox < 1478.15)
+  {
+    x_a_ox = (28.6 + exp(-6748/_temperature_aox + 4.748)) * 1e-2;
+  }
+  else if (_temperature_aox > 1478.15 && _temperature_aox < 1798.15)
+  {
+    x_a_ox = (28.6 + exp(-6301/_temperature_aox + 4.460)) * 1e-2;
+  }
+  else if (_temperature_aox > 1798.15 && _temperature_aox < 2338.15)
+  {
+    x_a_ox = (28.6 + exp(-7012/_temperature_aox + 8.434 - 3.521e-3 * _temperature_aox )) * 1e-2;
+  }
+  else
+  {
+    x_a_ox = 28.6 *1e-2;
+  }
+  const Real C_a_ox = x_a_ox/(1-x_a_ox);
+
+  if (_two_interfaces)
+  {
+    Real x_b_a = (9.59e-3 * (_temperature_ab - 1136) + 4.72e-6 * pow(_temperature_ab - 1136,2) - 4.35e-9 * pow(_temperature_ab - 1136,3)) * 1e-2;
+    Real x_a_b = (45.86e-3 * (_temperature_ab - 1136) - 44.77e-6 * pow(_temperature_ab - 1136,2) + 17.40e-9 * pow(_temperature_ab - 1136,3)) * 1e-2; //the original one, not the weak equivalent
+    const Real C_a_b = x_a_b / (1 - x_a_b);
+    const Real C_b_a = x_b_a / (1 - x_b_a);
+
+    _value = C_ox - (C_ox_a - C_a_ox) - (C_a_b - C_b_a);
+
+    //std::cout << "C_ox : " << C_ox << std::endl;
+    //std::cout << "C_ox_a : " << C_ox_a << std::endl;
+    //std::cout << "C_a_ox : " << C_a_ox << std::endl;
+    //std::cout << "C_a_b : " << C_a_b << std::endl;
+    //std::cout << "C_b_a : " << C_b_a << std::endl;
+  }
+  else
+  {
+    _value = C_ox - (C_ox_a - C_a_ox);
+  }
+  return _value;
+}

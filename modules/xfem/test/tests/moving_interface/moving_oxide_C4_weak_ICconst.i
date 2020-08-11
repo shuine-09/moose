@@ -1,5 +1,9 @@
-# test for an oxide growing on top of a zirconium nuclear fuel cladding
+# Test for an oxide growing on top of a zirconium nuclear fuel cladding
 # using the C4 model to compute the growth rate
+# The variable is the reduced concentration [/um^3] over Czr
+# The length unit is the micrometer
+# there's 2 moving interfaces (alpha/oxide and alpha/beta)
+# The ICs are set as constants in each phase through ICs, no steady state
 
 [GlobalParams]
   order = FIRST
@@ -9,12 +13,12 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 61
+  nx = 601
   ny = 20
   xmin = 0
-  xmax = 6e-4
+  xmax = 600
   ymin = 0
-  ymax = 1e-3
+  ymax = 20
   elem_type = QUAD4
 []
 
@@ -25,10 +29,9 @@
 
 [UserObjects]
   [./velocity_ox_a]
-    type = XFEMC4VelocityOxideWeak
-    diffusivity_alpha = 1e-11
+    type = XFEMC4VelocityOxideWeakMicro
+    diffusivity_alpha = 10
     value_at_interface_uo = value_uo_ox_a
-    x0 = 5.9e-4
   [../]
   [./value_uo_ox_a]
     type = PointValueAtXFEMInterface
@@ -39,16 +42,15 @@
   [../]
   [./moving_line_segments_ox_a]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '5.9e-4 0 5.9e-4 1e-3 0 0'
+    cut_data = '587.7 0 587.7 20 0 0'
     heal_always = true
     interface_velocity = velocity_ox_a
   [../]
   [./velocity_a_b]
     type = XFEMC4VelocityMetalWeak
-    diffusivity_alpha = 1e-11
-    diffusivity_beta = 6e-11
+    diffusivity_alpha = 10
+    diffusivity_beta = 60
     value_at_interface_uo = value_uo_a_b
-    x0 = 5.7e-4
   [../]
   [./value_uo_a_b]
     type = PointValueAtXFEMInterface
@@ -59,7 +61,7 @@
   [../]
   [./moving_line_segments_a_b]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '5.7e-4 0 5.7e-4 1e-3 0 0'
+    cut_data = '566 0 566 20 0 0'
     heal_always = true
     interface_velocity = velocity_a_b
   [../]
@@ -74,7 +76,7 @@
   [./ic_u]
     type = FunctionIC
     variable = u
-    function = 'if(x<5.9e-4,if(x<5.7e-4,0.0074,0.0360+(x-5.7e-4)*0.937e4), 0.2393)'
+    function = 'if(x<587.7,if(x<566,0.0075,0.1873),0.3679)'
   [../]
 []
 
@@ -96,7 +98,7 @@
     geometric_cut_userobject = 'moving_line_segments_ox_a'
     use_displaced_mesh = false
     variable = u
-    value = 0.2234
+    value = 0.3373
     alpha = 1e5
   [../]
   [./u_constraint_a_b]
@@ -104,7 +106,7 @@
     geometric_cut_userobject = 'moving_line_segments_a_b'
     use_displaced_mesh = false
     variable = u
-    value = 0.0360
+    value = 0.0373
     alpha = 1e5
   [../]
 []
@@ -138,17 +140,17 @@
   [./diffusivity_beta]
     type = GenericConstantMaterial
     prop_names = beta_diffusion_coefficient
-    prop_values = 6e-11
+    prop_values = 60
   [../]
   [./diffusivity_alpha]
     type = GenericConstantMaterial
     prop_names = alpha_diffusion_coefficient
-    prop_values = 1e-11
+    prop_values = 10
   [../]
   [./diffusivity_oxide]
     type = GenericConstantMaterial
     prop_names = oxide_diffusion_coefficient
-    prop_values = 1e-5
+    prop_values = 10e6
   [../]
   [./diff_combined]
     type = LevelSetTriMaterialReal
@@ -167,15 +169,36 @@
   [./left_u]
     type = DirichletBC
     variable = u
-    value = 0.0074
+    value = 0.0075
     boundary = left
   [../]
 
   [./right_u]
     type = DirichletBC
     variable = u
-    value = 0.2393
+    value = 0.3679
     boundary = right
+  [../]
+[]
+
+[Postprocessors]
+  [./grad_a_ox]
+    type = GradValueAtXFEMInterfacePostprocessor
+    value_at_interface_uo = value_uo_ox_a
+    side = -1
+    execute_on ='initial timestep_begin final'
+  [../]
+  [./grad_a_b]
+    type = GradValueAtXFEMInterfacePostprocessor
+    value_at_interface_uo = value_uo_a_b
+    side = +1
+    execute_on ='initial timestep_begin final'
+  [../]
+  [./grad_b_a]
+    type = GradValueAtXFEMInterfacePostprocessor
+    value_at_interface_uo = value_uo_a_b
+    side = -1
+    execute_on ='initial timestep_begin final'
   [../]
 []
 
@@ -189,13 +212,14 @@
 
 
   l_tol = 1e-3
+  l_max_its = 10
   nl_max_its = 15
-  nl_rel_tol = 1e-7
-  nl_abs_tol = 1e-7
+  nl_rel_tol = 1e-6
+  nl_abs_tol = 1e-6
 
-  start_time = 0.0
-  end_time = 1500.0
-  dt = 10
+  start_time = 30
+  dt = 1
+  num_steps = 470
   max_xfem_update = 1
 
 []

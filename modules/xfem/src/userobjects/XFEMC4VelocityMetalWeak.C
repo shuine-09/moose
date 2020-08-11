@@ -8,6 +8,7 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "XFEMC4VelocityMetalWeak.h"
+#include "MooseUtils.h"
 
 registerMooseObject("XFEMApp", XFEMC4VelocityMetalWeak);
 
@@ -16,11 +17,11 @@ InputParameters
 validParams<XFEMC4VelocityMetalWeak>()
 {
   InputParameters params = validParams<XFEMMovingInterfaceVelocityBase>();
-  params.addRequiredParam<Real>("diffusivity_alpha",
-                                "Diffusivity of oxygen in the alpha phase.");
-  params.addRequiredParam<Real>("diffusivity_beta",
-                                "Diffusivity of oxygen in the beta phase.");
-  //params.addParam<Real>("x0", 0, "Initial x location.");
+  //params.addRequiredParam<Real>("diffusivity_alpha",
+    //                            "Diffusivity of oxygen in the alpha phase.");
+  //params.addRequiredParam<Real>("diffusivity_beta",
+    //                            "Diffusivity of oxygen in the beta phase.");
+  params.addParam<Real>("temperature", 1473.15, "Temperature of the cladding (K)");
   params.addClassDescription(
       "Calculate the alpha phase/beta phase interface velocity for the 2 interfaces C4 model for Zircaloy-4 corrosion.");
   return params;
@@ -28,9 +29,9 @@ validParams<XFEMC4VelocityMetalWeak>()
 
 XFEMC4VelocityMetalWeak::XFEMC4VelocityMetalWeak(const InputParameters & parameters)
   : XFEMMovingInterfaceVelocityBase(parameters),
-    _diffusivity_alpha(getParam<Real>("diffusivity_alpha")),
-    _diffusivity_beta(getParam<Real>("diffusivity_beta"))
-    //_x0(getParam<Real>("x0"))
+    //_diffusivity_alpha(getParam<Real>("diffusivity_alpha")),
+    //_diffusivity_beta(getParam<Real>("diffusivity_beta"))
+    _temperature(getParam<Real>("temperature"))
 {
 }
 
@@ -48,26 +49,100 @@ XFEMC4VelocityMetalWeak::computeMovingInterfaceVelocity(unsigned int point_id) c
 
   // Current implementation only supports the case that the interface is moving horizontally
 
-  const Real x_o_b_a(0.0360); //retrieve from constraint ?
-  const Real x_o_a_b(0.1104); //the original one, not the weak equivalent
-
-// use fixed temperature at 1200C until we add a temperature diffusion kernel
-  //const Real temperature(1473);
-
-
-  const Real J_b_to_a = -_diffusivity_alpha * grad_positive(0);
-  const Real J_a_to_b = -_diffusivity_beta * (-grad_negative(0));
-
+//  Values at the interface (strong discontinuity)
+  Real x_o_b_a = (9.59e-3 * (_temperature - 1136) + 4.72e-6 * pow(_temperature - 1136,2) - 4.35e-9 * pow(_temperature - 1136,3)) * 1e-2;
+  Real x_o_a_b = (45.86e-3 * (_temperature - 1136) - 44.77e-6 * pow(_temperature - 1136,2) + 17.40e-9 * pow(_temperature - 1136,3)) * 1e-2; //the original one, not the weak equivalent
   const Real c_o_a_b = x_o_a_b / (1 - x_o_a_b);
   const Real c_o_b_a = x_o_b_a / (1 - x_o_b_a);
 
-  std::cout << "ab_grad_negative : " << grad_negative(0) << std::endl;
-  std::cout << "ab_grad_positive : " << grad_positive(0) << std::endl;
+//Diffusion coefficients
+Real diffusivity_alpha = 10 ;
+if (MooseUtils::absoluteFuzzyEqual(_temperature,633.15,1))
+{
+  diffusivity_alpha = 1.36e-7;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1223.15,1))
+{
+  diffusivity_alpha = 0.43;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
+{
+  diffusivity_alpha = 0.45;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1373.15,1))
+{
+  diffusivity_alpha = 2.6;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1473.15,1))
+{
+  diffusivity_alpha = 10;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1573.15,1))
+{
+  diffusivity_alpha = 26.115;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1673.15,1))
+{
+  diffusivity_alpha = 87.225;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1773.15,1))
+{
+  diffusivity_alpha = 173.13;
+}
+else
+{
+  diffusivity_alpha = 7.28 * exp(-53327/1.987/_temperature) * 1e8;
+}
+
+Real diffusivity_beta = 60 ;
+if (MooseUtils::absoluteFuzzyEqual(_temperature,633.15,1))
+{
+  diffusivity_beta = 4.8e-4;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1223.15,1))
+{
+  diffusivity_beta = 24;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
+{
+  diffusivity_beta = 38;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1373.15,1))
+{
+  diffusivity_beta = 37;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1473.15,1))
+{
+  diffusivity_beta = 60;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1573.15,1))
+{
+  diffusivity_beta = 201.07;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1673.15,1))
+{
+  diffusivity_beta = 856.19;
+}
+else if (MooseUtils::absoluteFuzzyEqual(_temperature,1773.15,1))
+{
+  diffusivity_beta = 927.85;
+}
+else
+{
+  diffusivity_beta = 0.110 * exp(-33391/1.987/_temperature) * 1e8;
+}
+
+  const Real J_b_to_a = -diffusivity_alpha * grad_positive(0);
+  const Real J_a_to_b = -diffusivity_beta * (-grad_negative(0));
+
+
+  //std::cout << "ab_grad_negative : " << grad_negative(0) << std::endl;
+  //std::cout << "ab_grad_positive : " << grad_positive(0) << std::endl;
 
   //std::cout << "J_b_to_a : " << J_b_to_a * 4.33e28<< std::endl;
   //std::cout << "J_a_to_b : " << J_a_to_b * 4.33e28<< std::endl;
 
-  const Real v_a_b = (J_b_to_a - J_a_to_b) / (c_o_a_b - c_o_b_a);
+  const Real v_a_b = (J_b_to_a + J_a_to_b) / (c_o_a_b - c_o_b_a);
 
   //std::cout << "Alpha-beta velocity : " << v_a_b << std::endl;
 

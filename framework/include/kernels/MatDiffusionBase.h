@@ -116,6 +116,7 @@ template <typename T>
 Real
 MatDiffusionBase<T>::computeQpResidual()
 {
+  //std::cout << "Diff coeff : " << _D[_qp] << std::endl;
   return _D[_qp] * _grad_v[_qp] * _grad_test[_i][_qp];
 }
 

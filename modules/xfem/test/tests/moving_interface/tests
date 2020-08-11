@@ -109,6 +109,7 @@
   [./ad_phase_transition]
     type = Exodiff
     input = ad_phase_transition.i
+  [../]
   [./moving_diffusion]
     type = Exodiff
     input = moving_diffusion.i

@@ -30,5 +30,14 @@ public:
   virtual std::vector<Real> getCutData() const { return _cut_data; };
 
 protected:
+
   std::vector<Real> _cut_data;
+
+  bool _is_C4;
+
+  bool _ab_interface;
+
+  bool _oxa_interface;
+
+  Real _temperature;
 };

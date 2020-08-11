@@ -8,6 +8,7 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "LineSegmentCutSetUserObject.h"
+#include "MooseUtils.h"
 
 // MOOSE includes
 #include "MooseError.h"
@@ -24,6 +25,10 @@ LineSegmentCutSetUserObject::validParams()
   params.addRequiredParam<std::vector<Real>>("cut_data",
                                              "Vector of Real values providing cut information");
   // Add optional parameters
+  params.addParam<bool>("is_C4",false,"Boolean specifying if the object is used for the C4 model");
+  params.addParam<bool>("ab_interface",false,"Boolean specifying if the object is used for alpha/beta interface.");
+  params.addParam<bool>("oxa_interface",false,"Boolean specifying if the object is used for oxide/alpha interface.");
+  params.addParam<Real>("temperature",1473.15,"Temperature of the cladding [K]. Homogeneous temperature only.");
   params.addParam<std::vector<Real>>("cut_scale", "X,Y scale factors for geometric cuts");
   params.addParam<std::vector<Real>>("cut_translate", "X,Y translations for geometric cuts");
   // Class description
@@ -33,8 +38,89 @@ LineSegmentCutSetUserObject::validParams()
 }
 
 LineSegmentCutSetUserObject::LineSegmentCutSetUserObject(const InputParameters & parameters)
-  : GeometricCut2DUserObject(parameters), _cut_data(getParam<std::vector<Real>>("cut_data"))
+  : GeometricCut2DUserObject(parameters),
+    _cut_data(getParam<std::vector<Real>>("cut_data")),
+    _is_C4(getParam<bool>("is_C4")),
+    _ab_interface(getParam<bool>("ab_interface")),
+    _oxa_interface(getParam<bool>("oxa_interface")),
+    _temperature(getParam<Real>("temperature"))
 {
+
+  //Check if C4 model or not
+  if (_is_C4)
+  {
+    if (_ab_interface)
+    {
+      Real x_a_b;
+      if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
+      {
+        x_a_b = 591.4;
+      }
+      else if (MooseUtils::absoluteFuzzyEqual(_temperature,1373.15,1))
+      {
+        x_a_b = 583.6;
+      }
+      else if (MooseUtils::absoluteFuzzyEqual(_temperature,1473.15,1))
+      {
+        x_a_b = 572.2;
+      }
+      else if (MooseUtils::absoluteFuzzyEqual(_temperature,1573.15,1))
+      {
+        x_a_b = 560.7;
+      }
+      else if (MooseUtils::absoluteFuzzyEqual(_temperature,1673.15,1))
+      {
+        x_a_b = 539.5;
+      }
+      else if (MooseUtils::absoluteFuzzyEqual(_temperature,1773.15,1))
+      {
+        x_a_b = 516.3;
+      }
+      else
+      {
+        x_a_b = -1.9259*1e-7*pow(_temperature,3) + 6.7254*1e-4*pow(_temperature,2) - 0.84697*_temperature + 977.01  ;
+      }
+      std::cout << "ab interface : " << std::endl;
+      _cut_data[0] = x_a_b;
+      _cut_data[2] = x_a_b;
+      std::cout << _cut_data[0] << std::endl;
+    }
+    if (_oxa_interface)
+    {
+      Real x_ox_a;
+      if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
+      {
+        x_ox_a = 595.6;
+      }
+      else if (MooseUtils::absoluteFuzzyEqual(_temperature,1373.15,1))
+      {
+        x_ox_a = 593.2;
+      }
+      else if (MooseUtils::absoluteFuzzyEqual(_temperature,1473.15,1))
+      {
+        x_ox_a = 590.0;
+      }
+      else if (MooseUtils::absoluteFuzzyEqual(_temperature,1573.15,1))
+      {
+        x_ox_a = 586.0;
+      }
+      else if (MooseUtils::absoluteFuzzyEqual(_temperature,1673.15,1))
+      {
+        x_ox_a = 582.0;
+      }
+      else if (MooseUtils::absoluteFuzzyEqual(_temperature,1773.15,1))
+      {
+        x_ox_a = 576.2;
+      }
+      else
+      {
+        x_ox_a = -3.6071*1e-5*pow(_temperature,2) + 7.1427*1e-2*_temperature + 563.11  ;
+      }
+      _cut_data[0] = x_ox_a;
+      _cut_data[2] = x_ox_a;
+    }
+  }
+
   // Set up constant parameters
   const int line_cut_data_len = 6;
 

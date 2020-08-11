@@ -23,31 +23,31 @@ LevelSetTriMaterialReal::validParams()
 
 LevelSetTriMaterialReal::LevelSetTriMaterialReal(const InputParameters & parameters)
   : LevelSetTriMaterialBase(parameters),
-    _bimaterial_material_prop(3),
+    _trimaterial_material_prop(3),
     _material_prop(declareProperty<Real>(_base_name + _prop_name))
 {
-  _bimaterial_material_prop[0] = &getMaterialProperty<Real>(
+  _trimaterial_material_prop[0] = &getMaterialProperty<Real>(
       getParam<std::string>("levelset_neg_neg_base") + "_" + _prop_name);
-  _bimaterial_material_prop[1] = &getMaterialProperty<Real>(
+  _trimaterial_material_prop[1] = &getMaterialProperty<Real>(
       getParam<std::string>("levelset_pos_neg_base") + "_" + _prop_name);
-  _bimaterial_material_prop[2] = &getMaterialProperty<Real>(
+  _trimaterial_material_prop[2] = &getMaterialProperty<Real>(
       getParam<std::string>("levelset_pos_pos_base") + "_" + _prop_name);
 }
 
 void
 LevelSetTriMaterialReal::assignQpPropertiesForLevelSetNegNeg()
 {
-  _material_prop[_qp] = (*_bimaterial_material_prop[0])[_qp];
+  _material_prop[_qp] = (*_trimaterial_material_prop[0])[_qp];
 }
 
 void
 LevelSetTriMaterialReal::assignQpPropertiesForLevelSetPosNeg()
 {
-  _material_prop[_qp] = (*_bimaterial_material_prop[1])[_qp];
+  _material_prop[_qp] = (*_trimaterial_material_prop[1])[_qp];
 }
 
 void
 LevelSetTriMaterialReal::assignQpPropertiesForLevelSetPosPos()
 {
-  _material_prop[_qp] = (*_bimaterial_material_prop[2])[_qp];
+  _material_prop[_qp] = (*_trimaterial_material_prop[2])[_qp];
 }

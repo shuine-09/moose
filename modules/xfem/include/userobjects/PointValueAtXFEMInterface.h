@@ -64,7 +64,10 @@ public:
     return _grad_values_negative_level_set_side;
   };
 
-  Point getPointCurrentLocation(unsigned int i) const { return _points[i]; };
+  Point getPointCurrentLocation(unsigned int i) const
+  {
+    return _points[i];
+  };
 
   unsigned int numberPoints() const { return _points.size(); };
 
@@ -74,7 +77,7 @@ public:
   Real getGradientXComponentAtPositiveLevelSet() const
   {
     return _grad_x_positive_level_set_side;
-  }
+  };
 
   /**
    * get the gradient x component at the negative level set side
@@ -82,7 +85,12 @@ public:
   Real getGradientXComponentAtNegativeLevelSet() const
   {
     return _grad_x_negative_level_set_side;
-  }
+  };
+
+  Real getCurrentX() const
+  {
+    return _current_x;
+  };
 
 protected:
   /**
@@ -141,4 +149,7 @@ protected:
 
   /// Gradient x component at the negative level set side
   Real _grad_x_negative_level_set_side ;
+
+  /// Point current position (x coordinate)
+  Real _current_x ;
 };
