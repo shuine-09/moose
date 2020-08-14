@@ -43,7 +43,7 @@
   [./ini_c]
     type = PhaseFieldDamageIC
     variable = c
-    l = 0.12
+    l = 0.08
     d0 = 1.0
     x1 = 1.8
     x2 = 2.2
@@ -65,15 +65,6 @@
       [../]
     [../]
   [../]
-  [./PhaseField]
-    [./Nonconserved]
-      [./c]
-        free_energy = F
-        kappa = kappa_op
-        mobility = L
-      [../]
-    [../]
-  [../]
 []
 
 [AuxVariables]
@@ -92,6 +83,8 @@
   [./elastic_energy]
     order = CONSTANT
     family = MONOMIAL
+  [../]
+  [./c]
   [../]
 []
 
@@ -126,22 +119,6 @@
   [../]
 []
 
-[Bounds]
-  [./c_upper_bound]
-    type = ConstantBoundsAux
-    variable = bounds_dummy
-    bounded_variable = c
-    bound_type = upper
-    bound_value = 1.0
-  [../]
-  [./c_lower_bound]
-    type = VariableOldValueBoundsAux
-    variable = bounds_dummy
-    bounded_variable = c
-    bound_type = lower
-  [../]
-[]
-
 [Functions]
   [./fracture_pressure]
     type = ParsedFunction
@@ -158,7 +135,7 @@
   [./pfbulkmat]
     type = GenericConstantMaterial
     prop_names = 'gc_prop l visco'
-    prop_values = '1 0.12 1e-10'
+    prop_values = '1 0.08 1e-10'
   [../]
   [./define_mobility]
     type = ParsedMaterial
@@ -184,7 +161,7 @@
     D_name = 'degradation'
     I_name = 'indicator_function'
     F_name = 'local_fracture_energy'
-    decomposition_type = none
+    decomposition_type = strain_spectral
     use_current_history_variable = false
     use_snes_vi_solver = true
   [../]
@@ -787,8 +764,8 @@
   type = Transient
 
   solve_type = PJFNK
-  petsc_options_iname = '-pc_type -pc_factor_mat_solver_package -snes_type'
-  petsc_options_value = 'lu       superlu_dist vinewtonrsls'
+  petsc_options_iname = '-pc_type -pc_factor_mat_solver_package'
+  petsc_options_value = 'lu       superlu_dist'
 
   nl_rel_tol = 1e-10
   nl_abs_tol = 1e-10
