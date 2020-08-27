@@ -12,13 +12,23 @@
 #include "Material.h"
 
 /**
- * This material automatically declares as material properties whatever is passed to it
+ * (This material automatically declares as material properties whatever is passed to it
  * through the parameters 'prop_names' and uses the values from 'prop_values' as the values
  * for those properties.
  *
  * This is not meant to be used in a production capacity... and instead is meant to be used
- * during development phases for ultimate flexibility.
+ * during development phases for ultimate flexibility.)
+ *
+ *
+ * Gives the value for O diffusion coefficient in the beta phase of Zr.
+ * The unit is micrometer^2/s.
+ *
+ * Specific to the weak discontinuity equivalent of the C4 model for the
+ * high-temperature corrosion of Zircaloy-4 (1000C to 1500C)
+ * The variable used is the weak (atomic) oxygen concentration scaled by
+ * the atomic concentration of Zr in the metal.
  */
+
 template <bool is_ad>
 class C4DiffusionCoefBetaTempl : public Material
 {

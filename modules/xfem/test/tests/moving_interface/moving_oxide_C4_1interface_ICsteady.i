@@ -1,9 +1,9 @@
 # Test for an oxide growing on top of a zirconium nuclear fuel cladding
-# using the C4 model to compute the growth rate
-# The variable is the reduced concentration [/um^3] over Czr
-# The length unit is the micrometer
+# using the C4 model to compute the growth rate.
+# The variable is the reduced concentration [/um^3] over Czr.
+# The length unit is the micrometer.
 # There's 1 moving interface (alpha/oxide)
-# The ICs are enforced using steady state solving at first time step
+# The ICs are enforced using steady state solving at first time step.
 # The ICs are enforced using 1 additional interface at the first time step (in alpha)
 
 [GlobalParams]
@@ -30,7 +30,7 @@
 
 [UserObjects]
   [./velocity_ox_a]
-    type = XFEMC4VelocityOxideWeakMicro
+    type = XFEMC4VelocityZrOxA
     diffusivity_alpha = 10
     value_at_interface_uo = value_uo_ox_a
   [../]
@@ -48,7 +48,7 @@
     interface_velocity = velocity_ox_a
   [../]
   [./velocity_a0]
-    type = XFEMC4VelocityMetalWeak
+    type = XFEMC4VelocityZrAB
     diffusivity_alpha = 10
     diffusivity_beta = 10
     value_at_interface_uo = value_uo_a0

@@ -14,7 +14,7 @@
 // Forward Declarations
 
 /**
- * Compute a Real material property for bi-materials problem (consisting of two different materials)
+ * Compute a Real material property for tri-materials problem (consisting of three different materials)
  * defined by a level set function
  *
  */

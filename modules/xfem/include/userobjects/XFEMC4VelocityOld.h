@@ -7,21 +7,30 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifndef XFEMC4OXIDEVELOCITY_H
-#define XFEMC4OXIDEVELOCITY_H
+#ifndef XFEMC4VelocityOld_H
+#define XFEMC4VelocityOld_H
 
 #include "XFEMMovingInterfaceVelocityBase.h"
 
-class XFEMC4OxideVelocity;
+/**
+*
+* Computes the oxide/alpha interface velocity for Zr C4 model.
+* !!! Old Leo's version !!!
+*
+*/
+
+
+
+class XFEMC4VelocityOld;
 
 template <>
-InputParameters validParams<XFEMC4OxideVelocity>();
+InputParameters validParams<XFEMC4VelocityOld>();
 
-class XFEMC4OxideVelocity : public XFEMMovingInterfaceVelocityBase
+class XFEMC4VelocityOld : public XFEMMovingInterfaceVelocityBase
 {
 public:
-  XFEMC4OxideVelocity(const InputParameters & parameters);
-  virtual ~XFEMC4OxideVelocity() {}
+  XFEMC4VelocityOld(const InputParameters & parameters);
+  virtual ~XFEMC4VelocityOld() {}
 
   virtual Real computeMovingInterfaceVelocity(unsigned int point_id) const override;
 
@@ -38,4 +47,4 @@ protected:
   Real _x0;
 };
 
-#endif // XFEMC4OXIDEVELOCITY_H
+#endif // XFEMC4VelocityOld_H

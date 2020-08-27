@@ -14,6 +14,15 @@
 // Forward Declarations
 class XFEM;
 
+/**
+ * Sets variable value at the oxide/alpha interface.
+ *
+ * Specific to the weak discontinuity equivalent of the C4 model for the
+ * high-temperature corrosion of Zircaloy-4 (1000C to 1500C)
+ * The variable used is the weak (atomic) oxygen concentration scaled by
+ * the atomic concentration of Zr in the metal.
+ */
+
 class XFEMEqualValueAtInterfaceC4aox : public ElemElemConstraint
 {
 public:

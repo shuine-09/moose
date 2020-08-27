@@ -7,30 +7,27 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "XFEMC4VelocityOxideSpinel.h"
+#include "XFEMC4VelocitySteelOx.h"
 
-registerMooseObject("XFEMApp", XFEMC4VelocityOxideSpinel);
+registerMooseObject("XFEMApp", XFEMC4VelocitySteelOx);
 
 template <>
 InputParameters
-validParams<XFEMC4VelocityOxideSpinel>()
+validParams<XFEMC4VelocitySteelOx>()
 {
   InputParameters params = validParams<XFEMMovingInterfaceVelocityBase>();
-  //params.addRequiredParam<Real>("diffusivity_alpha",
-                              //  "Diffusivity of oxygen in the Zr alpha phase.");
-  //params.addParam<Real>("temperature",1473.15,"Temperature of the cladding (K)");
   params.addClassDescription(
       "Calculate the oxide/gas interface velocity for the 1 oxide layer (spinel) C4 model for steel corrosion.");
   return params;
 }
 
-XFEMC4VelocityOxideSpinel::XFEMC4VelocityOxideSpinel(const InputParameters & parameters)
+XFEMC4VelocitySteelOx::XFEMC4VelocitySteelOx(const InputParameters & parameters)
   : XFEMMovingInterfaceVelocityBase(parameters)
 {
 }
 
 Real
-XFEMC4VelocityOxideSpinel::computeMovingInterfaceVelocity(unsigned int point_id) const
+XFEMC4VelocitySteelOx::computeMovingInterfaceVelocity(unsigned int point_id) const
 {
   //RealVectorValue grad_positive = _value_at_interface_uo->getGradientAtPositiveLevelSet()[point_id];
   //RealVectorValue grad_negative = _value_at_interface_uo->getGradientAtNegativeLevelSet()[point_id];
@@ -74,7 +71,7 @@ XFEMC4VelocityOxideSpinel::computeMovingInterfaceVelocity(unsigned int point_id)
   const Real M_spinel = M_Mn + 2 * M_Cr + 4 * M_O ;
 
   // Densities [g/cm^3]
-  const Real rho_steel(7.7);
+  const Real rho_steel(7.67);
   const Real rho_spinel(4.93);
 
   //Average volume occupied by a molecule of MnCr2O4 [nm^3]
@@ -86,16 +83,16 @@ XFEMC4VelocityOxideSpinel::computeMovingInterfaceVelocity(unsigned int point_id)
   // C4 model parameters
   const Real nu(3600 * 1e13);           //Frequency of jump [/hr]
   const Real a(0.5);           // Length of jump [nm]
-  const Real E_m_VMn(1.9);     // Mn vacancies energy of migration [eV]
+  const Real E_m_VMn(1.82);     // Mn vacancies energy of migration [eV]
   const Real E_m_h(1.7);       // Holes energy of migration [eV]
 
   // Interfaces concentrations [at/cm^3]
-  const Real C_VMn_ox_g = 0.01 * 1 / V_spinel ;
-  const Real C_VCr_ox_g = 0.01 * 2 / V_spinel ;
+  const Real C_VMn_ox_g = 1e-4 * 1 / V_spinel ;
+  const Real C_VCr_ox_g = 1e-4 * 2 / V_spinel ;
   const Real C_h_ox_g = 2 * C_VMn_ox_g + 3 * C_VCr_ox_g ;
 
-  const Real C_VMn_ox_m = 1e-4;
-  const Real C_h_ox_m = 1e-4;
+  const Real C_VMn_ox_m = 1e-8;
+  const Real C_h_ox_m = 1e-8;
 
   // Temperature fixed at 700C for now
   const Real temperature(973.15);
@@ -106,6 +103,7 @@ XFEMC4VelocityOxideSpinel::computeMovingInterfaceVelocity(unsigned int point_id)
   const Real mu_h = 4 * pow(a, 2) * nu * 1 / (Kb * temperature) *
                        exp(-E_m_h / (Kb * temperature));
 
+  // Solving for eta
   const Real A = 8 * mu_VMn * C_VMn_ox_g - mu_h * C_h_ox_m;
   const Real B = mu_h * (C_h_ox_g - C_h_ox_m);
   const Real C = mu_h * C_h_ox_g - 8 * mu_VMn * C_VMn_ox_m;

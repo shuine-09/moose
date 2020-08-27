@@ -18,7 +18,6 @@ InputParameters
 C4ZrIC4::validParams()
 {
   InputParameters params = InitialCondition::validParams();
-  //params.addRequiredParam<FunctionName>("function", "The initial condition function.");
   params.addRequiredParam<Real>("temperature", "The temperature of the cladding (homogeneous temperature only)");
   params.addClassDescription("An initial condition for the C4 model for high temperature "
                             "corrosion of Zircaloy-4");
@@ -150,10 +149,3 @@ C4ZrIC4::value(const Point & p)
     return (_C_ox_weak + (p(0)-600) * _grad_ox);
   }
 }
-
-/**RealGradient
-C4ZrIC4::gradient(const Point & p)
-{
-  return _func.gradient(_t, p);
-}
-*/

@@ -13,6 +13,19 @@
 
 // Forward declarations
 
+/**
+*
+* Added booleans to specify if the object is representing an interface in the
+* weak discontinuity equivalent of the C4 model for the high-temperature
+* corrosion of Zircaloy-4 (1000C to 1500C), and if so which interfaces and what
+* the temperature is.
+* This is used to specify the "initial" (time = 20s) positions of the _two_interfaces
+* as retrieved from the finite difference Matlab implementation of the model.
+*
+* By defaults, all the booleans are set to false so that the class can keep
+* being used to model interfaces in other applications without any change. 
+*/
+
 class LineSegmentCutSetUserObject : public GeometricCut2DUserObject
 {
 public:

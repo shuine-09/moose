@@ -1,3 +1,9 @@
+
+# Old Leo's file that I tried to adapt, not working right now.
+
+# test for an oxide growing on top of a zirconium nuclear fuel cladding
+# using the C4 model to compute the growth rate
+
 [GlobalParams]
   order = FIRST
   family = LAGRANGE
@@ -6,12 +12,12 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 4
-  ny = 1
+  nx = 21
+  ny = 20
   xmin = 0
-  xmax = 4
+  xmax = 600
   ymin = 0
-  ymax = 1
+  ymax = 600
   elem_type = QUAD4
 []
 
@@ -22,11 +28,9 @@
 
 [UserObjects]
   [./velocity]
-    type = XFEMPhaseTransitionMovingInterfaceVelocity
-    diffusivity_at_positive_level_set = 5
-    diffusivity_at_negative_level_set = 1
-    equilibrium_concentration_jump = 0
-    value_at_interface_uo = value_uo
+  type = XFEMC4VelocityZrOxA
+  diffusivity_alpha = 10
+  value_at_interface_uo = value_uo
   [../]
   [./value_uo]
     type = PointValueAtXFEMInterface
@@ -37,7 +41,7 @@
   [../]
   [./moving_line_segments]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '1.5 0 1.5 1.0 0 0'
+    cut_data = '591 0 591 600 0 0'
     heal_always = true
     interface_velocity = velocity
   [../]
@@ -52,7 +56,7 @@
   [./ic_u]
     type = FunctionIC
     variable = u
-    function = 'if(x<1.5, x, 1.5)'
+    function = 'if(x<591, 0.0075, 2)'
   [../]
 []
 
@@ -63,13 +67,15 @@
   [../]
 []
 
+# Need to use XFEMTwoSideDirichlet that has been removed
 [Constraints]
   [./u_constraint]
-    type = XFEMEqualValueAtInterface
+    type = XFEMTwoSideDirichlet
     geometric_cut_userobject = 'moving_line_segments'
     use_displaced_mesh = false
     variable = u
-    value = 1.5
+    value_at_positive_level_set_interface = 0.4241
+    value_at_negative_level_set_interface = 1
     alpha = 1e5
   [../]
 []
@@ -78,7 +84,7 @@
   [./diff]
     type = MatDiffusion
     variable = u
-    diffusivity = diffusion_coefficient
+    diffusivity = 'diffusion_coefficient'
   [../]
   [./time]
     type = TimeDerivative
@@ -98,12 +104,12 @@
   [./diffusivity_A]
     type = GenericConstantMaterial
     prop_names = A_diffusion_coefficient
-    prop_values = 5
+    prop_values = 1e7
   [../]
   [./diffusivity_B]
     type = GenericConstantMaterial
     prop_names = B_diffusion_coefficient
-    prop_values = 1
+    prop_values = 10
   [../]
   [./diff_combined]
     type = LevelSetBiMaterialReal
@@ -119,53 +125,44 @@
   [./left_u]
     type = DirichletBC
     variable = u
-    value = 0
+    value = 0.0075
     boundary = left
   [../]
 
   [./right_u]
     type = DirichletBC
     variable = u
+    value = 2
     boundary = right
-    value = 1.5
   [../]
 []
 
 [Executioner]
   type = Transient
   solve_type = 'PJFNK'
-  petsc_options_iname = '-pc_type -pc_hypre_type'
-  petsc_options_value = 'hypre boomeramg'
+  petsc_options_iname = '-pc_type'
+  petsc_options_value = 'lu'
   line_search = 'none'
 
   l_tol = 1e-3
   nl_max_its = 15
-  nl_rel_tol = 1e-12
-  nl_abs_tol = 1e-11
+  nl_rel_tol = 1e-6
+  nl_abs_tol = 1e-6
 
   start_time = 0.0
-  dt = 0.01
-  num_steps = 4
+  dt = 10
+  num_steps = 150
   max_xfem_update = 1
-[]
-
-[Controls]
-  [./diff]
-    type = TimePeriod
-    disable_objects = 'Kernel::time'
-    start_time = '0'
-    end_time = '0.01'
-  [../]
 []
 
 
 [Outputs]
   execute_on = timestep_end
   exodus = true
-  perf_graph = true
   [./console]
     type = Console
     output_linear = true
   [../]
   csv = true
+  perf_graph = true
 []

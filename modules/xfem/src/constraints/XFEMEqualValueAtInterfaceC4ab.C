@@ -19,7 +19,6 @@ XFEMEqualValueAtInterfaceC4ab::validParams()
 {
   InputParameters params = ElemElemConstraint::validParams();
   params.addRequiredParam<Real>("alpha", "Penalty parameter in penalty formulation.");
-  //params.addRequiredParam<Real>("value", "Prescribed value at the interface.");
   params.addRequiredParam<Real>("temperature", "Temperature [K] at the alpha/beta the interface");
   params.addParam<UserObjectName>(
       "geometric_cut_userobject",

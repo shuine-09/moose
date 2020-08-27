@@ -7,16 +7,26 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "WeakToStrongDiscontinuityAux.h"
+#include "WeakToStrongDiscontinuityC4ZrAux.h"
 #include "AuxiliarySystem.h"
 #include "MooseVariable.h"
 #include "XFEM.h"
 #include "FEProblem.h"
 
-registerMooseObject("MooseApp", WeakToStrongDiscontinuityAux);
+registerMooseObject("MooseApp", WeakToStrongDiscontinuityC4ZrAux);
+
+/**
+ * Computes the value of the original variable of the strong discontinuity
+ * problem from the weak discontinuity variable.
+ * !!! Not working correctly. Only adds the discontinuity value once an element
+ * has been fully crossed by the interface. !!!
+
+ * Currently adds the value everywhere ! (to be used with a clip filter in
+ * combination with athe weak variable. Only works for 1 inerface pb.)
+ */
 
 InputParameters
-WeakToStrongDiscontinuityAux::validParams()
+WeakToStrongDiscontinuityC4ZrAux::validParams()
 {
   InputParameters params = AuxKernel::validParams();
   params.addClassDescription(
@@ -29,7 +39,7 @@ WeakToStrongDiscontinuityAux::validParams()
   return params;
 }
 
-WeakToStrongDiscontinuityAux::WeakToStrongDiscontinuityAux(const InputParameters & parameters)
+WeakToStrongDiscontinuityC4ZrAux::WeakToStrongDiscontinuityC4ZrAux(const InputParameters & parameters)
   : AuxKernel(parameters),
   _jump_value(getParam<Real>("jump_value")),
   _weak_variable_number(
@@ -48,7 +58,7 @@ WeakToStrongDiscontinuityAux::WeakToStrongDiscontinuityAux(const InputParameters
 }
 
 Real
-WeakToStrongDiscontinuityAux::computeValue()
+WeakToStrongDiscontinuityC4ZrAux::computeValue()
 {
   const Node * node = _current_node;
 

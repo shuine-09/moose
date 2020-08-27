@@ -1,9 +1,13 @@
-# Test for an oxide growing on top of a zirconium nuclear fuel cladding
-# using the C4 model to compute the growth rate
-# The variable is the reduced concentration [/um^3] over Czr
-# The length unit is the micrometer
-# there's 2 moving interfaces (alpha/oxide and alpha/beta)
-# The ICs are set as constants in each phase through ICs, no steady state
+# Input file for an oxide growing on top of a zirconium nuclear fuel cladding
+# using the C4 model to compute the growth rate.
+# The variable is the reduced concentration [/um^3] over Czr.
+# The length unit is the micrometer.
+# There are 2 moving interfaces (alpha/oxide and alpha/beta)
+# The ICs are enforced using steady state solving at first time step.
+# The ICs are enforced using 2 additional interfaces at the first time step (1 in alpha, 1 in beta).
+
+# Fixed T=1200C.
+# File used to study influence of ICs.
 
 [GlobalParams]
   order = FIRST
@@ -29,7 +33,7 @@
 
 [UserObjects]
   [./velocity_ox_a]
-    type = XFEMC4VelocityOxideWeakMicro
+    type = XFEMC4VelocityZrOxA
     diffusivity_alpha = 10
     value_at_interface_uo = value_uo_ox_a
   [../]
@@ -42,12 +46,12 @@
   [../]
   [./moving_line_segments_ox_a]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '587.7 0 587.7 20 0 0'
+    cut_data = '590 0 590 20 0 0'
     heal_always = true
     interface_velocity = velocity_ox_a
   [../]
   [./velocity_a_b]
-    type = XFEMC4VelocityMetalWeak
+    type = XFEMC4VelocityZrAB
     diffusivity_alpha = 10
     diffusivity_beta = 60
     value_at_interface_uo = value_uo_a_b
@@ -61,9 +65,47 @@
   [../]
   [./moving_line_segments_a_b]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '566 0 566 20 0 0'
+    cut_data = '572.2 0 572.2 20 0 0'
     heal_always = true
     interface_velocity = velocity_a_b
+  [../]
+  [./velocity_a0]
+    type = XFEMC4VelocityZrAB
+    diffusivity_alpha = 10
+    diffusivity_beta = 10
+    value_at_interface_uo = value_uo_a0
+  [../]
+  [./value_uo_a0]
+    type = PointValueAtXFEMInterface
+    variable = 'u'
+    geometric_cut_userobject = 'moving_line_segments_a0'
+    execute_on = 'nonlinear'
+    level_set_var = ls_a0
+  [../]
+  [./moving_line_segments_a0]
+    type = MovingLineSegmentCutSetUserObject
+    cut_data = '580.8 0 580.8 20 0 0'
+    heal_always = true
+    interface_velocity = velocity_a0
+  [../]
+  [./velocity_b0]
+    type = XFEMC4VelocityZrAB
+    diffusivity_alpha = 60
+    diffusivity_beta = 60
+    value_at_interface_uo = value_uo_b0
+  [../]
+  [./value_uo_b0]
+    type = PointValueAtXFEMInterface
+    variable = 'u'
+    geometric_cut_userobject = 'moving_line_segments_b0'
+    execute_on = 'nonlinear'
+    level_set_var = ls_b0
+  [../]
+  [./moving_line_segments_b0]
+    type = MovingLineSegmentCutSetUserObject
+    cut_data = '531.0 0 531.0 20 0 0'
+    heal_always = true
+    interface_velocity = velocity_b0
   [../]
 []
 
@@ -76,7 +118,7 @@
   [./ic_u]
     type = FunctionIC
     variable = u
-    function = 'if(x<587.7,if(x<566,0.0075,0.1873),0.3679)'
+    function = 'if(x<590.0,0.0075,0.3679)'
   [../]
 []
 
@@ -86,6 +128,14 @@
     family = LAGRANGE
   [../]
   [./ls_a_b]
+    order = FIRST
+    family = LAGRANGE
+  [../]
+  [./ls_a0]
+    order = FIRST
+    family = LAGRANGE
+  [../]
+  [./ls_b0]
     order = FIRST
     family = LAGRANGE
   [../]
@@ -109,6 +159,23 @@
     value = 0.0373
     alpha = 1e5
   [../]
+  [./u_constraint_alpha]
+    type = XFEMEqualValueAtInterface
+    geometric_cut_userobject = 'moving_line_segments_a0'
+    use_displaced_mesh = false
+    variable = u
+    value = 0.0910
+    alpha = 1e5
+  [../]
+  [./u_constraint_beta]
+    type = XFEMEqualValueAtInterface
+    geometric_cut_userobject = 'moving_line_segments_b0'
+    use_displaced_mesh = false
+    variable = u
+    value = 0.0075
+    alpha = 1e5
+  [../]
+
 []
 
 [Kernels]
@@ -133,6 +200,16 @@
     type = LineSegmentLevelSetAux
     line_segment_cut_set_user_object = 'moving_line_segments_a_b'
     variable = ls_a_b
+  [../]
+  [./ls_a0]
+    type = LineSegmentLevelSetAux
+    line_segment_cut_set_user_object = 'moving_line_segments_a0'
+    variable = ls_a0
+  [../]
+  [./ls_b0]
+    type = LineSegmentLevelSetAux
+    line_segment_cut_set_user_object = 'moving_line_segments_b0'
+    variable = ls_b0
   [../]
 []
 
@@ -217,13 +294,22 @@
   nl_rel_tol = 1e-6
   nl_abs_tol = 1e-6
 
-  start_time = 30
+  start_time = 20
   dt = 1
-  num_steps = 470
+  num_steps = 480
   max_xfem_update = 1
 
 []
 
+[Controls]
+  [./steady]
+    type = TimePeriod
+    disable_objects = 'Kernels::time '
+    enable_objects = 'UserObjects::velocity_a0 UserObjects::value_uo_a0 UserObjects::moving_line_segments_a0 Constraints::u_constraint_alpha AuxKernels::ls_a0 UserObjects::velocity_b0 UserObjects::value_uo_b0 UserObjects::moving_line_segments_b0 Constraints::u_constraint_beta AuxKernels::ls_b0 '
+    start_time = '20'
+    end_time = '21'
+  [../]
+[]
 
 [Outputs]
   execute_on = timestep_end

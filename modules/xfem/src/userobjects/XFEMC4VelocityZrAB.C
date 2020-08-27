@@ -7,36 +7,30 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "XFEMC4VelocityMetalWeak.h"
+#include "XFEMC4VelocityZrAB.h"
 #include "MooseUtils.h"
 
-registerMooseObject("XFEMApp", XFEMC4VelocityMetalWeak);
+registerMooseObject("XFEMApp", XFEMC4VelocityZrAB);
 
 template <>
 InputParameters
-validParams<XFEMC4VelocityMetalWeak>()
+validParams<XFEMC4VelocityZrAB>()
 {
   InputParameters params = validParams<XFEMMovingInterfaceVelocityBase>();
-  //params.addRequiredParam<Real>("diffusivity_alpha",
-    //                            "Diffusivity of oxygen in the alpha phase.");
-  //params.addRequiredParam<Real>("diffusivity_beta",
-    //                            "Diffusivity of oxygen in the beta phase.");
   params.addParam<Real>("temperature", 1473.15, "Temperature of the cladding (K)");
   params.addClassDescription(
       "Calculate the alpha phase/beta phase interface velocity for the 2 interfaces C4 model for Zircaloy-4 corrosion.");
   return params;
 }
 
-XFEMC4VelocityMetalWeak::XFEMC4VelocityMetalWeak(const InputParameters & parameters)
+XFEMC4VelocityZrAB::XFEMC4VelocityZrAB(const InputParameters & parameters)
   : XFEMMovingInterfaceVelocityBase(parameters),
-    //_diffusivity_alpha(getParam<Real>("diffusivity_alpha")),
-    //_diffusivity_beta(getParam<Real>("diffusivity_beta"))
     _temperature(getParam<Real>("temperature"))
 {
 }
 
 Real
-XFEMC4VelocityMetalWeak::computeMovingInterfaceVelocity(unsigned int point_id) const
+XFEMC4VelocityZrAB::computeMovingInterfaceVelocity(unsigned int point_id) const
 {
   RealVectorValue grad_positive = _value_at_interface_uo->getGradientAtPositiveLevelSet()[point_id];
   RealVectorValue grad_negative = _value_at_interface_uo->getGradientAtNegativeLevelSet()[point_id];

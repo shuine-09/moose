@@ -7,32 +7,29 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "XFEMC4VelocityOxideWeakMicro.h"
+#include "XFEMC4VelocityZrOxA.h"
 
-registerMooseObject("XFEMApp", XFEMC4VelocityOxideWeakMicro);
+registerMooseObject("XFEMApp", XFEMC4VelocityZrOxA);
 
 template <>
 InputParameters
-validParams<XFEMC4VelocityOxideWeakMicro>()
+validParams<XFEMC4VelocityZrOxA>()
 {
   InputParameters params = validParams<XFEMMovingInterfaceVelocityBase>();
-  //params.addRequiredParam<Real>("diffusivity_alpha",
-                              //  "Diffusivity of oxygen in the Zr alpha phase.");
   params.addParam<Real>("temperature",1473.15,"Temperature of the cladding (K)");
   params.addClassDescription(
       "Calculate the metal/oxide interface velocity for the 1 interface C4 model for Zircaloy-4 corrosion.");
   return params;
 }
 
-XFEMC4VelocityOxideWeakMicro::XFEMC4VelocityOxideWeakMicro(const InputParameters & parameters)
+XFEMC4VelocityZrOxA::XFEMC4VelocityZrOxA(const InputParameters & parameters)
   : XFEMMovingInterfaceVelocityBase(parameters),
-    //diffusivity_alpha(getParam<Real>("diffusivity_alpha")),
     _temperature(getParam<Real>("temperature"))
 {
 }
 
 Real
-XFEMC4VelocityOxideWeakMicro::computeMovingInterfaceVelocity(unsigned int point_id) const
+XFEMC4VelocityZrOxA::computeMovingInterfaceVelocity(unsigned int point_id) const
 {
   RealVectorValue grad_positive = _value_at_interface_uo->getGradientAtPositiveLevelSet()[point_id];
   RealVectorValue grad_negative = _value_at_interface_uo->getGradientAtNegativeLevelSet()[point_id];
@@ -131,14 +128,13 @@ XFEMC4VelocityOxideWeakMicro::computeMovingInterfaceVelocity(unsigned int point_
     diffusivity_alpha = 7.28 * exp(-53327/1.987/_temperature) * 1e8;
   }
 
-// use fixed temperature at 1200C until we add a temperature diffusion kernel
-//  const Real temperature(1473);
-
+  // Mobilities
   const Real mobil_v = 4 * pow(migr_jp_l, 2) * migr_jp_f * 2 / (Kb * _temperature) *
                        exp(-migr_e_v / (Kb * _temperature));
   const Real mobil_e = 4 * pow(migr_jp_l, 2) * migr_jp_f * -1 / (Kb * _temperature) *
                        exp(-migr_e_e / (Kb * _temperature));
 
+  // Solving for eta
   const Real A = mobil_e * con_e_ox_w - 2 * mobil_v * con_v_ox_m;
   const Real B = mobil_e * con_e_ox_w - mobil_e * con_e_ox_m;
   const Real C = 2 * mobil_v * con_v_ox_w - mobil_e * con_e_ox_m;

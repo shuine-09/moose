@@ -3,6 +3,15 @@
 #include "PointValueAtXFEMInterface.h"
 #include "GeneralPostprocessor.h"
 
+
+
+/**
+*
+* Retrieves the value of the gradient at a specified interface, at the
+* specified side of that interface.
+*
+*/
+
 class GradValueAtXFEMInterfacePostprocessor : public GeneralPostprocessor
 {
 public:
@@ -23,5 +32,4 @@ protected:
   /// Value to indicate which side of the interface we want the gradient of (+1 or -1)
   const Real _side;
 
-//  Real _grad_value;
 };

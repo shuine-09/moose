@@ -13,6 +13,20 @@
 
 #include <string>
 
+
+/**
+ * Sets ICs, as in IC4 : 2 additional interfaces, 1 in beta, 1 in alpha.
+ * Takes value of interfaces positions and gradients at 20s from Matlab
+ * finite-difference implementation.
+ * Unit length is um.
+ *
+ *
+ * Specific to the weak discontinuity equivalent of the C4 model for the
+ * high-temperature corrosion of Zircaloy-4 (1000C to 1500C)
+ * The variable used is the weak (atomic) oxygen concentration scaled by
+ * the atomic concentration of Zr in the metal.
+ */
+
 // Forward Declarations
 class C4ZrIC4;
 class InputParameters;
@@ -35,10 +49,6 @@ public:
   C4ZrIC4(const InputParameters & parameters);
 
 protected:
-  /**
-   * Evaluate the function at the current quadrature point and time step.
-   */
-  //Real f();
 
   /**
    * The value of the variable at a point.
@@ -50,13 +60,8 @@ protected:
    */
   //virtual RealGradient gradient(const Point & p) override;
 
-  //const Function & _func;
+  //Temperature [K]
   Real _temperature;
-
-//  Real computeBreakPositions(Real T)
-//  {
-//
-//  }
 
   Real _x_b_break = 531.0 ;
 

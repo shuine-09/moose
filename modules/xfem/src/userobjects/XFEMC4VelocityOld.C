@@ -7,13 +7,13 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "XFEMC4OxideVelocity.h"
+#include "XFEMC4VelocityOld.h"
 
-registerMooseObject("XFEMApp", XFEMC4OxideVelocity);
+registerMooseObject("XFEMApp", XFEMC4VelocityOld);
 
 template <>
 InputParameters
-validParams<XFEMC4OxideVelocity>()
+validParams<XFEMC4VelocityOld>()
 {
   InputParameters params = validParams<XFEMMovingInterfaceVelocityBase>();
   params.addRequiredParam<Real>("diffusivity_at_positive_level_set",
@@ -28,7 +28,7 @@ validParams<XFEMC4OxideVelocity>()
   return params;
 }
 
-XFEMC4OxideVelocity::XFEMC4OxideVelocity(const InputParameters & parameters)
+XFEMC4VelocityOld::XFEMC4VelocityOld(const InputParameters & parameters)
   : XFEMMovingInterfaceVelocityBase(parameters),
     _diffusivity_at_positive_level_set(getParam<Real>("diffusivity_at_positive_level_set")),
     _diffusivity_at_negative_level_set(getParam<Real>("diffusivity_at_negative_level_set")),
@@ -38,7 +38,7 @@ XFEMC4OxideVelocity::XFEMC4OxideVelocity(const InputParameters & parameters)
 }
 
 Real
-XFEMC4OxideVelocity::computeMovingInterfaceVelocity(unsigned int point_id) const
+XFEMC4VelocityOld::computeMovingInterfaceVelocity(unsigned int point_id) const
 {
 //  Real value_positive = _value_at_interface_uo->getValueAtPositiveLevelSet()[point_id];
 //  Real value_negative = _value_at_interface_uo->getValueAtNegativeLevelSet()[point_id];
@@ -46,8 +46,8 @@ XFEMC4OxideVelocity::computeMovingInterfaceVelocity(unsigned int point_id) const
   RealVectorValue grad_negative = _value_at_interface_uo->getGradientAtNegativeLevelSet()[point_id];
 
   Real xt = (_value_at_interface_uo->getPointCurrentLocation(point_id))(0);
-
-  Real delta = std::abs(xt - _x0);
+  const Real zirconium_PBR(1.55);
+  Real delta = zirconium_PBR * std::abs(xt - 600);
 
 //  std::cout << "delta: " << delta << std::endl;
 
@@ -55,12 +55,11 @@ XFEMC4OxideVelocity::computeMovingInterfaceVelocity(unsigned int point_id) const
   //  return std::abs((_diffusivity_at_positive_level_set * grad_positive(0) -
   //                   _diffusivity_at_negative_level_set * grad_negative(0)) /
   //                  (value_positive - value_negative + _equilibrium_concentration_jump));
-  const Real zircaloy_density(6550);
-// const Real zro2_density(5680);
-// const Real oxygen_atmass(16);
-  const Real zirconium_atmass(91.2);
-  const Real zirconium_PBR(1.56);
+
   const Real Na(6.022140857e23);
+  const Real zircaloy_density(6.56);
+  const Real zirconium_atmass(91.22);
+  const Real con_zr = zircaloy_density * Na / zirconium_atmass * 1e6;
   const Real Kb(8.6173303e-5);
   const Real migr_jp_f(1e13);
   const Real migr_jp_l(5e-10);
@@ -89,11 +88,10 @@ XFEMC4OxideVelocity::computeMovingInterfaceVelocity(unsigned int point_id) const
 
   const Real J_v = mobil_v * potential * (con_v_ox_w - con_v_ox_m * pow(eta, 2)) /
                    (1 - pow(eta, 2)) / delta;
-  const Real J_o = zircaloy_density * Na / (zirconium_atmass * 1e-3) *
-                   _diffusivity_at_positive_level_set * (grad_positive(0) + grad_positive(1) + grad_positive(2)) / 3 * 1e-6;
+  const Real J_o = _diffusivity_at_positive_level_set * con_zr * grad_positive(0) / 3 * 1e-6;
 
   if (delta == 0)
     return sqrt(0.01126 * exp(-35890 / (1.987 * temperature)) / (2 * _t)) * (-1e-2);
   else
-    return -zirconium_PBR * (J_v - J_o) / (zirconium_PBR * con_o_ox_m - con_o_m_ox);
+    return - (J_v - J_o) / (zirconium_PBR * con_o_ox_m - con_o_m_ox);
 }

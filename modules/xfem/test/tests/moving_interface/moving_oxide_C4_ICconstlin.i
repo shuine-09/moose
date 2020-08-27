@@ -1,11 +1,12 @@
-# Test for an oxide growing on top of a zirconium nuclear fuel cladding
-# using the C4 model to compute the growth rate
-# The variable is the reduced concentration [/um^3] over Czr
-# The length unit is the micrometer
-# there's 2 moving interfaces (alpha/oxide and alpha/beta)
-# The ICs are set as constants in each phase through ICs, no steady state
-# Temperature dependence is included. No heat equation yet. Homogeneous T.
+# Input file for an oxide growing on top of a zirconium nuclear fuel cladding
+# using the C4 model to compute the growth rate.
+# The variable is the reduced concentration [/um^3] over Czr.
+# The length unit is the micrometer.
+# There are 2 moving interfaces (alpha/oxide and alpha/beta).
+# The ICs are set as constants in beta and oxide but linear in alpha through ICs, no steady state. No gradients as input for ICs.
 
+# Fixed T=1200C.
+# File used to study influence of ICs.
 
 [GlobalParams]
   order = FIRST
@@ -31,8 +32,8 @@
 
 [UserObjects]
   [./velocity_ox_a]
-    type = XFEMC4VelocityOxideWeakMicro
-    temperature = 1673.15
+    type = XFEMC4VelocityZrOxA
+    diffusivity_alpha = 10
     value_at_interface_uo = value_uo_ox_a
   [../]
   [./value_uo_ox_a]
@@ -44,16 +45,14 @@
   [../]
   [./moving_line_segments_ox_a]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '500 0 500 20 0 0'
-    is_C4 = true
-    oxa_interface = true
-    temperature = 1673.15
+    cut_data = '590 0 590 20 0 0'
     heal_always = true
     interface_velocity = velocity_ox_a
   [../]
   [./velocity_a_b]
-    type = XFEMC4VelocityMetalWeak
-    temperature = 1673.15
+    type = XFEMC4VelocityZrAB
+    diffusivity_alpha = 10
+    diffusivity_beta = 60
     value_at_interface_uo = value_uo_a_b
   [../]
   [./value_uo_a_b]
@@ -65,10 +64,7 @@
   [../]
   [./moving_line_segments_a_b]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '400 0 400 20 0 0'
-    is_C4 = true
-    ab_interface = true
-    temperature = 1673.15
+    cut_data = '572.2 0 572.2 20 0 0'
     heal_always = true
     interface_velocity = velocity_a_b
   [../]
@@ -81,9 +77,9 @@
 
 [ICs]
   [./ic_u]
-    type = C4ZrICConst
+    type = FunctionIC
     variable = u
-    temperature = 1673.15
+    function = 'if(x<590.0,if(x<572.2,0.0075,0.0373+(x-572.2)*16853.93e-6),0.3679)'
   [../]
 []
 
@@ -101,29 +97,28 @@
 
 [Constraints]
   [./u_constraint_ox_a]
-    type = XFEMEqualValueAtInterfaceC4aox
+    type = XFEMEqualValueAtInterface
     geometric_cut_userobject = 'moving_line_segments_ox_a'
     use_displaced_mesh = false
     variable = u
-    temperature = 1673.15
+    value = 0.3373
     alpha = 1e5
-    offset = true
   [../]
   [./u_constraint_a_b]
-    type = XFEMEqualValueAtInterfaceC4ab
+    type = XFEMEqualValueAtInterface
     geometric_cut_userobject = 'moving_line_segments_a_b'
     use_displaced_mesh = false
     variable = u
-    temperature = 1673.15
+    value = 0.0373
     alpha = 1e5
   [../]
 []
 
 [Kernels]
   [./diff]
-    type = MatDiffusion
+    type = ConcentrationDiffusion
     variable = u
-    diffusivity = 'diffusion_coefficient'
+    diffusion_coefficient_name = 'diffusion_coefficient'
   [../]
   [./time]
     type = TimeDerivative
@@ -144,17 +139,16 @@
   [../]
 []
 
-
 [Materials]
   [./diffusivity_beta]
-    type = C4DiffusionCoefBeta
+    type = GenericConstantMaterial
     prop_names = beta_diffusion_coefficient
-    temperature = 1673.15
+    prop_values = 60
   [../]
   [./diffusivity_alpha]
-    type = C4DiffusionCoefAlpha
+    type = GenericConstantMaterial
     prop_names = alpha_diffusion_coefficient
-    temperature = 1673.15
+    prop_values = 10
   [../]
   [./diffusivity_oxide]
     type = GenericConstantMaterial
@@ -183,11 +177,9 @@
   [../]
 
   [./right_u]
-    type = DirichletBCRightC4Zr
+    type = DirichletBC
     variable = u
-    two_interfaces = true
-    temperature_aox = 1673.15
-    temperature_ab = 1673.15
+    value = 0.3679
     boundary = right
   [../]
 []
@@ -211,16 +203,6 @@
     side = -1
     execute_on ='initial timestep_begin final'
   [../]
-  [./position_ox_a]
-    type = PositionOfXFEMInterfacePostprocessor
-    value_at_interface_uo = value_uo_ox_a
-    execute_on ='timestep_end final'
-  [../]
-  [./position_a_b]
-    type = PositionOfXFEMInterfacePostprocessor
-    value_at_interface_uo = value_uo_a_b
-    execute_on ='timestep_end final'
-  [../]
 []
 
 [Executioner]
@@ -238,9 +220,9 @@
   nl_rel_tol = 1e-6
   nl_abs_tol = 1e-6
 
-  start_time = 19
+  start_time = 20
   dt = 1
-  num_steps = 81
+  num_steps = 480
   max_xfem_update = 1
 
 []

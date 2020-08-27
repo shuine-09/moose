@@ -1,5 +1,9 @@
-# test for an oxide growing on top of a zirconium nuclear fuel cladding
-# using the C4 model to compute the growth rate
+# Input file for an oxide growing on top of a zirconium nuclear fuel cladding
+# using the C4 model to compute the growth rate.
+# The variable is the reduced oxygen concentration [/um^3] over Czr.
+# The length unit is the micrometer.
+# There's 1 moving interface (alpha/oxide).
+# The ICs are the simplest "const" IC (profile constant in each phase). No gradients as input for ICs.
 
 [GlobalParams]
   order = FIRST
@@ -12,9 +16,9 @@
   nx = 21
   ny = 20
   xmin = 0
-  xmax = 6e-4
+  xmax = 600
   ymin = 0
-  ymax = 1e-3
+  ymax = 600
   elem_type = QUAD4
 []
 
@@ -24,24 +28,23 @@
 []
 
 [UserObjects]
-  [./velocity]
-    type = XFEMC4VelocityOxideWeak
-    diffusivity_alpha = 1e-11
-    value_at_interface_uo = value_uo
-    x0 = 5.9e-4
+  [./velocity_ox_a]
+    type = XFEMC4VelocityZrOxA
+    diffusivity_alpha = 10
+    value_at_interface_uo = value_uo_ox_a
   [../]
-  [./value_uo]
+  [./value_uo_ox_a]
     type = PointValueAtXFEMInterface
     variable = 'u'
-    geometric_cut_userobject = 'moving_line_segments'
+    geometric_cut_userobject = 'moving_line_segments_ox_a'
     execute_on = 'nonlinear'
-    level_set_var = ls
+    level_set_var = ls_ox_a
   [../]
-  [./moving_line_segments]
+  [./moving_line_segments_ox_a]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '5.9e-4 0 5.9e-4 1e-3 0 0'
+    cut_data = '590 0 590 600 0 0'
     heal_always = true
-    interface_velocity = velocity
+    interface_velocity = velocity_ox_a
   [../]
 []
 
@@ -54,16 +57,12 @@
   [./ic_u]
     type = FunctionIC
     variable = u
-    function = 'if(x<5.9e-4, 0.0075, 0.4547)'
+    function = 'if(x<590,0.0075,0.4547)'
   [../]
 []
 
 [AuxVariables]
-  [./ls]
-    order = FIRST
-    family = LAGRANGE
-  [../]
-  [./u_discontinuous]
+  [./ls_ox_a]
     order = FIRST
     family = LAGRANGE
   [../]
@@ -71,9 +70,9 @@
 
 
 [Constraints]
-  [./u_constraint]
+  [./u_constraint_ox_a]
     type = XFEMEqualValueAtInterface
-    geometric_cut_userobject = 'moving_line_segments'
+    geometric_cut_userobject = 'moving_line_segments_ox_a'
     use_displaced_mesh = false
     variable = u
     value = 0.4241
@@ -94,37 +93,31 @@
 []
 
 [AuxKernels]
-  [./ls]
+  [./ls_ox_a]
     type = LineSegmentLevelSetAux
-    line_segment_cut_set_user_object = 'moving_line_segments'
-    variable = ls
-  [../]
-  [./u_discontinuous]
-    type = WeakToStrongDiscontinuityAux
-    variable = u_discontinuous
-    weak_variable = u
-    jump_value = 0.8274
-    level_set_var = ls
+    line_segment_cut_set_user_object = 'moving_line_segments_ox_a'
+    variable = ls_ox_a
   [../]
 []
 
 [Materials]
-  [./diffusivity_A]
+  [./diffusivity_alpha]
     type = GenericConstantMaterial
-    prop_names = A_diffusion_coefficient
-    prop_values = 1e-5
+    prop_names = alpha_diffusion_coefficient
+    prop_values = 10
   [../]
-  [./diffusivity_B]
+  [./diffusivity_oxide]
     type = GenericConstantMaterial
-    prop_names = B_diffusion_coefficient
-    prop_values = 1e-11
+    prop_names = oxide_diffusion_coefficient
+    prop_values = 10e6
   [../]
   [./diff_combined]
     type = LevelSetBiMaterialReal
-    levelset_positive_base = 'A'
-    levelset_negative_base = 'B'
-    level_set_var = ls
+    levelset_negative_base = 'alpha'
+    levelset_positive_base = 'oxide'
+    level_set_var = ls_ox_a
     prop_name = diffusion_coefficient
+    outputs = exodus
   [../]
 []
 
@@ -145,6 +138,15 @@
   [../]
 []
 
+[Postprocessors]
+  [./grad_a_ox]
+    type = GradValueAtXFEMInterfacePostprocessor
+    value_at_interface_uo = value_uo_ox_a
+    side = -1
+    execute_on ='initial timestep_begin final'
+  [../]
+[]
+
 [Executioner]
   type = Transient
   solve_type = 'PJFNK'
@@ -155,14 +157,16 @@
 
 
   l_tol = 1e-3
+  l_max_its = 10
   nl_max_its = 15
-  nl_rel_tol = 1e-7
-  nl_abs_tol = 1e-7
+  nl_rel_tol = 1e-6
+  nl_abs_tol = 1e-6
 
-  start_time = 0.0
+  start_time = 0
   dt = 10
   num_steps = 150
   max_xfem_update = 1
+
 []
 
 

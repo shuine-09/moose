@@ -12,17 +12,20 @@
 #include "AuxKernel.h"
 
 // Forward Declarations
-class WeakToStrongDiscontinuityAux;
+class WeakToStrongDiscontinuityC4ZrAux;
 
 /**
- * The original variable of the strong discontinuity problem from the weak discontinuity problem variable
+ * Computes the value of the original variable of the strong discontinuity
+ * problem from the weak discontinuity variable.
+ * !!! Not working correctly. Only adds the discontinuity value once an element
+ * has been fully crossed by the interface. !!!
  */
-class WeakToStrongDiscontinuityAux : public AuxKernel
+class WeakToStrongDiscontinuityC4ZrAux : public AuxKernel
 {
 public:
   static InputParameters validParams();
 
-  WeakToStrongDiscontinuityAux(const InputParameters & parameters);
+  WeakToStrongDiscontinuityC4ZrAux(const InputParameters & parameters);
 
 protected:
   virtual Real computeValue() override;

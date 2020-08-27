@@ -20,7 +20,7 @@ XFEMEqualValueAtInterfaceC4aox::validParams()
   InputParameters params = ElemElemConstraint::validParams();
   params.addRequiredParam<Real>("alpha", "Penalty parameter in penalty formulation.");
   params.addRequiredParam<Real>("temperature", "Temperature [K] at the alpha/beta the interface");
-  params.addRequiredParam<bool>("offset", "Specifies if an offset is needed or not. Due to the use "
+  params.addParam<bool>("offset",true, "Specifies if an offset is needed or not. Due to the use "
                                 "of a weak discontinuity variable, an offset on the oxide/alpha interface"
                                 "value is needed when an alpha/beta interface is also used.");
   params.addParam<UserObjectName>(

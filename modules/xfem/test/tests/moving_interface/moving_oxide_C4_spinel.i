@@ -1,6 +1,6 @@
-# Test for an oxide growing outward on top of a steel valve
+# Input file for an oxide growing outward on top of a steel 21-2N sample
 # using the C4 model to compute the growth rate
-# The variables is the Mn concentration [/nm^3]
+# The variable is the Mn concentration [/nm^3]
 # The length unit is the nanometer. The time unit is the hour
 # there's 1 fixed interface (oxide/metal) and 1 moving interface (oxide/gas)
 # The gas is the left part of the mesh (void)
@@ -16,11 +16,11 @@
   type = GeneratedMesh
   dim = 2
   nx = 41
-  ny = 40
+  ny = 20
   xmin = 0
-  xmax = 10000
+  xmax = 8000
   ymin = 0
-  ymax = 5000
+  ymax = 4000
   elem_type = QUAD4
 []
 
@@ -32,10 +32,10 @@
 [UserObjects]
   [./fixed_cut_oxide_metal]
     type = LineSegmentCutSetUserObject
-    cut_data = '5000 0 5000 5000 0 0'
+    cut_data = '5000 0 5000 4000 0 0'
   [../]
   [./velocity_oxide]
-    type = XFEMC4VelocityOxideSpinel
+    type = XFEMC4VelocitySteelOx
     value_at_interface_uo = value_uo_oxide
   [../]
   [./value_uo_oxide]
@@ -47,7 +47,7 @@
   [../]
   [./moving_cut_oxide]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '5500 0 5500 5000 0 0'
+    cut_data = '5500 0 5500 4000 0 0'
     heal_always = true
     interface_velocity = velocity_oxide
   [../]
@@ -62,7 +62,7 @@
   [./ic_Mn]
     type = FunctionIC
     variable = C_Mn
-    function = 'if(x<5000, 7.1725,if(x<5500,13.318,13.185))'
+    function = 'if(x<5000, 7.1445,if(x<5500,13.3179,13.3152))'
   [../]
 []
 
@@ -80,12 +80,12 @@
 
 [Constraints]
   [./oxide_metal_constraint]
-    type = XFEMOneSideDirichlet
+    type = XFEMTwoSideDirichlet
     geometric_cut_userobject = 'fixed_cut_oxide_metal'
-    positive_side = true
     use_displaced_mesh = false
     variable = C_Mn
-    value = 13.318
+    value_at_positive_level_set_interface = 2.1577
+    value_at_negative_level_set_interface = 13.3179
     alpha = 1e5
   [../]
   [./oxide_gas_constraint]
@@ -93,7 +93,7 @@
     geometric_cut_userobject = 'moving_cut_oxide'
     use_displaced_mesh = false
     variable = C_Mn
-    value = 13.185
+    value = 13.3152
     alpha = 1e5
   [../]
 []
@@ -127,12 +127,12 @@
   [./diffusivity_steel]
     type = GenericConstantMaterial
     prop_names = steel_diffusion_coefficient
-    prop_values = 1e3
+    prop_values = 36000
   [../]
   [./diffusivity_oxide]
     type = GenericConstantMaterial
     prop_names = oxide_diffusion_coefficient
-    prop_values = 1e4
+    prop_values = 10000
   [../]
   [./diffusivity_gas]
     type = GenericConstantMaterial
@@ -156,14 +156,14 @@
   [./left_Mn]
     type = DirichletBC
     variable = C_Mn
-    value = 7.1725
+    value = 7.1445
     boundary = left
   [../]
 
   [./right_u]
     type = DirichletBC
     variable = C_Mn
-    value = 13.185
+    value = 13.3152
     boundary = right
   [../]
 []
@@ -184,7 +184,7 @@
 
   start_time = 40
   dt = 10
-  num_steps = 96
+  num_steps = 46
   max_xfem_update = 1
 []
 

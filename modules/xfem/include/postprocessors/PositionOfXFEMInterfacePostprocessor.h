@@ -3,6 +3,13 @@
 #include "PointValueAtXFEMInterface.h"
 #include "GeneralPostprocessor.h"
 
+/**
+*
+* Retrieves the position of a specified interface
+*
+*/
+
+
 class PositionOfXFEMInterfacePostprocessor : public GeneralPostprocessor
 {
 public:

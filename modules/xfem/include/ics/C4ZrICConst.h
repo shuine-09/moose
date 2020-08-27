@@ -13,6 +13,18 @@
 
 #include <string>
 
+/**
+ * Sets ICs, simplest case : constant in every phase (no need for initial gradients.)
+ * Takes value of interfaces positions at 20s from Matlab finite-difference implementation.
+ * Unit length is um.
+ *
+ *
+ * Specific to the weak discontinuity equivalent of the C4 model for the
+ * high-temperature corrosion of Zircaloy-4 (1000C to 1500C)
+ * The variable used is the weak (atomic) oxygen concentration scaled by
+ * the atomic concentration of Zr in the metal.
+ */
+
 // Forward Declarations
 class C4ZrICConst;
 class InputParameters;

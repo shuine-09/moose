@@ -1,21 +1,27 @@
-# test for an oxide growing on top of a ziroconium nuclear fuel cladding
+# Test for an oxide growing on top of a zirconium nuclear fuel cladding
 # using the C4 model to compute the growth rate
+# The variable is the reduced concentration [/um^3] over Czr
+# The length unit is the micrometer
+# there's 2 moving interfaces (alpha/oxide and alpha/beta)
+# The ICs are set as constants in each phase through ICs, no steady state
+# Temperature dependence is included. No heat equation yet. Homogeneous T.
+
 
 [GlobalParams]
   order = FIRST
   family = LAGRANGE
+  temperature = 1473.15
 []
 
 [Mesh]
-  type = GeneratedMesh
-  dim = 2
-  nx = 21
-  ny = 20
-  xmin = 0
-  xmax = 6e-4
-  ymin = 0
-  ymax = 1e-3
-  elem_type = QUAD4
+  [./cmg]
+    type = CartesianMeshGenerator
+    dim = 2
+    dx = '300 300'
+    dy = '60'
+    ix = '100 301'
+    iy = '20'
+  [../]
 []
 
 [XFEM]
@@ -24,26 +30,43 @@
 []
 
 [UserObjects]
-  [./velocity]
-    type = XFEMC4OxideVelocity
-    diffusivity_at_positive_level_set = 1e-5
-    diffusivity_at_negative_level_set = 1e-11
-    equilibrium_concentration_jump = 0.3689
-    value_at_interface_uo = value_uo
-    x0 = 5.9e-4
+  [./velocity_ox_a]
+    type = XFEMC4VelocityZrOxA
+    value_at_interface_uo = value_uo_ox_a
   [../]
-  [./value_uo]
+  [./value_uo_ox_a]
     type = PointValueAtXFEMInterface
     variable = 'u'
-    geometric_cut_userobject = 'moving_line_segments'
+    geometric_cut_userobject = 'moving_line_segments_ox_a'
     execute_on = 'nonlinear'
-    level_set_var = ls
+    level_set_var = ls_ox_a
   [../]
-  [./moving_line_segments]
+  [./moving_line_segments_ox_a]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '5.9e-4 0 5.9e-4 1e-3 0 0'
+    cut_data = '500 0 500 60 0 0'
+    is_C4 = true
+    oxa_interface = true
     heal_always = true
-    interface_velocity = velocity
+    interface_velocity = velocity_ox_a
+  [../]
+  [./velocity_a_b]
+    type = XFEMC4VelocityZrAB
+    value_at_interface_uo = value_uo_a_b
+  [../]
+  [./value_uo_a_b]
+    type = PointValueAtXFEMInterface
+    variable = 'u'
+    geometric_cut_userobject = 'moving_line_segments_a_b'
+    execute_on = 'nonlinear'
+    level_set_var = ls_a_b
+  [../]
+  [./moving_line_segments_a_b]
+    type = MovingLineSegmentCutSetUserObject
+    cut_data = '400 0 400 60 0 0'
+    is_C4 = true
+    ab_interface = true
+    heal_always = true
+    interface_velocity = velocity_a_b
   [../]
 []
 
@@ -54,38 +77,45 @@
 
 [ICs]
   [./ic_u]
-    type = FunctionIC
+    type = C4ZrICConst
     variable = u
-    function = 'if(x<5.9e-4, 0.03, 0.6667)'
   [../]
 []
 
 [AuxVariables]
-  [./ls]
+  [./ls_ox_a]
+    order = FIRST
+    family = LAGRANGE
+  [../]
+  [./ls_a_b]
     order = FIRST
     family = LAGRANGE
   [../]
 []
 
-# Need to use XFEMTwoSideDirichlet that has been removed
+
 [Constraints]
-  [./u_constraint]
-    type = XFEMTwoSideDirichlet
-    geometric_cut_userobject = 'moving_line_segments'
+  [./u_constraint_ox_a]
+    type = XFEMEqualValueAtInterfaceC4aox
+    geometric_cut_userobject = 'moving_line_segments_ox_a'
     use_displaced_mesh = false
     variable = u
-    value_at_positive_level_set_interface = 0.2978
-    value_at_negative_level_set_interface = 0.6667
-#    value = 0.6667
+    alpha = 1e5
+  [../]
+  [./u_constraint_a_b]
+    type = XFEMEqualValueAtInterfaceC4ab
+    geometric_cut_userobject = 'moving_line_segments_a_b'
+    use_displaced_mesh = false
+    variable = u
     alpha = 1e5
   [../]
 []
 
 [Kernels]
   [./diff]
-    type = ConcentrationDiffusion
+    type = MatDiffusion
     variable = u
-    diffusion_coefficient_name = 'diffusion_coefficient'
+    diffusivity = 'diffusion_coefficient'
   [../]
   [./time]
     type = TimeDerivative
@@ -94,30 +124,42 @@
 []
 
 [AuxKernels]
-  [./ls]
+  [./ls_ox_a]
     type = LineSegmentLevelSetAux
-    line_segment_cut_set_user_object = 'moving_line_segments'
-    variable = ls
+    line_segment_cut_set_user_object = 'moving_line_segments_ox_a'
+    variable = ls_ox_a
+  [../]
+  [./ls_a_b]
+    type = LineSegmentLevelSetAux
+    line_segment_cut_set_user_object = 'moving_line_segments_a_b'
+    variable = ls_a_b
   [../]
 []
 
+
 [Materials]
-  [./diffusivity_A]
-    type = GenericConstantMaterial
-    prop_names = A_diffusion_coefficient
-    prop_values = 1e-5
+  [./diffusivity_beta]
+    type = C4DiffusionCoefBeta
+    prop_names = beta_diffusion_coefficient
   [../]
-  [./diffusivity_B]
+  [./diffusivity_alpha]
+    type = C4DiffusionCoefAlpha
+    prop_names = alpha_diffusion_coefficient
+  [../]
+  [./diffusivity_oxide]
     type = GenericConstantMaterial
-    prop_names = B_diffusion_coefficient
-    prop_values = 1e-11
+    prop_names = oxide_diffusion_coefficient
+    prop_values = 10e6
   [../]
   [./diff_combined]
-    type = LevelSetBiMaterialReal
-    levelset_positive_base = 'A'
-    levelset_negative_base = 'B'
-    level_set_var = ls
+    type = LevelSetTriMaterialReal
+    levelset_neg_neg_base = 'beta'
+    levelset_pos_neg_base = 'alpha'
+    levelset_pos_pos_base = 'oxide'
+    ls_var_1 = ls_a_b
+    ls_var_2 = ls_ox_a
     prop_name = diffusion_coefficient
+    outputs = exodus
   [../]
 []
 
@@ -126,15 +168,45 @@
   [./left_u]
     type = DirichletBC
     variable = u
-    value = 0.03
+    value = 0.0075
     boundary = left
   [../]
 
   [./right_u]
-    type = DirichletBC
+    type = DirichletBCRightC4Zr
     variable = u
-    value = 0.6667
     boundary = right
+  [../]
+[]
+
+[Postprocessors]
+  [./grad_a_ox]
+    type = GradValueAtXFEMInterfacePostprocessor
+    value_at_interface_uo = value_uo_ox_a
+    side = -1
+    execute_on ='initial timestep_begin final'
+  [../]
+  [./grad_a_b]
+    type = GradValueAtXFEMInterfacePostprocessor
+    value_at_interface_uo = value_uo_a_b
+    side = +1
+    execute_on ='initial timestep_begin final'
+  [../]
+  [./grad_b_a]
+    type = GradValueAtXFEMInterfacePostprocessor
+    value_at_interface_uo = value_uo_a_b
+    side = -1
+    execute_on ='initial timestep_begin final'
+  [../]
+  [./position_ox_a]
+    type = PositionOfXFEMInterfacePostprocessor
+    value_at_interface_uo = value_uo_ox_a
+    execute_on ='timestep_end final'
+  [../]
+  [./position_a_b]
+    type = PositionOfXFEMInterfacePostprocessor
+    value_at_interface_uo = value_uo_a_b
+    execute_on ='timestep_end final'
   [../]
 []
 
@@ -145,15 +217,19 @@
   petsc_options_value = 'lu'
   line_search = 'none'
 
-  l_tol = 1e-3
-  nl_max_its = 15
-  nl_rel_tol = 1e-7
-  nl_abs_tol = 1e-7
 
-  start_time = 0.0
-  dt = 10
-  num_steps = 150
+
+  l_tol = 1e-3
+  l_max_its = 10
+  nl_max_its = 15
+  nl_rel_tol = 1e-6
+  nl_abs_tol = 1e-6
+
+  start_time = 19
+  dt = 1
+  num_steps = 1481
   max_xfem_update = 1
+
 []
 
 
