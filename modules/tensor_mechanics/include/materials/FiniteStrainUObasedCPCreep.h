@@ -301,6 +301,8 @@ protected:
   Real _gamma;
 
   Real _D;
+
+  Real _D2;
 };
 
 #endif // FINITESTRAINUOBASEDCPCREEP_H

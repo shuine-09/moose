@@ -51,6 +51,7 @@ validParams<FiniteStrainUObasedCPCreep>()
   params.addParam<Real>("alpha", 0.5, "boundary-diffusion coefficient.");
   params.addParam<Real>("gamma", 2, "surface energy.");
   params.addParam<Real>("D", 0.02, "damage evolution parameter.");
+  params.addParam<Real>("D2", 1, "damage evolution parameter for diffusion creep.");
   params.addParam<unsigned int>(
       "line_search_maxiter", 20, "Line search bisection method maximum number of iteration");
   MooseEnum line_search_method("CUT_HALF BISECTION", "CUT_HALF");
@@ -124,7 +125,8 @@ FiniteStrainUObasedCPCreep::FiniteStrainUObasedCPCreep(const InputParameters & p
     _Db(getFunction("Db")),
     _alpha(getParam<Real>("alpha")),
     _gamma(getParam<Real>("gamma")),
-    _D(getParam<Real>("D"))
+    _D(getParam<Real>("D")),
+    _D2(getParam<Real>("D2"))
 {
   _err_tol = false;
 
@@ -351,13 +353,14 @@ FiniteStrainUObasedCPCreep::postSolveQp()
 
   Real eff = std::sqrt(3.0 / 2 * _stress[_qp].doubleContraction(_stress[_qp]));
 
-  _w_bd[_qp] = _w_bd_old[_qp] +
-               _xi / 2.0 * eff / (std::sqrt(_w_bd_old[_qp]) * std::log(1.0 / _w_bd_old[_qp])) * _dt;
+  _w_bd[_qp] = _w_bd_old[_qp] + 2 * _xi / 2.0 * eff /
+                                    (std::sqrt(_w_bd_old[_qp]) * std::log(1.0 / _w_bd_old[_qp])) *
+                                    _dt;
 
-  _w_sd[_qp] = _w_sd_old[_qp] + _xi * _alpha / 4.0 * _d / _gamma * std::sqrt(_w_sd_old[_qp]) *
+  _w_sd[_qp] = _w_sd_old[_qp] + 2 * _xi * _alpha / 4.0 * _d / _gamma * std::sqrt(_w_sd_old[_qp]) *
                                     std::pow(eff, 3.0) / std::pow(1.0 - _w_sd_old[_qp], 3.0);
 
-  _w[_qp] = _w_bd[_qp] + _w_sd[_qp] + _w_bd[_qp];
+  _w[_qp] = _w_dis[_qp] + (_w_sd[_qp] + _w_bd[_qp]) * _D2;
 
   // Calculate jacobian for preconditioner
   calcTangentModuli();
