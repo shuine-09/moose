@@ -1,8 +1,8 @@
 [Mesh]
   type = GeneratedMesh
   dim = 2
-  nx = 100
-  ny = 100
+  nx = 200
+  ny = 200
   xmax = 2.8
   ymax = 2.8
   elem_type = QUAD4
@@ -35,6 +35,15 @@
   [../]
 []
 
+[ICs]
+  [d]
+    type = RandomIC
+    min = 0
+    max = 1e-8
+    variable = d
+  []
+[]
+
 [AuxVariables]
   [./force_x]
     order = FIRST
@@ -54,7 +63,7 @@
       radius = 0.5
       invalue = 1.0
       outvalue = 0.0
-      int_width = 0.05
+      int_width = 0.2
 #    type = SpecifiedSmoothCircleIC
 #    invalue = 1.0
 #    outvalue = 0
@@ -84,9 +93,9 @@
   [../]
  [./pressure]
    type = PiecewiseLinear
-   data_file = 'bubble_pressure_r0.5_gas100_por10_ext0.csv'
-   format = columns
- [../]
+   x = '0 10'
+   y = '0 200'
+  [../]
   # [./pressure]
   #   type = ParsedFunction
   #   value = '100'
@@ -144,11 +153,6 @@
 []
 
 [AuxKernels]
-  [./bnds_aux]
-    type = BndsCalcAux
-    variable = bnds
-    execute_on = timestep_end
-  [../]
   [./C1111]
     type = RankFourAux
     variable = C1111
@@ -165,23 +169,22 @@
   [./pfbulkmat]
     type = GenericConstantMaterial
     prop_names = 'l visco'
-    prop_values = '0.01 1e-3'
+    prop_values = '0.2 1e-3'
   [../]
   [pressure]
     type = GenericFunctionMaterial
     block = 0
     prop_names = fracture_pressure
     prop_values = pressure
-    factor = 1e-6
+    #factor = 1e-6
   []
   [./gc]
-    type = ParsedMaterial
-    f_name = gc_prop
-    #function = 'if(bnds < 0.75, if(bnds>0.25, 0.5, 2.5), 2.5)'
-    function = 'if(bnds < 0.75 & c < 0.5, 0.0012, 0.012)'
-    args = 'bnds c'
+  type = ParsedMaterial
+  f_name = gc_prop
+  #function = 'if(bnds < 0.75, if(bnds>0.25, 0.5, 2.5), 2.5)'
+  function = 'if(c < 0.5, 0.001, 0.01)'
+   args = 'c'
   [../]
-
   [./define_mobility]
     type = ParsedMaterial
     material_property_names = 'gc_prop visco'
@@ -228,8 +231,8 @@
     type = DerivativeParsedMaterial
     f_name = indicator_function
     args = 'd'
-    function = 'd'
-    derivative_order = 2
+    function = '0'
+    derivative_order = 1
   [../]
   [./degradation]
     type = DerivativeParsedMaterial
@@ -332,8 +335,8 @@
   solve_type = PJFNK
   petsc_options_iname = '-pc_type -pc_factor_mat_solver_type -snes_type'
   petsc_options_value = 'lu superlu_dist vinewtonrsls'
-  nl_rel_tol = 1e-6  ##nonlinear relative tolerance
-  nl_abs_tol = 1e-6
+  nl_rel_tol = 1e-8  ##nonlinear relative tolerance
+  nl_abs_tol = 1e-8
   l_max_its = 10   ##max linear iterations Previous:200
   nl_max_its = 50  ##max nonlinear iterations Previous:50
   start_time=0
@@ -341,10 +344,10 @@
   end_time = 2000
   dtmax = 1
   dtmin = 1e-14
-  automatic_scaling = true
+  automatic_scaling = false
   [./TimeStepper]
     type = IterationAdaptiveDT
-    dt = 1
+    dt = 1e-1
     optimal_iterations = 10
     iteration_window = 0
     growth_factor = 1.2
@@ -355,7 +358,7 @@
 [Outputs]
   [exodus]
     type = Exodus
-    interval = 5
+    interval = 1
   []
   csv = true
 #gnuplot = true
