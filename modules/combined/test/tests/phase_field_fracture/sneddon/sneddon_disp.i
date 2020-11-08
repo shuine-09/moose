@@ -13,6 +13,7 @@ x1 = '${fparse H2-a}'
 x2 = '${fparse H2+a}'
 y1 = '${fparse H2-0.0001}'
 y2 = '${fparse H2+0.0001}'
+dt = '${fparse end/100.0}'
 
 [GlobalParams]
   displacements = 'disp_x disp_y'
@@ -68,8 +69,8 @@ y2 = '${fparse H2+0.0001}'
 
 [Adaptivity]
   marker = box
-  max_h_level = 6
-  initial_steps = 6
+  max_h_level = 5
+  initial_steps = 5
   [Markers]
     [box]
       type = BoxMarker
@@ -130,7 +131,7 @@ y2 = '${fparse H2+0.0001}'
   [pfbulkmat]
     type = GenericConstantMaterial
     prop_names = 'gc_prop l visco'
-    prop_values = '0.001 0.02 1e-6'
+    prop_values = '0.001 0.04 1e-6'
   []
   [define_mobility]
     type = ParsedMaterial
@@ -203,7 +204,6 @@ y2 = '${fparse H2+0.0001}'
   nl_rel_tol = 1e-6
   nl_abs_tol = 1e-8
 
-  dt = 1e-3
   automatic_scaling = true
 
   picard_max_its = 100
@@ -211,6 +211,7 @@ y2 = '${fparse H2+0.0001}'
   picard_abs_tol = 1e-8
   accept_on_max_picard_iteration = true
   end_time = ${end}
+  dt = ${dt}
 []
 
 [Outputs]

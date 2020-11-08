@@ -64,7 +64,7 @@ for filename in all_files:
 #length = [0.1,0.12,0.14,0.16,0.18,0.20,0.22,0.24,0.26,0.28,0.3,0.4,0.5,0.6]
 # p = [0.054,0.049,0.046,0.044,0.041,0.04,0.038,0.036,0.035,0.034,0.033,0.029,0.026,0.024]
 
-a = np.linspace(0.2,0.4,100) # 100 linearly spaced numbers
+a = np.linspace(0.1,0.8,100) # 100 linearly spaced numbers
 th_p = np.sqrt(1.0*0.001/(1-0.2*0.2)/np.pi/a)
 
 fig = plt.figure(figsize=[6.5,5.5])

@@ -45,8 +45,8 @@ y2 = '${fparse H2+0.0001}'
 
 [Adaptivity]
   marker = box
-  max_h_level = 6
-  initial_steps = 6
+  max_h_level = 5
+  initial_steps = 5
   [Markers]
     [box]
       type = BoxMarker

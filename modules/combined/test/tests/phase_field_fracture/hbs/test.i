@@ -1,15 +1,32 @@
+# [Mesh]
+#   type = FileMesh
+#   file = hbs_bub_test.e
+# []
+
 [Mesh]
-  type = GeneratedMesh
-  dim = 2
-  nx = 200
-  ny = 200
-  xmax = 2.8
-  ymax = 2.8
-  elem_type = QUAD4
+  [gen]
+    type = GeneratedMeshGenerator
+    dim = 2
+    xmax = 950
+    ymax = 950
+    nx = 300
+    ny = 300
+  []
 []
 
 [GlobalParams]
+  op_num = 15
+  var_name_base = gr
   displacements = 'disp_x disp_y'
+[]
+
+[UserObjects]
+  [./soln]
+    type = SolutionUserObject
+    mesh = hbs_bub_test.e
+    timestep = 'LATEST'
+    execute_on = 'initial'
+  [../]
 []
 
 [Variables]
@@ -35,16 +52,11 @@
   [../]
 []
 
-[ICs]
-  [d]
-    type = RandomIC
-    min = 0
-    max = 1e-8
-    variable = d
-  []
-[]
-
 [AuxVariables]
+  [./stress_yy]
+    order = CONSTANT
+    family = MONOMIAL
+  [../]
   [./force_x]
     order = FIRST
     family = LAGRANGE
@@ -53,32 +65,147 @@
     order = FIRST
     family = LAGRANGE
   [../]
-  [./c]
-    order = FIRST
-    family = LAGRANGE
+  [./bnds]
     [./InitialCondition]
-      type = SmoothCircleIC
-      x1 = 1.4
-      y1 = 1.4
-      radius = 0.5
-      invalue = 1.0
-      outvalue = 0.0
-      int_width = 0.2
-#    type = SpecifiedSmoothCircleIC
-#    invalue = 1.0
-#    outvalue = 0
-#    int_width = 0.05
-#    x_positions = '12.5 27.5'
-#    z_positions = '0 0'
-#    y_positions = '27.5 12.5'
-#    radii = '5 5'
+      type = FunctionIC
+      function = f_bnds
+      variable = bnds
     [../]
   [../]
+  [./c]
+    [./InitialCondition]
+      type = FunctionIC
+      function = f_bubs
+      variable = c
+    [../]
+  [../]
+  [./gr0]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr0
+      function = f_gr0
+    [../]
+  [../]
+  [./gr1]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr1
+      function = f_gr1
+    [../]
+  [../]
+  [./gr2]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr2
+      function = f_gr2
+    [../]
+  [../]
+  [./gr3]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr3
+      function = f_gr3
+    [../]
+  [../]
+  [./gr4]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr4
+      function = f_gr4
+    [../]
+  [../]
+  [./gr5]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr5
+      function = f_gr5
+    [../]
+  [../]
+  [./gr6]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr6
+      function = f_gr6
+    [../]
+  [../]
+  [./gr7]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr7
+      function = f_gr7
+    [../]
+  [../]
+  [./gr8]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr8
+      function = f_gr8
+    [../]
+  [../]
+  [./gr9]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr9
+      function = f_gr9
+    [../]
+  [../]
+  [./gr10]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr10
+      function = f_gr10
+    [../]
+  [../]
+  [./gr11]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr11
+      function = f_gr11
+    [../]
+  [../]
+  [./gr12]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr12
+      function = f_gr12
+    [../]
+  [../]
+  [./gr13]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr13
+      function = f_gr13
+    [../]
+  [../]
+  [./gr14]
+    [./InitialCondition]
+      type = FunctionIC
+      variable = gr14
+      function = f_gr14
+    [../]
+  [../]
+
+  # [./euler_angle]
+  #   order = CONSTANT
+  #   family = MONOMIAL
+  # [../]
   [./C1111]
     order = CONSTANT
     family = MONOMIAL
     block = 0
   [../]
+  # [./var_indices]
+  #   order = CONSTANT
+  #   family = MONOMIAL
+  # [../]
+  [./strain_yy]
+    family = MONOMIAL
+    order = CONSTANT
+  [../]
+  # [./unique_grains]
+  #   order = CONSTANT
+  #   family = MONOMIAL
+  # [../]
   [./bounds_dummy]
     order = FIRST
     family = LAGRANGE
@@ -93,13 +220,99 @@
   [../]
  [./pressure]
    type = PiecewiseLinear
-   x = '0 10'
-   y = '0 200'
-  [../]
+   data_file = 'bubble_pressure1.csv'
+   format = columns
+ [../]
   # [./pressure]
   #   type = ParsedFunction
   #   value = '100'
   # [../]
+  [./f_bnds]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'bnds'
+  [../]
+  [./f_bubs]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'etab'
+  [../]
+  [./f_gr0]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta0'
+  [../]
+  [./f_gr1]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta1'
+  [../]
+  [./f_gr2]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta2'
+  [../]
+  [./f_gr3]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta3'
+  [../]
+  [./f_gr4]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta4'
+  [../]
+  [./f_gr5]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta5'
+  [../]
+  [./f_gr6]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta6'
+  [../]
+  [./f_gr7]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta7'
+  [../]
+  [./f_gr8]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta8'
+  [../]
+  [./f_gr9]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta9'
+  [../]
+  [./f_gr10]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta10'
+  [../]
+  [./f_gr11]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta11'
+  [../]
+  [./f_gr12]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta12'
+  [../]
+  [./f_gr13]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta13'
+  [../]
+  [./f_gr14]
+    type = SolutionFunction
+    solution = soln
+    from_variable = 'eta14'
+  [../]
+
 []
 
 [Bounds]
@@ -119,40 +332,42 @@
 []
 
 [Kernels]
-  [./dcdt]
-    type = TimeDerivative
+  [./pfbulk]
+    type = AllenCahn
     variable = d
+    mob_name = L
+    f_name = F
   [../]
-  [./pf_c]
-    type = PhaseFieldPressurizedFractureDamage
-    variable = d
-    displacements = 'disp_x disp_y'
-  [../]
-  [./pf_disp_x]
-    type = PhaseFieldPressurizedFractureMechanics
+  [./solid_x]
+    type = PhaseFieldFractureMechanicsOffDiag
     variable = disp_x
     component = 0
     c = d
   [../]
-  [./pf_disp_y]
-    type = PhaseFieldPressurizedFractureMechanics
+  [./solid_y]
+    type = PhaseFieldFractureMechanicsOffDiag
     variable = disp_y
     component = 1
     c = d
   [../]
-  [./ACBulk]
-    type = AllenCahn
+  [./dcdt]
+    type = TimeDerivative
     variable = d
-    f_name = F
   [../]
-  [./ACInterface]
+  [./acint]
     type = ACInterface
     variable = d
+    mob_name = L
     kappa_name = kappa_op
   [../]
 []
 
 [AuxKernels]
+  [./bnds_aux]
+    type = BndsCalcAux
+    variable = bnds
+    execute_on = timestep_end
+  [../]
   [./C1111]
     type = RankFourAux
     variable = C1111
@@ -169,22 +384,22 @@
   [./pfbulkmat]
     type = GenericConstantMaterial
     prop_names = 'l visco'
-    prop_values = '0.2 1e-3'
+    prop_values = '10 1e-3'
   [../]
   [pressure]
     type = GenericFunctionMaterial
     block = 0
     prop_names = fracture_pressure
     prop_values = pressure
-    #factor = 1e-6
   []
   [./gc]
-  type = ParsedMaterial
-  f_name = gc_prop
-  #function = 'if(bnds < 0.75, if(bnds>0.25, 0.5, 2.5), 2.5)'
-  function = 'if(c < 0.5, 0.001, 0.01)'
-   args = 'c'
+    type = ParsedMaterial
+    f_name = gc_prop
+    #function = 'if(bnds < 0.75, if(bnds>0.25, 0.5, 2.5), 2.5)'
+    function = 'if(bnds < 0.75 & c < 0.5, 0.0012, 0.012)'
+    args = 'bnds c'
   [../]
+
   [./define_mobility]
     type = ParsedMaterial
     material_property_names = 'gc_prop visco'
@@ -222,8 +437,8 @@
     D_name = 'degradation'
     F_name = 'local_fracture_energy'
     I_name = 'indicator_function'
-   decomposition_type = strain_vol_dev
-   #decomposition_type = none
+    decomposition_type = strain_vol_dev
+    #decomposition_type = none
     use_snes_vi_solver = true
     base_name = matrix
   [../]
@@ -231,8 +446,8 @@
     type = DerivativeParsedMaterial
     f_name = indicator_function
     args = 'd'
-    function = '0'
-    derivative_order = 1
+    function = 'd*d'
+    derivative_order = 2
   [../]
   [./degradation]
     type = DerivativeParsedMaterial
@@ -293,13 +508,13 @@
   [./yfix]
     type = PresetBC
     variable = disp_y
-    boundary = bottom
+    boundary = 'bottom'
     value = 0
   [../]
   [./xfix]
     type = PresetBC
     variable = disp_x
-    boundary = left
+    boundary = 'left'
     value = 0
   [../]
 []
@@ -335,24 +550,25 @@
   solve_type = PJFNK
   petsc_options_iname = '-pc_type -pc_factor_mat_solver_type -snes_type'
   petsc_options_value = 'lu superlu_dist vinewtonrsls'
-  nl_rel_tol = 1e-8  ##nonlinear relative tolerance
-  nl_abs_tol = 1e-8
+  nl_rel_tol = 1e-6  ##nonlinear relative tolerance
+  nl_abs_tol = 1e-6
   l_max_its = 10   ##max linear iterations Previous:200
-  nl_max_its = 50  ##max nonlinear iterations Previous:50
+  nl_max_its = 15  ##max nonlinear iterations Previous:50
   start_time=0
   line_search = 'none'
   end_time = 2000
   dtmax = 1
   dtmin = 1e-14
-  automatic_scaling = false
+  automatic_scaling = true
   [./TimeStepper]
     type = IterationAdaptiveDT
-    dt = 1e-1
+    dt = 1
     optimal_iterations = 10
     iteration_window = 0
     growth_factor = 1.2
     cutback_factor = 0.5
   [../]
+#num_grids = 1
 []
 
 [Outputs]
