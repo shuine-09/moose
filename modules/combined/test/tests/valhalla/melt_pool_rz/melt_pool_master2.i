@@ -79,7 +79,7 @@
    [dts]
      type = PiecewiseLinear
      x = '0   1e-8'
-     y = '1e-8 1e-4'
+     y = '1e-8 1e-5'
    []
 []
 
@@ -180,7 +180,7 @@
     material_emissivity = 0.59
     ambient_temperature = 300
     laser_location_x = '0'
-    laser_location_y = '0.005-t*1e-2'
+    laser_location_y = '0.005'
     rho_l = 8000
     rho_g = 1.184
     vaporization_latent_heat = 6.1e6
@@ -382,10 +382,10 @@
   nl_abs_tol = 1e-7
   num_steps = 1000
   line_search = 'none'
-  petsc_options_iname = '-pc_type -pc_factor_mat_solver_package -ksp_type'
+ petsc_options_iname = '-pc_type -pc_factor_mat_solver_package -ksp_type'
   petsc_options_value = 'lu superlu_dist preonly'
-  # petsc_options_iname = '-pc_type -sub_pc_type -pc_asm_overlap -pc_factor_mat_solver_package -sub_pc_factor_levels'
-  # petsc_options_value = 'asm lu 1 superlu_dist 3'
+#   petsc_options_iname = '-pc_type -sub_pc_type -pc_asm_overlap -pc_factor_mat_solver_package -sub_pc_factor_levels'
+#   petsc_options_value = 'asm lu 1 superlu_dist 3'
   nl_div_tol = 1e10
   automatic_scaling = true
   nl_max_its = 10
@@ -397,6 +397,6 @@
 []
 
 [Outputs]
+  interval = 10
   exodus = true
-  interval = 5
 []

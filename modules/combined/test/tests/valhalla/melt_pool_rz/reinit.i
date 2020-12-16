@@ -3,11 +3,11 @@
     type = GeneratedMeshGenerator
     dim = 2
     xmin = 0
-    xmax = 0.005
+    xmax = 0.0025
     ymin = 0
-    ymax = 0.01
-    nx = 200
-    ny = 400
+    ymax = 0.005
+    nx = 100
+    ny = 200
     elem_type = QUAD4
   []
 []
@@ -102,7 +102,7 @@
   line_search = none
   petsc_options_iname = '-pc_type -pc_factor_mat_solver_package'
   petsc_options_value = 'lu superlu_dist'
-  dt = 0.00001
+  dt = 0.000001
 []
 
 [Outputs]

@@ -3,11 +3,11 @@
     type = GeneratedMeshGenerator
     dim = 2
     xmin = 0
-    xmax = 0.005
+    xmax = 0.0025
     ymin = 0
-    ymax = 0.01
-    nx = 200
-    ny = 400
+    ymax = 0.005
+    nx = 150
+    ny = 300
     elem_type = QUAD4
   []
 []
@@ -73,13 +73,13 @@
   [ls_exact]
    type = LevelSetOlssonPlane
    epsilon = 0.00004
-   point = '0.005 0.005 0'
+   point = '0.0025 0.0025 0'
    normal = '0 1 0'
    []
    [dts]
      type = PiecewiseLinear
      x = '0   1e-8'
-     y = '1e-8 1e-4'
+     y = '1e-8 5e-5'
    []
 []
 
@@ -131,16 +131,16 @@
   [level_set_phase_change]
     type = LevelSetPhaseChange
     variable = ls
-    rho_l = 8000
-    rho_g = 1.184
+    rho_l = 7000
+    rho_g = 10
   []
 
   [level_set_phase_change_supg]
     type = LevelSetPhaseChangeSUPG
     variable = ls
     velocity = velocity
-    rho_l = 8000
-    rho_g = 1.184
+    rho_l = 7000
+    rho_g = 10
   []
 
   [reinit]
@@ -172,17 +172,17 @@
   [heat_source]
     type = MeltPoolHeatSource
     variable = temp
-    laser_power = 800
-    effective_beam_radius = 0.25e-3
+    laser_power = 600
+    effective_beam_radius = 0.3e-3
     absorption_coefficient = 0.27
     heat_transfer_coefficient = 100
     StefanBoltzmann_constant = 5.67e-8
     material_emissivity = 0.59
     ambient_temperature = 300
     laser_location_x = '0'
-    laser_location_y = '0.005-t*1e-2'
-    rho_l = 8000
-    rho_g = 1.184
+    laser_location_y = '0.0025'
+    rho_l = 7000
+    rho_g = 10
     vaporization_latent_heat = 6.1e6
   []
 
@@ -249,9 +249,9 @@
   [thermal]
     type = LevelSetThermalMaterial
     temperature = temp
-    c_g = 300
-    c_s = 500
-    c_l = 500
+    c_g = 1000
+    c_s = 400
+    c_l = 400
     k_g = 0.017
     k_s = 31.8724
     k_l = 209.3
@@ -264,8 +264,8 @@
     temperature = temp
     liquidus_temperature = 1673
     solidus_temperature = 1648
-    rho_s = 8000
-    rho_l = 8000
+    rho_s = 7000
+    rho_l = 7000
     outputs = all
   []
   [delta]
@@ -286,10 +286,10 @@
     alpha = .1
     temperature = temp
     curvature = curvature
-    surface_tension = 1.169
-    thermal_capillary = -4.3e-4
-    rho_l = 8000
-    rho_g = 1.184
+    surface_tension = 0.15 #1.169
+    thermal_capillary = 0 #-4.3e-4
+    rho_l = 7000
+    rho_g = 10
     outputs = all
     output_properties = melt_pool_mass_rate
     cp_name = specific_heat
@@ -302,16 +302,16 @@
     vaporization_latent_heat = 6.1e6
     atomic_weight = 97.43e-27
     vaporization_temperature = 3134
-    reference_pressure = 1.01e5
+    reference_pressure = 1.01e4
     outputs = all
   []
   [fluid]
     type = LevelSetFluidMaterial
-    rho_g = 1.184
-    rho_s = 8000
-    rho_l = 8000
-    mu_g = 1.81e-5
-    mu_l = 0.1
+    rho_g = 10
+    rho_s = 7000
+    rho_l = 7000
+    mu_g = 0.00005
+    mu_l = 0.005
     permeability_constant = 1e-8
     outputs = all
   []
@@ -380,12 +380,12 @@
   solve_type = NEWTON
   dt = 1e-4
   nl_abs_tol = 1e-7
-  num_steps = 1000
+  num_steps = 100000
   line_search = 'none'
-  petsc_options_iname = '-pc_type -pc_factor_mat_solver_package -ksp_type'
+ petsc_options_iname = '-pc_type -pc_factor_mat_solver_package -ksp_type'
   petsc_options_value = 'lu superlu_dist preonly'
-  # petsc_options_iname = '-pc_type -sub_pc_type -pc_asm_overlap -pc_factor_mat_solver_package -sub_pc_factor_levels'
-  # petsc_options_value = 'asm lu 1 superlu_dist 3'
+#   petsc_options_iname = '-pc_type -sub_pc_type -pc_asm_overlap -pc_factor_mat_solver_package -sub_pc_factor_levels'
+#   petsc_options_value = 'asm lu 1 superlu_dist 3'
   nl_div_tol = 1e10
   automatic_scaling = true
   nl_max_its = 10
@@ -397,6 +397,8 @@
 []
 
 [Outputs]
-  exodus = true
-  interval = 5
+  [exodus]
+    type = Exodus
+    interval = 10
+  []
 []

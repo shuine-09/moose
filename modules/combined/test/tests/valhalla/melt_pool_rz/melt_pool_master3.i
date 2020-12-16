@@ -3,11 +3,11 @@
     type = GeneratedMeshGenerator
     dim = 2
     xmin = 0
-    xmax = 0.005
+    xmax = 0.0025
     ymin = 0
-    ymax = 0.01
-    nx = 200
-    ny = 400
+    ymax = 0.005
+    nx = 100
+    ny = 200
     elem_type = QUAD4
   []
 []
@@ -73,7 +73,7 @@
   [ls_exact]
    type = LevelSetOlssonPlane
    epsilon = 0.00004
-   point = '0.005 0.005 0'
+   point = '0.0025 0.0025 0'
    normal = '0 1 0'
    []
    [dts]
@@ -164,15 +164,15 @@
     variable = temp
   []
 
-  [heat_conv]
-    type = INSADEnergyAdvection
-    variable = temp
-  []
+  # [heat_conv]
+  #   type = INSADEnergyAdvection
+  #   variable = temp
+  # []
 
   [heat_source]
     type = MeltPoolHeatSource
     variable = temp
-    laser_power = 800
+    laser_power = 300
     effective_beam_radius = 0.25e-3
     absorption_coefficient = 0.27
     heat_transfer_coefficient = 100
@@ -180,7 +180,7 @@
     material_emissivity = 0.59
     ambient_temperature = 300
     laser_location_x = '0'
-    laser_location_y = '0.005-t*1e-2'
+    laser_location_y = '0.0025-t'
     rho_l = 8000
     rho_g = 1.184
     vaporization_latent_heat = 6.1e6
@@ -380,12 +380,12 @@
   solve_type = NEWTON
   dt = 1e-4
   nl_abs_tol = 1e-7
-  num_steps = 1000
+  num_steps = 100000
   line_search = 'none'
-  petsc_options_iname = '-pc_type -pc_factor_mat_solver_package -ksp_type'
+ petsc_options_iname = '-pc_type -pc_factor_mat_solver_package -ksp_type'
   petsc_options_value = 'lu superlu_dist preonly'
-  # petsc_options_iname = '-pc_type -sub_pc_type -pc_asm_overlap -pc_factor_mat_solver_package -sub_pc_factor_levels'
-  # petsc_options_value = 'asm lu 1 superlu_dist 3'
+#   petsc_options_iname = '-pc_type -sub_pc_type -pc_asm_overlap -pc_factor_mat_solver_package -sub_pc_factor_levels'
+#   petsc_options_value = 'asm lu 1 superlu_dist 3'
   nl_div_tol = 1e10
   automatic_scaling = true
   nl_max_its = 10
@@ -397,6 +397,6 @@
 []
 
 [Outputs]
+  interval = 1
   exodus = true
-  interval = 5
 []
