@@ -6,8 +6,8 @@
     xmax = 0.0025
     ymin = 0
     ymax = 0.005
-    nx = 100
-    ny = 200
+    nx = 150
+    ny = 300
     elem_type = QUAD4
   []
 []

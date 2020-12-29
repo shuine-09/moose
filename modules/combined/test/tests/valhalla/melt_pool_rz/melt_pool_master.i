@@ -3,11 +3,11 @@
     type = GeneratedMeshGenerator
     dim = 2
     xmin = 0
-    xmax = 0.005
+    xmax = 0.0025
     ymin = 0
-    ymax = 0.01
-    nx = 200
-    ny = 400
+    ymax = 0.005
+    nx = 150
+    ny = 300
     elem_type = QUAD4
   []
 []
@@ -79,7 +79,7 @@
    [dts]
      type = PiecewiseLinear
      x = '0   1e-8'
-     y = '1e-8 1e-4'
+     y = '1e-8 5e-5'
    []
 []
 
@@ -180,7 +180,8 @@
     material_emissivity = 0.59
     ambient_temperature = 300
     laser_location_x = '0'
-    laser_location_y = '0.005-t*1e-2'
+    #laser_location_y = '0.005-t*1e-2'
+    laser_location_y = '0.005'
     rho_l = 8000
     rho_g = 1.184
     vaporization_latent_heat = 6.1e6

@@ -54,16 +54,22 @@ ADReal
 MeltPoolHeatSource::precomputeQpResidual()
 {
   Point p(0, 0, 0);
+  // RealVectorValue laser_location(_laser_location_x.value(_t, p),
+  //                                _laser_location_y.value(_t, p),
+  //                                _laser_location_z.value(_t, p));
+
   RealVectorValue laser_location(_laser_location_x.value(_t, p),
-                                 _laser_location_y.value(_t, p),
+                                 MetaPhysicL::raw_value(_ad_q_point[_qp](1)),
                                  _laser_location_z.value(_t, p));
 
-  std::cout << "laser_location = " << laser_location << std::endl;
+  // std::cout << "laser_location = " << laser_location << std::endl;
 
   ADReal r = (_ad_q_point[_qp] - laser_location).norm();
 
-  ADReal laser_source = 2 * _power * _alpha / (libMesh::pi * Utility::pow<2>(_Rb)) *
-                        std::exp(-2.0 * Utility::pow<2>(r / _Rb));
+  // ADReal laser_source = 2 * _power * _alpha / (libMesh::pi * Utility::pow<2>(_Rb)) *
+  //                       std::exp(-2.0 * Utility::pow<2>(r / _Rb));
+  ADReal laser_source =
+      _power * _alpha / (libMesh::pi * Utility::pow<2>(_Rb)) * std::exp(-Utility::pow<2>(r / _Rb));
 
   ADReal convection = -_Ah * (_u[_qp] - _T0);
   ADReal radiation =

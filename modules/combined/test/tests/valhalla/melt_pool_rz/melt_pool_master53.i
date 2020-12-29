@@ -79,7 +79,7 @@
    [dts]
      type = PiecewiseLinear
      x = '0   1e-8'
-     y = '1e-8 5e-5'
+     y = '1e-8 1e-5'
    []
 []
 
@@ -131,16 +131,16 @@
   [level_set_phase_change]
     type = LevelSetPhaseChange
     variable = ls
-    rho_l = 7000
-    rho_g = 10
+    rho_l = 7287
+    rho_g = 1
   []
 
   [level_set_phase_change_supg]
     type = LevelSetPhaseChangeSUPG
     variable = ls
     velocity = velocity
-    rho_l = 7000
-    rho_g = 10
+    rho_l = 7287
+    rho_g = 1
   []
 
   [reinit]
@@ -172,7 +172,7 @@
   [heat_source]
     type = MeltPoolHeatSource
     variable = temp
-    laser_power = 600
+    laser_power = 1500
     effective_beam_radius = 0.3e-3
     absorption_coefficient = 0.27
     heat_transfer_coefficient = 100
@@ -181,8 +181,8 @@
     ambient_temperature = 300
     laser_location_x = '0'
     laser_location_y = '0.0025'
-    rho_l = 7000
-    rho_g = 10
+    rho_l = 7287
+    rho_g = 1
     vaporization_latent_heat = 6.1e6
   []
 
@@ -249,23 +249,23 @@
   [thermal]
     type = LevelSetThermalMaterial
     temperature = temp
-    c_g = 1000
-    c_s = 400
-    c_l = 400
-    k_g = 0.017
+    c_g = 373
+    c_s = 600
+    c_l = 573
+    k_g = 0.12
     k_s = 31.8724
     k_l = 209.3
-    solidus_temperature = 1648
+    solidus_temperature = 1788
     latent_heat = 2.5e5
     outputs = all
   []
   [mushy]
     type = MushyZoneMaterial
     temperature = temp
-    liquidus_temperature = 1673
-    solidus_temperature = 1648
-    rho_s = 7000
-    rho_l = 7000
+    liquidus_temperature = 1808
+    solidus_temperature = 1788
+    rho_s = 8000
+    rho_l = 7287
     outputs = all
   []
   [delta]
@@ -288,8 +288,8 @@
     curvature = curvature
     surface_tension = 0.15 #1.169
     thermal_capillary = 0 #-4.3e-4
-    rho_l = 7000
-    rho_g = 10
+    rho_l = 7287
+    rho_g = 1
     outputs = all
     output_properties = melt_pool_mass_rate
     cp_name = specific_heat
@@ -307,10 +307,10 @@
   []
   [fluid]
     type = LevelSetFluidMaterial
-    rho_g = 10
-    rho_s = 7000
-    rho_l = 7000
-    mu_g = 0.00005
+    rho_g = 1
+    rho_s = 8000
+    rho_l = 7287
+    mu_g = 1e-5
     mu_l = 0.005
     permeability_constant = 1e-8
     outputs = all
