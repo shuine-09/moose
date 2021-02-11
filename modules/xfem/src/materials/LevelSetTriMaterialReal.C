@@ -38,12 +38,14 @@ void
 LevelSetTriMaterialReal::assignQpPropertiesForLevelSetNegNeg()
 {
   _material_prop[_qp] = (*_trimaterial_material_prop[0])[_qp];
+  //std::cout << "Db, material : " << _material_prop[_qp] << std::endl;
 }
 
 void
 LevelSetTriMaterialReal::assignQpPropertiesForLevelSetPosNeg()
 {
   _material_prop[_qp] = (*_trimaterial_material_prop[1])[_qp];
+  //std::cout << "Da, material : " << _material_prop[_qp] << std::endl;
 }
 
 void

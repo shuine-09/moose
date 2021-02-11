@@ -8,6 +8,7 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "XFEMC4VelocityZrOxA.h"
+#include "MooseUtils.h"
 
 registerMooseObject("XFEMApp", XFEMC4VelocityZrOxA);
 
@@ -90,42 +91,42 @@ XFEMC4VelocityZrOxA::computeMovingInterfaceVelocity(unsigned int point_id) const
   const Real con_e_ox_m = 2 * con_v_ox_m;
 
   //Diffusion coefficient is also temperature dependent [um^2/s]
-  Real diffusivity_alpha = 10 ;
-  if (_temperature == 633.15)
+  Real diffusivity_alpha = 10.3 ;
+  if (MooseUtils::absoluteFuzzyEqual(_temperature,633.15,1))
   {
     diffusivity_alpha = 1.36e-7;
   }
-  else if (_temperature == 1223.15)
+  else if (MooseUtils::absoluteFuzzyEqual(_temperature,1223.15,1))
   {
     diffusivity_alpha = 0.43;
   }
-  else if (_temperature == 1273.15)
+  else if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
   {
-    diffusivity_alpha = 0.45;
+    diffusivity_alpha = 0.3807;
   }
-  else if (_temperature == 1373.15)
+  else if (MooseUtils::absoluteFuzzyEqual(_temperature,1373.15,1))
   {
-    diffusivity_alpha = 2.6;
+    diffusivity_alpha = 2.40;
   }
-  else if (_temperature == 1473.15)
+  else if (MooseUtils::absoluteFuzzyEqual(_temperature,1473.15,1))
   {
-    diffusivity_alpha = 10;
+    diffusivity_alpha = 10.3;
   }
-  else if (_temperature == 1573.15)
+  else if (MooseUtils::absoluteFuzzyEqual(_temperature,1573.15,1))
   {
-    diffusivity_alpha = 26.115;
+    diffusivity_alpha = 30;
   }
-  else if (_temperature == 1673.15)
+  else if (MooseUtils::absoluteFuzzyEqual(_temperature,1673.15,1))
   {
-    diffusivity_alpha = 87.225;
+    diffusivity_alpha = 75.25;
   }
-  else if (_temperature == 1773.15)
+  else if (MooseUtils::absoluteFuzzyEqual(_temperature,1773.15,1))
   {
-    diffusivity_alpha = 173.13;
+    diffusivity_alpha = 170.25;
   }
   else
   {
-    diffusivity_alpha = 7.28 * exp(-53327/1.987/_temperature) * 1e8;
+    diffusivity_alpha = 9.76* exp(-54325/1.987/_temperature) * 1e8;
   }
 
   // Mobilities
@@ -143,7 +144,8 @@ XFEMC4VelocityZrOxA::computeMovingInterfaceVelocity(unsigned int point_id) const
 
   const Real potential = Kb * _temperature * log(eta)/delta;
 
-  const Real J_v = 1e6 * mobil_v * potential * (con_v_ox_w - con_v_ox_m * pow(eta,2)) / (1 - pow(eta,2));
+  _J_v = 1e6 * mobil_v * potential * (con_v_ox_w - con_v_ox_m * pow(eta,2)) / (1 - pow(eta,2));
+
   const Real J_o = -diffusivity_alpha * con_zr * (-grad_negative(0) * 1e-6);
 
   //std::cout << "ox_a_grad_negative : " << grad_negative(0) << std::endl;
@@ -153,7 +155,8 @@ XFEMC4VelocityZrOxA::computeMovingInterfaceVelocity(unsigned int point_id) const
   //std::cout << "J_o : " << J_o << std::endl;
 
   const Real v_ox_a_init = sqrt(0.01126 * exp(-35890 / (1.987 * _temperature)) / (2 * _t)) * (-1e-2);
-  const Real v_ox_a = 1e6 * (J_o - J_v) / (con_zr * (3 * x_o_ox_m - (x_o_m_ox / (1 - x_o_m_ox))));
+  const Real v_ox_a = 1e6 * (J_o - _J_v) / (con_zr * (3 * x_o_ox_m - (x_o_m_ox / (1 - x_o_m_ox))));
+//  _ox_vel = v_ox_a;
 
   if (delta == 0)
     {

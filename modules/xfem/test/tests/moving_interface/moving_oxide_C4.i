@@ -6,6 +6,8 @@
 # The ICs are set as constants in each phase through ICs, no steady state
 # Temperature dependence is included. No heat equation yet. Homogeneous T.
 
+# if change ix and iy (so dy), must change cut_data in MovingLineSegmentCutSetUO, ymax in weight_gain_space_integral and start/end_point in O_profile vector PP
+
 
 [GlobalParams]
   order = FIRST
@@ -18,9 +20,9 @@
     type = CartesianMeshGenerator
     dim = 2
     dx = '300 300'
-    dy = '60'
-    ix = '100 301'
-    iy = '20'
+    dy = '4'#'800'
+    ix = '30 151'
+    iy = '2'
   [../]
 []
 
@@ -43,7 +45,7 @@
   [../]
   [./moving_line_segments_ox_a]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '500 0 500 60 0 0'
+    cut_data = '500 0 500 4 0 0'
     is_C4 = true
     oxa_interface = true
     heal_always = true
@@ -62,7 +64,7 @@
   [../]
   [./moving_line_segments_a_b]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '400 0 400 60 0 0'
+    cut_data = '400 0 400 4 0 0'
     is_C4 = true
     ab_interface = true
     heal_always = true
@@ -166,9 +168,9 @@
 [BCs]
 # Define boundary conditions
   [./left_u]
-    type = DirichletBC
+    type = NeumannBC
     variable = u
-    value = 0.0075
+    value = 0
     boundary = left
   [../]
 
@@ -180,24 +182,6 @@
 []
 
 [Postprocessors]
-  [./grad_a_ox]
-    type = GradValueAtXFEMInterfacePostprocessor
-    value_at_interface_uo = value_uo_ox_a
-    side = -1
-    execute_on ='initial timestep_begin final'
-  [../]
-  [./grad_a_b]
-    type = GradValueAtXFEMInterfacePostprocessor
-    value_at_interface_uo = value_uo_a_b
-    side = +1
-    execute_on ='initial timestep_begin final'
-  [../]
-  [./grad_b_a]
-    type = GradValueAtXFEMInterfacePostprocessor
-    value_at_interface_uo = value_uo_a_b
-    side = -1
-    execute_on ='initial timestep_begin final'
-  [../]
   [./position_ox_a]
     type = PositionOfXFEMInterfacePostprocessor
     value_at_interface_uo = value_uo_ox_a
@@ -207,6 +191,58 @@
     type = PositionOfXFEMInterfacePostprocessor
     value_at_interface_uo = value_uo_a_b
     execute_on ='timestep_end final'
+  [../]
+  [./oxide_thickness]
+    type = OxideThicknessZr
+    oxide_alpha_pos = position_ox_a
+    execute_on ='timestep_end final'
+  [../]
+  [./alpha_thickness]
+    type = AlphaThicknessZr
+    oxide_alpha_pos = position_ox_a
+    alpha_beta_pos = position_a_b
+    execute_on ='timestep_end final'
+  [../]
+#  [./vacancy_flux]
+#    type = VacancyFluxZrPostprocessor
+#    velocity_uo = velocity_ox_a
+#    execute_on = 'timestep_end final'
+#  [../]
+#  [./vacancy_flux_integral]
+#    type = TotalVariableValue
+#    value = vacancy_flux
+#    execute_on = 'timestep_end final'
+#  [../]
+#  [./weight_gain]
+#    type = WeightGainZr
+#    flux_integral = vacancy_flux_integral
+#    execute_on = 'timestep_end final'
+#  [../]
+  [./weak_concentration_integral]
+    type = ElementIntegralVariablePostprocessor
+    variable = u
+    execute_on = 'timestep_end final'
+  [../]
+  [./weight_gain_space_integral]
+    type = WeightGainSpaceIntegralZr
+    concentration_integral = weak_concentration_integral
+    ymax = 4
+    oxide_thickness = oxide_thickness
+    alpha_thickness = alpha_thickness
+    execute_on = 'timestep_end final'
+  [../]
+[]
+
+[VectorPostprocessors]
+  [./O_profile]
+    type = LineValueSampler
+    use_displaced_mesh = false
+    start_point = '600 2 0'
+    end_point = '0 2 0'
+    sort_by = x
+    num_points = 601
+    outputs = csv
+    variable = 'u'
   [../]
 []
 
@@ -225,9 +261,9 @@
   nl_rel_tol = 1e-6
   nl_abs_tol = 1e-6
 
-  start_time = 19
-  dt = 1
-  num_steps = 1481
+  start_time = -0.5
+  dt = 0.5
+  num_steps = 601
   max_xfem_update = 1
 
 []

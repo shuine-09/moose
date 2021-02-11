@@ -50,7 +50,7 @@ XFEMC4VelocityZrAB::computeMovingInterfaceVelocity(unsigned int point_id) const
   const Real c_o_b_a = x_o_b_a / (1 - x_o_b_a);
 
 //Diffusion coefficients
-Real diffusivity_alpha = 10 ;
+Real diffusivity_alpha = 10.3 ;
 if (MooseUtils::absoluteFuzzyEqual(_temperature,633.15,1))
 {
   diffusivity_alpha = 1.36e-7;
@@ -61,34 +61,34 @@ else if (MooseUtils::absoluteFuzzyEqual(_temperature,1223.15,1))
 }
 else if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
 {
-  diffusivity_alpha = 0.45;
+  diffusivity_alpha = 0.3807;
 }
 else if (MooseUtils::absoluteFuzzyEqual(_temperature,1373.15,1))
 {
-  diffusivity_alpha = 2.6;
+  diffusivity_alpha = 2.40;
 }
 else if (MooseUtils::absoluteFuzzyEqual(_temperature,1473.15,1))
 {
-  diffusivity_alpha = 10;
+  diffusivity_alpha = 10.3;
 }
 else if (MooseUtils::absoluteFuzzyEqual(_temperature,1573.15,1))
 {
-  diffusivity_alpha = 26.115;
+  diffusivity_alpha = 30.0;
 }
 else if (MooseUtils::absoluteFuzzyEqual(_temperature,1673.15,1))
 {
-  diffusivity_alpha = 87.225;
+  diffusivity_alpha = 75.25;
 }
 else if (MooseUtils::absoluteFuzzyEqual(_temperature,1773.15,1))
 {
-  diffusivity_alpha = 173.13;
+  diffusivity_alpha = 170.25;
 }
 else
 {
-  diffusivity_alpha = 7.28 * exp(-53327/1.987/_temperature) * 1e8;
+  diffusivity_alpha = 9.76* exp(-54325/1.987/_temperature) * 1e8;
 }
 
-Real diffusivity_beta = 60 ;
+Real diffusivity_beta = 280.8594 ;
 if (MooseUtils::absoluteFuzzyEqual(_temperature,633.15,1))
 {
   diffusivity_beta = 4.8e-4;
@@ -99,31 +99,32 @@ else if (MooseUtils::absoluteFuzzyEqual(_temperature,1223.15,1))
 }
 else if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
 {
-  diffusivity_beta = 38;
+  diffusivity_beta = 30.1;
 }
 else if (MooseUtils::absoluteFuzzyEqual(_temperature,1373.15,1))
 {
-  diffusivity_beta = 37;
+  diffusivity_beta = 88.8;
 }
 else if (MooseUtils::absoluteFuzzyEqual(_temperature,1473.15,1))
 {
-  diffusivity_beta = 60;
+  diffusivity_beta = 280.8594;
+  //diffusivity_beta = 140;
 }
 else if (MooseUtils::absoluteFuzzyEqual(_temperature,1573.15,1))
 {
-  diffusivity_beta = 201.07;
+  diffusivity_beta = 704.6875;
 }
 else if (MooseUtils::absoluteFuzzyEqual(_temperature,1673.15,1))
 {
-  diffusivity_beta = 856.19;
+  diffusivity_beta = 709.65625;
 }
 else if (MooseUtils::absoluteFuzzyEqual(_temperature,1773.15,1))
 {
-  diffusivity_beta = 927.85;
+  diffusivity_beta = 1360;
 }
 else
 {
-  diffusivity_beta = 0.110 * exp(-33391/1.987/_temperature) * 1e8;
+  diffusivity_beta = 0.265*exp(-34205/1.987/_temperature) * 1e8;
 }
 
   const Real J_b_to_a = -diffusivity_alpha * grad_positive(0);
@@ -133,8 +134,8 @@ else
   //std::cout << "ab_grad_negative : " << grad_negative(0) << std::endl;
   //std::cout << "ab_grad_positive : " << grad_positive(0) << std::endl;
 
-  //std::cout << "J_b_to_a : " << J_b_to_a * 4.33e28<< std::endl;
-  //std::cout << "J_a_to_b : " << J_a_to_b * 4.33e28<< std::endl;
+  //std::cout << "J_a : " << J_b_to_a * 4.33e28<< std::endl;
+  //std::cout << "J_b : " << J_a_to_b * 4.33e28<< std::endl;
 
   const Real v_a_b = (J_b_to_a + J_a_to_b) / (c_o_a_b - c_o_b_a);
 

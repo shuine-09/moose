@@ -1,7 +1,7 @@
 # Input file for an oxide growing outward on top of a steel 21-2N sample
 # using the C4 model to compute the growth rate
 # The variable is the Mn concentration [/nm^3]
-# The length unit is the nanometer. The time unit is the hour
+# The length unit is the micrometer. The time unit is the hour
 # there's 1 fixed interface (oxide/metal) and 1 moving interface (oxide/gas)
 # The gas is the left part of the mesh (void)
 # The ICs are set as constants in each phase through ICs, no steady state
@@ -18,9 +18,9 @@
   nx = 41
   ny = 20
   xmin = 0
-  xmax = 8000
+  xmax = 8
   ymin = 0
-  ymax = 4000
+  ymax = 4
   elem_type = QUAD4
 []
 
@@ -32,7 +32,7 @@
 [UserObjects]
   [./fixed_cut_oxide_metal]
     type = LineSegmentCutSetUserObject
-    cut_data = '5000 0 5000 4000 0 0'
+    cut_data = '5 0 5 4 0 0'
   [../]
   [./velocity_oxide]
     type = XFEMC4VelocitySteelOx
@@ -47,7 +47,7 @@
   [../]
   [./moving_cut_oxide]
     type = MovingLineSegmentCutSetUserObject
-    cut_data = '5500 0 5500 4000 0 0'
+    cut_data = '5.5 0 5.5 4 0 0'
     heal_always = true
     interface_velocity = velocity_oxide
   [../]
@@ -62,7 +62,7 @@
   [./ic_Mn]
     type = FunctionIC
     variable = C_Mn
-    function = 'if(x<5000, 7.1445,if(x<5500,13.3179,13.3152))'
+    function = 'if(x<5, 7.1445,if(x<5.5,13.3179,13.3152))'
   [../]
 []
 
@@ -84,7 +84,7 @@
     geometric_cut_userobject = 'fixed_cut_oxide_metal'
     use_displaced_mesh = false
     variable = C_Mn
-    value_at_positive_level_set_interface = 2.1577
+    value_at_positive_level_set_interface = 0
     value_at_negative_level_set_interface = 13.3179
     alpha = 1e5
   [../]
@@ -127,12 +127,12 @@
   [./diffusivity_steel]
     type = GenericConstantMaterial
     prop_names = steel_diffusion_coefficient
-    prop_values = 36000
+    prop_values = 0.036
   [../]
   [./diffusivity_oxide]
     type = GenericConstantMaterial
     prop_names = oxide_diffusion_coefficient
-    prop_values = 10000
+    prop_values = 0.01
   [../]
   [./diffusivity_gas]
     type = GenericConstantMaterial
@@ -154,9 +154,9 @@
 [BCs]
 # Define boundary conditions
   [./left_Mn]
-    type = DirichletBC
+    type = NeumannBC
     variable = C_Mn
-    value = 7.1445
+    value = 0
     boundary = left
   [../]
 

@@ -28,7 +28,7 @@ C4ZrICConst::validParams()
 C4ZrICConst::C4ZrICConst(const InputParameters & parameters)
   : InitialCondition(parameters),_temperature(getParam<Real>("temperature"))
 {
-  if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
+/**  if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
   {
     _x_a_b = 591.4;
     _x_ox_a = 595.6;
@@ -63,6 +63,7 @@ C4ZrICConst::C4ZrICConst(const InputParameters & parameters)
     _x_a_b = -1.9259*1e-7*pow(_temperature,3) + 6.7254*1e-4*pow(_temperature,2) - 0.84697*_temperature + 977.01  ;
     _x_ox_a = -3.6071*1e-5*pow(_temperature,2) + 7.1427*1e-2*_temperature + 563.11  ;
   }
+  */
 
   const Real Zr_PBR = 1.55;
   const Real xo_ox = 0.66666666667;
@@ -114,7 +115,8 @@ C4ZrICConst::value(const Point & p)
   }
   else if (p(0)<_x_ox_a)
   {
-    return (_C_b_a + (_C_a_ox - _C_a_b)/2);
+    //return (_C_b_a + (_C_a_ox - _C_a_b)/2);
+    return _C_b_a;
   }
   else
   {

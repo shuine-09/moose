@@ -34,8 +34,8 @@ XFEMC4VelocitySteelOx::computeMovingInterfaceVelocity(unsigned int point_id) con
 
   Real xt = (_value_at_interface_uo->getPointCurrentLocation(point_id))(0);
 
-  //Oxide thickness [nm]
-  Real delta = std::abs(xt - 5000);
+  //Oxide thickness [µm]
+  Real delta = std::abs(xt - 5);
   std::cout << "delta : " << delta << std::endl;
 
 
@@ -58,31 +58,31 @@ XFEMC4VelocitySteelOx::computeMovingInterfaceVelocity(unsigned int point_id) con
   // Material properties
 
   // Atomic molar masses [g/mol]
-  const Real M_Fe = 55.845;
+//  const Real M_Fe = 55.845;
   const Real M_Cr = 54.938044;
   const Real M_Mn = 51.9961;
-  const Real M_Ni = 58.6934;
-  const Real M_C = 12.0107;
-  const Real M_Mo = 95.95;
-  const Real M_Si = 28.0855;
+//  const Real M_Ni = 58.6934;
+//  const Real M_C = 12.0107;
+//  const Real M_Mo = 95.95;
+//  const Real M_Si = 28.0855;
 //  const Real M_steel = x_steel_Fe * M_Fe + x_steel_Cr * M_Cr + x_steel_Mn * M_Mn + x_steel_Ni * M_Ni + x_steel_C * M_C + x_steel_Mo * M_Mo + x_steel_Si * M_Si;
 
   const Real M_O = 15.999;
   const Real M_spinel = M_Mn + 2 * M_Cr + 4 * M_O ;
 
   // Densities [g/cm^3]
-  const Real rho_steel(7.67);
+  //const Real rho_steel(7.67);
   const Real rho_spinel(4.93);
 
-  //Average volume occupied by a molecule of MnCr2O4 [nm^3]
-  const Real V_spinel = 1e21 * M_spinel / rho_spinel / Na;
+  //Average volume occupied by a molecule of MnCr2O4 [µm^3]
+  const Real V_spinel = 1e12 * M_spinel / rho_spinel / Na;
 
   // Concentration of metal atoms in the steel [at/cm^3]
 //  const Real C_steel = rho_steel * Na / M_steel;
 
   // C4 model parameters
   const Real nu(3600 * 1e13);           //Frequency of jump [/hr]
-  const Real a(0.5);           // Length of jump [nm]
+  const Real a(0.5 * 1e-3);           // Length of jump [µm]
   const Real E_m_VMn(1.82);     // Mn vacancies energy of migration [eV]
   const Real E_m_h(1.7);       // Holes energy of migration [eV]
 

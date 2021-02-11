@@ -66,11 +66,13 @@ protected:
 
 //  Real _x_b_break = 531.0 ;
 
-  Real _x_a_b = 572.2 ;
+  //Real _x_a_b = 541.7 ;
+  Real _x_a_b = 594.0 ;
 
 //  Real _x_a_break = 580.8;
 
-  Real _x_ox_a = 590.0 ;
+//  Real _x_ox_a = 577.9 ;
+  Real _x_ox_a = 598.0 ;
 
   Real _C_b = 0.0074/(1-0.0074) ;
 

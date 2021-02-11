@@ -55,7 +55,7 @@ C4DiffusionCoefAlphaTempl<is_ad>::C4DiffusionCoefAlphaTempl(
     _properties[i] = &declareGenericProperty<Real, is_ad>(_prop_names[i]);
 
 
-  Real diffusivity_alpha = 10 ;
+  Real diffusivity_alpha = 10.3 ;
   if (MooseUtils::absoluteFuzzyEqual(_temperature,633.15,1))
   {
     diffusivity_alpha = 1.36e-7;
@@ -66,31 +66,31 @@ C4DiffusionCoefAlphaTempl<is_ad>::C4DiffusionCoefAlphaTempl(
   }
   else if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
   {
-    diffusivity_alpha = 0.45;
+    diffusivity_alpha = 0.3807;
   }
   else if (MooseUtils::absoluteFuzzyEqual(_temperature,1373.15,1))
   {
-    diffusivity_alpha = 2.6;
+    diffusivity_alpha = 2.40;
   }
   else if (MooseUtils::absoluteFuzzyEqual(_temperature,1473.15,1))
   {
-    diffusivity_alpha = 10;
+    diffusivity_alpha = 10.3;
   }
   else if (MooseUtils::absoluteFuzzyEqual(_temperature,1573.15,1))
   {
-    diffusivity_alpha = 26.115;
+    diffusivity_alpha = 30.0;
   }
   else if (MooseUtils::absoluteFuzzyEqual(_temperature,1673.15,1))
   {
-    diffusivity_alpha = 87.225;
+    diffusivity_alpha = 75.25;
   }
   else if (MooseUtils::absoluteFuzzyEqual(_temperature,1773.15,1))
   {
-    diffusivity_alpha = 173.13;
+    diffusivity_alpha = 170.25;
   }
   else
   {
-    diffusivity_alpha = 7.28 * exp(-53327/1.987/_temperature) * 1e8;
+    diffusivity_alpha = 9.76* exp(-54325/1.987/_temperature) * 1e8;
   }
 
   _prop_values[0] = diffusivity_alpha;

@@ -51,8 +51,9 @@ LineSegmentCutSetUserObject::LineSegmentCutSetUserObject(const InputParameters &
   {
     if (_ab_interface)
     {
-      Real x_a_b;
-      if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
+      Real x_a_b = 594.0;
+        //Real x_a_b = 541.7;
+/**      if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
       {
         x_a_b = 591.4;
       }
@@ -80,6 +81,7 @@ LineSegmentCutSetUserObject::LineSegmentCutSetUserObject(const InputParameters &
       {
         x_a_b = -1.9259*1e-7*pow(_temperature,3) + 6.7254*1e-4*pow(_temperature,2) - 0.84697*_temperature + 977.01  ;
       }
+      */
       std::cout << "ab interface : " << std::endl;
       _cut_data[0] = x_a_b;
       _cut_data[2] = x_a_b;
@@ -87,8 +89,9 @@ LineSegmentCutSetUserObject::LineSegmentCutSetUserObject(const InputParameters &
     }
     if (_oxa_interface)
     {
-      Real x_ox_a;
-      if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
+      Real x_ox_a = 598.0;
+      //Real x_ox_a = 577.9;
+/**      if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
       {
         x_ox_a = 595.6;
       }
@@ -116,6 +119,7 @@ LineSegmentCutSetUserObject::LineSegmentCutSetUserObject(const InputParameters &
       {
         x_ox_a = -3.6071*1e-5*pow(_temperature,2) + 7.1427*1e-2*_temperature + 563.11  ;
       }
+      */
       _cut_data[0] = x_ox_a;
       _cut_data[2] = x_ox_a;
     }

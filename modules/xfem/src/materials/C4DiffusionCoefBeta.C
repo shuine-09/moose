@@ -55,7 +55,7 @@ C4DiffusionCoefBetaTempl<is_ad>::C4DiffusionCoefBetaTempl(
     _properties[i] = &declareGenericProperty<Real, is_ad>(_prop_names[i]);
 
 
-  Real diffusivity_beta = 60 ;
+  Real diffusivity_beta = 280.8594 ;
   if (MooseUtils::absoluteFuzzyEqual(_temperature,633.15,1))
   {
     diffusivity_beta = 4.8e-4;
@@ -66,31 +66,32 @@ C4DiffusionCoefBetaTempl<is_ad>::C4DiffusionCoefBetaTempl(
   }
   else if (MooseUtils::absoluteFuzzyEqual(_temperature,1273.15,1))
   {
-    diffusivity_beta = 38;
+    diffusivity_beta = 30.1;
   }
   else if (MooseUtils::absoluteFuzzyEqual(_temperature,1373.15,1))
   {
-    diffusivity_beta = 37;
+    diffusivity_beta = 88.8;
   }
   else if (MooseUtils::absoluteFuzzyEqual(_temperature,1473.15,1))
   {
-    diffusivity_beta = 60;
+    diffusivity_beta = 280.8594;
+    //diffusivity_beta = 140;
   }
   else if (MooseUtils::absoluteFuzzyEqual(_temperature,1573.15,1))
   {
-    diffusivity_beta = 201.07;
+    diffusivity_beta = 704.6875;
   }
   else if (MooseUtils::absoluteFuzzyEqual(_temperature,1673.15,1))
   {
-    diffusivity_beta = 856.19;
+    diffusivity_beta = 709.65625;
   }
   else if (MooseUtils::absoluteFuzzyEqual(_temperature,1773.15,1))
   {
-    diffusivity_beta = 927.85;
+    diffusivity_beta = 1360;
   }
   else
   {
-    diffusivity_beta = 0.110 * exp(-33391/1.987/_temperature) * 1e8;
+    diffusivity_beta = 0.265*exp(-34205/1.987/_temperature) * 1e8;
   }
 
   _prop_values[0] = diffusivity_beta;

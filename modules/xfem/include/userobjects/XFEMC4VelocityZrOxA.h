@@ -37,6 +37,15 @@ public:
 
   virtual Real computeMovingInterfaceVelocity(unsigned int point_id) const override;
 
+  Real getVacancyFlux() const
+  {
+    return _J_v;
+  };
+
+//  Real getOxideVelocity() const
+//  {
+//    return _ox_vel;
+//  };
 
 protected:
 
@@ -45,6 +54,12 @@ protected:
 
   // Temperature [K]
   Real _temperature;
+
+  // Vacancy flux [/m²/s]
+  mutable Real _J_v;
+
+  // Oxide/alpha interface velocity [/m²/s]
+  //mutable Real _ox_vel;
 };
 
 #endif // XFEMC4VELOCITYZROXA_H
