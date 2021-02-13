@@ -5,14 +5,17 @@
 
 [Mesh]
   type = GeneratedMesh
-  dim = 2
+  dim = 3
   nx = 11
   ny = 1
+  nz = 1
   xmin = 0
   xmax = 2
   ymin = 0
   ymax = 1
-  elem_type = QUAD4
+  zmin = 0
+  zmax = 1
+  elem_type = HEX8
 []
 
 [XFEM]
@@ -34,12 +37,13 @@
     geometric_cut_userobject = 'moving_line_segments'
     execute_on = 'nonlinear'
     level_set_var = ls
+    is_3d = true
   [../]
   [./moving_line_segments]
-    type = MovingLineSegmentCutSetUserObject
-    cut_data = '0.5 0 0.5 1.0 0 0'
-    heal_always = true
+    type = InterfaceMeshCut3DUserObject
+    mesh_file = interface.xda
     interface_velocity = velocity
+    heal_always = true
   [../]
 []
 
@@ -88,9 +92,10 @@
 
 [AuxKernels]
   [./ls]
-    type = LineSegmentLevelSetAux
-    line_segment_cut_set_user_object = 'moving_line_segments'
+    type = MeshCutLevelSetAux
+    mesh_cut_user_object = moving_line_segments
     variable = ls
+    execute_on = 'TIMESTEP_BEGIN TIMESTEP_END'
   [../]
 []
 
@@ -121,13 +126,13 @@
     type = PresetBC
     variable = u
     value = 2
-    boundary = 3
+    boundary = left
   [../]
 
   [./right_u]
     type = NeumannBC
     variable = u
-    boundary = 1
+    boundary = right
     value = 0
   [../]
 []

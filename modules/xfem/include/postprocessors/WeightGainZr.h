@@ -34,9 +34,9 @@ protected:
   /// The weight gain [mg/cm^2]
   Real _wg;
 
-  /// The vacancy flux integral [/m^2]
-  const PostprocessorValue & _flux_integral;
-
   /// Temperature [K] to get the "initial" weight gain at 20s
   Real _temperature;
+
+  /// The vacancy flux integral [/m^2]
+  const PostprocessorValue & _flux_integral;
 };

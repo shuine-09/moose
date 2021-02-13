@@ -18,6 +18,7 @@
 // Forward Declarations
 class XFEM;
 class LineSegmentCutSetUserObject;
+class InterfaceMeshCut3DUserObject;
 
 class PointValueAtXFEMInterface : public GeneralUserObject
 {
@@ -64,33 +65,21 @@ public:
     return _grad_values_negative_level_set_side;
   };
 
-  Point getPointCurrentLocation(unsigned int i) const
-  {
-    return _points[i];
-  };
+  Point getPointCurrentLocation(unsigned int i) const;
 
   unsigned int numberPoints() const { return _points.size(); };
 
   /**
    * get the gradient x component at the positive level set side
    */
-  Real getGradientXComponentAtPositiveLevelSet() const
-  {
-    return _grad_x_positive_level_set_side;
-  };
+  Real getGradientXComponentAtPositiveLevelSet() const { return _grad_x_positive_level_set_side; };
 
   /**
    * get the gradient x component at the negative level set side
    */
-  Real getGradientXComponentAtNegativeLevelSet() const
-  {
-    return _grad_x_negative_level_set_side;
-  };
+  Real getGradientXComponentAtNegativeLevelSet() const { return _grad_x_negative_level_set_side; };
 
-  Real getCurrentX() const
-  {
-    return _current_x;
-  };
+  Real getCurrentX() const { return _current_x; };
 
 protected:
   /**
@@ -120,6 +109,9 @@ protected:
   /// Pointer to LineSegmentCutSetUserObject object
   const LineSegmentCutSetUserObject * _geo_cut;
 
+  /// Pointer to LineSegmentCutSetUserObject object
+  const InterfaceMeshCut3DUserObject * _geo_cut_3d;
+
   /// Pointer to MooseVariableFEBase object
   MooseVariableFEBase * _var;
 
@@ -145,11 +137,13 @@ protected:
   std::map<unsigned int, RealVectorValue> _grad_values_negative_level_set_side;
 
   /// Gradient x component at the positive level set side
-  Real _grad_x_positive_level_set_side ;
+  Real _grad_x_positive_level_set_side;
 
   /// Gradient x component at the negative level set side
-  Real _grad_x_negative_level_set_side ;
+  Real _grad_x_negative_level_set_side;
+
+  bool _is_3d;
 
   /// Point current position (x coordinate)
-  Real _current_x ;
+  Real _current_x;
 };

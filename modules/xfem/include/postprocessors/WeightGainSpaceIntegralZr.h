@@ -31,6 +31,8 @@ public:
   virtual Real getValue() override;
 
 protected:
+  /// Temperature [K] to get the interfaces concentrations
+  Real _temperature;
   /// The weight gain [mg/cm^2]
   Real _wg;
 
@@ -45,7 +47,4 @@ protected:
 
   /// The alpha layer thickness [um]
   const PostprocessorValue & _d_alpha;
-
-  /// Temperature [K] to get the interfaces concentrations
-  Real _temperature;
 };

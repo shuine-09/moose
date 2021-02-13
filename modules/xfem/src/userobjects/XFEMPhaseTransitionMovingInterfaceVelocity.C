@@ -44,9 +44,9 @@ XFEMPhaseTransitionMovingInterfaceVelocity::computeMovingInterfaceVelocity(
   RealVectorValue grad_positive = _value_at_interface_uo->getGradientAtPositiveLevelSet()[point_id];
   RealVectorValue grad_negative = _value_at_interface_uo->getGradientAtNegativeLevelSet()[point_id];
 
-  Real xt = (_value_at_interface_uo->getPointCurrentLocation(point_id))(0);
-
-  std::cout << "xt: " << xt << std::endl;
+  // Real xt = (_value_at_interface_uo->getPointCurrentLocation(point_id))(0);
+  //
+  // std::cout << "xt: " << xt << std::endl;
   std::cout << "value_positive : " << value_positive << std::endl;
   std::cout << "value_negative : " << value_negative << std::endl;
   std::cout << "grad_positive : " << grad_positive(0) << std::endl;

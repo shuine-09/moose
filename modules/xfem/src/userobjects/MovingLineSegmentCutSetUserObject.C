@@ -49,13 +49,13 @@ MovingLineSegmentCutSetUserObject::initialize()
 
   const_cast<XFEMMovingInterfaceVelocityBase *>(_interface_velocity)->initialize();
 
-/**  UserObject * uo_C4 =
-      &(_fe_problem.getUserObjectBase(getParam<UserObjectName>("interface_velocity")));
+  /**  UserObject * uo_C4 =
+        &(_fe_problem.getUserObjectBase(getParam<UserObjectName>("interface_velocity")));
 
-  velocity_C4 = dynamic_cast<XFEMC4VelocityOxideWeakMicro *>(uo_C4);
+    velocity_C4 = dynamic_cast<XFEMC4VelocityOxideWeakMicro *>(uo_C4);
 
-  cast<XFEMC4VelocityOxideWeakMicro *>(velocity_C4)->initialize();
-*/
+    cast<XFEMC4VelocityOxideWeakMicro *>(velocity_C4)->initialize();
+  */
 }
 
 void
@@ -72,15 +72,18 @@ MovingLineSegmentCutSetUserObject::execute()
 
   if (_t_step > 1)
   {
-    for (unsigned int i = 1; i < _interface_velocity->numberPoints(); ++i) //numberPoints = 2 usually so i=0,1
+    for (unsigned int i = 1; i < _interface_velocity->numberPoints();
+         ++i) // numberPoints = 2 usually so i=0,1
     {
       cut_data_copy[(i - 1) * line_cut_data_len + 0] +=
           _interface_velocity->computeMovingInterfaceVelocity((i - 1)) * _dt;
       cut_data_copy[(i - 1) * line_cut_data_len + 2] +=
           _interface_velocity->computeMovingInterfaceVelocity(i) * _dt;
+      std::cout << "velocity = " << _interface_velocity->computeMovingInterfaceVelocity((i - 1))
+                << std::endl;
     }
-    //std::cout << "Number of points : " << _interface_velocity->numberPoints() << std::endl;
-    //velocity_C4->computeVacancyFlux(_interface_velocity->numberPoints()-1);
+    // std::cout << "Number of points : " << _interface_velocity->numberPoints() << std::endl;
+    // velocity_C4->computeVacancyFlux(_interface_velocity->numberPoints()-1);
   }
 
   _cut_line_endpoints.clear();

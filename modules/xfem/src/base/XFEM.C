@@ -965,7 +965,8 @@ XFEM::healMesh()
             {
               Node * e1node_displaced = elem1_displaced->node_ptr(in);
               Node * e2node_displaced = elem2_displaced->node_ptr(in);
-              if (!xfce->isPointPhysical(*elem1->node_ptr(in)))
+              if (!xfce->isPointPhysical(*elem1->node_ptr(in)) &&
+                  e1node_displaced != e2node_displaced)
               {
                 elem1_displaced->set_node(in) = e2node_displaced;
                 nodes_to_delete_displaced.insert(e1node_displaced);
