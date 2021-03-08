@@ -1,0 +1,33 @@
+Lmod has detected the following error: The following module(s) are unknown:
+"pbs"
+
+Please check the spelling or version number. Also try "module spider ..."
+It is also possible your cache file is out-of-date; it may help to try:
+  $ module --ignore-cache load "pbs"
+
+Also make sure that all modulefiles written in TCL start with the string
+#%Module
+
+
+
+[0]PETSC ERROR: --------------------- Error Message --------------------------------------------------------------
+[0]PETSC ERROR: See http://www.mcs.anl.gov/petsc/documentation/linearsolvertable.html for possible LU and Cholesky solvers
+[0]PETSC ERROR: Could not locate a solver package. Perhaps you must ./configure with --download-<package>
+[0]PETSC ERROR: See http://www.mcs.anl.gov/petsc/documentation/faq.html for trouble shooting.
+[0]PETSC ERROR: Petsc Release Version 3.9.3, Jul, 02, 2018 
+[0]PETSC ERROR: /home/jianw/projects/moose5_lemhi/modules/combined/combined-opt on a  named lemhi0371 by jianw Fri Dec  4 13:48:56 2020
+[0]PETSC ERROR: Configure options --prefix=/apps/local/easybuild/software/PETSc/3.9.3-foss-2018b --LIBS="-lm -lpthread -lrt" --with-cc=mpicc --with-cxx=mpicxx --with-c++-support --with-fc=mpifort --CFLAGS="-O2 -ftree-vectorize -march=native -fno-math-errno -fPIC" --CXXFLAGS="-O2 -ftree-vectorize -march=native -fno-math-errno -fPIC" --FFLAGS="-O2 -ftree-vectorize -march=native -fno-math-errno -fPIC" --with-mpi=1 --with-build-step-np=40 --with-shared-libraries=0 --with-debugging=0 --with-pic=1 --with-x=0 --with-windows-graphics=0 --with-fftw=1 --with-fftw-include=/apps/local/easybuild/software/FFTW/3.3.8-gompi-2018b/include --with-fftw-lib="[/apps/local/easybuild/software/FFTW/3.3.8-gompi-2018b/lib/libfftw3_mpi.a,libfftw3.a]" --with-scalapack=1 --with-scalapack-include=/apps/local/easybuild/software/ScaLAPACK/2.0.2-gompi-2018b-OpenBLAS-0.3.1/include --with-scalapack-lib="[/apps/local/easybuild/software/ScaLAPACK/2.0.2-gompi-2018b-OpenBLAS-0.3.1/lib/libscalapack.a,libopenblas.a,libgfortran.a]" --with-blaslapack-lib="[/apps/local/easybuild/software/OpenBLAS/0.3.1-GCC-7.3.0-2.30/lib/libopenblas.a,libgfortran.a]" --with-boost=1 --with-boost-dir=/apps/local/easybuild/software/Boost/1.67.0-foss-2018b --with-metis=1 --with-metis-dir=/apps/local/easybuild/software/METIS/5.1.0-foss-2018b --with-parmetis=1 --with-parmetis-dir=/apps/local/easybuild/software/ParMETIS/4.0.3-foss-2018b --with-ptscotch=1 --with-ptscotch-dir=/apps/local/easybuild/software/SCOTCH/6.0.5-foss-2018b --with-hypre=1 --with-hypre-dir=/apps/local/easybuild/software/Hypre/2.14.0-foss-2018b --with-suitesparse=1 --with-suitesparse-include="[/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/UMFPACK/Include,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/KLU/Include,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/CHOLMOD/Include,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/BTF/Include,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/CCOLAMD/Include,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/COLAMD/Include,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/CAMD/Include,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/AMD/Include,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/SuiteSparse_config]" --with-suitesparse-lib="[/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/UMFPACK/Lib/libumfpack.a,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/KLU/Lib/libklu.a,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/CHOLMOD/Lib/libcholmod.a,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/BTF/Lib/libbtf.a,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/CCOLAMD/Lib/libccolamd.a,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/COLAMD/Lib/libcolamd.a,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/CAMD/Lib/libcamd.a,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/AMD/Lib/libamd.a,/apps/local/easybuild/software/SuiteSparse/5.1.2-foss-2018b-METIS-5.1.0/SuiteSparse_config/libsuitesparseconfig.a]"
+[0]PETSC ERROR: #1 MatGetFactor() line 4328 in /apps/local/easybuild/build/PETSc/3.9.3/foss-2018b/petsc-3.9.3/src/mat/interface/matrix.c
+[0]PETSC ERROR: #2 PCSetUp_LU() line 93 in /apps/local/easybuild/build/PETSc/3.9.3/foss-2018b/petsc-3.9.3/src/ksp/pc/impls/factor/lu/lu.c
+[0]PETSC ERROR: #3 PCSetUp() line 923 in /apps/local/easybuild/build/PETSc/3.9.3/foss-2018b/petsc-3.9.3/src/ksp/pc/interface/precon.c
+[0]PETSC ERROR: #4 KSPSetUp() line 381 in /apps/local/easybuild/build/PETSc/3.9.3/foss-2018b/petsc-3.9.3/src/ksp/ksp/interface/itfunc.c
+[0]PETSC ERROR: #5 SNESSolve_VINEWTONRSLS() line 500 in /apps/local/easybuild/build/PETSc/3.9.3/foss-2018b/petsc-3.9.3/src/snes/impls/vi/rs/virs.c
+[0]PETSC ERROR: #6 SNESSolve() line 4314 in /apps/local/easybuild/build/PETSc/3.9.3/foss-2018b/petsc-3.9.3/src/snes/interface/snes.c
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 0 in communicator MPI_COMM_WORLD
+with errorcode 1.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------

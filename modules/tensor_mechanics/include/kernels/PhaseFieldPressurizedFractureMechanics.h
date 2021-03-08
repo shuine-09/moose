@@ -34,6 +34,9 @@ protected:
   /// Coupled order parameter defining the crack
   const VariableGradient & _grad_c;
 
+  /// Coupled order parameter defining the crack
+  const VariableValue & _c;
+
   const unsigned int _c_var;
 
   /// Material property defining pressure, declared elsewhere

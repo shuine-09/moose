@@ -10,8 +10,10 @@ a_top = '${fparse H2+0.2}'
 a_bottom = '${fparse H2-0.2}'
 x1 = '${fparse H2-a}'
 x2 = '${fparse H2+a}'
-y1 = '${fparse H2-0.0001}'
-y2 = '${fparse H2+0.0001}'
+#y1 = '${fparse H2-0.0001}'
+#y2 = '${fparse H2+0.0001}'
+y1 = '${fparse H2-0.01}'
+y2 = '${fparse H2+0.01}'
 
 [GlobalParams]
   displacements = 'disp_x disp_y'
@@ -108,8 +110,13 @@ y2 = '${fparse H2+0.0001}'
   []
   [pfbulkmat]
     type = GenericConstantMaterial
-    prop_names = 'gc_prop l visco'
-    prop_values = '0.001 0.04 1e-6'
+    prop_names = 'gc_prop visco'
+    prop_values = '0.001 1e-6'
+  []
+  [pfbulkmat2]
+    type = GenericConstantMaterial
+    prop_names = 'l'
+    prop_values = 0.02
   []
   [define_mobility]
     type = ParsedMaterial
@@ -182,8 +189,8 @@ y2 = '${fparse H2+0.0001}'
   petsc_options_iname = '-pc_type -pc_factor_mat_solver_package -snes_type'
   petsc_options_value = 'lu       superlu_dist                  vinewtonrsls'
 
-  nl_rel_tol = 1e-6
-  nl_abs_tol = 1e-8
+  nl_rel_tol = 1e-8
+  nl_abs_tol = 1e-10
   dt = 1e-3
   automatic_scaling = true
 []

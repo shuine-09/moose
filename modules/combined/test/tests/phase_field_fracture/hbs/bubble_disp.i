@@ -28,7 +28,6 @@
 [GlobalParams]
   op_num = 9
   var_name_base = gr
-  displacements = 'disp_x disp_y'
 []
 
 [UserObjects]
@@ -86,12 +85,14 @@
 [Modules]
   [./TensorMechanics]
     [./Master]
+      displacements = 'disp_x disp_y'
       [./mech]
         add_variables = true
         strain = SMALL
-        additional_generate_output = 'stress_yy stress_xy stress_xx strain_xx strain_xy strain_yy strain_zz hydrostatic_stress mid_principal_stress min_principal_stress max_principal_stress'
+        additional_generate_output = 'stress_yy stress_xy stress_xx strain_xx strain_xy strain_yy strain_zz hydrostatic_stress mid_principal_stress min_principal_stress max_principal_stress mid_principal_strain min_principal_strain max_principal_strain'
         decomposition_method = EigenSolution
         save_in = 'force_x force_y'
+        displacements = 'disp_x disp_y'
       [../]
     [../]
   [../]
@@ -128,14 +129,6 @@
       invalue = 1.0
       outvalue = 0.0
       int_width = 0.05
-#    type = SpecifiedSmoothCircleIC
-#    invalue = 1.0
-#    outvalue = 0
-#    int_width = 0.05
-#    x_positions = '12.5 27.5'
-#    z_positions = '0 0'
-#    y_positions = '27.5 12.5'
-#    radii = '5 5'
     [../]
   [../]
   [./gr0]
@@ -233,7 +226,7 @@
   [../]
  [./pressure]
    type = PiecewiseLinear
-   data_file = 'bubble_pressure_r0.5_gas100_por10_ext0.csv'
+   data_file = 'pressure.csv'
    format = columns
  [../]
   # [./pressure]
@@ -322,7 +315,7 @@
     block = 0
     prop_names = fracture_pressure
     prop_values = pressure
-    factor = 1e-6
+#factor = 1e-6
   []
   [./gc]
     type = ParsedMaterial
@@ -354,12 +347,14 @@
     type = ComputeSmallStrain
     block = 0
     base_name = void
+    displacements = 'disp_x disp_y'
   [../]
 
   [./strain]
     type = ComputeSmallStrain
     block = 0
     base_name = matrix
+    displacements = 'disp_x disp_y'
   [../]
 
   [./damage_stress]
@@ -373,6 +368,8 @@
    #decomposition_type = none
     use_snes_vi_solver = true
     base_name = matrix
+    output_properties = 'hist'
+    outputs = exodus
   [../]
   [./indicator_function]
     type = DerivativeParsedMaterial
@@ -399,10 +396,18 @@
     function = 'gc_prop/l/3.14159*(2*d-d^2)'
     derivative_order = 2
   [../]
+#  [./fracture_driving_energy]
+#    type = DerivativeSumMaterial
+#    args = d
+#    sum_materials = 'elastic_energy local_fracture_energy'
+#    derivative_order = 2
+#    f_name = F
+#  [../]
   [./fracture_driving_energy]
-    type = DerivativeSumMaterial
-    args = d
-    sum_materials = 'elastic_energy local_fracture_energy'
+    type = DerivativeParsedMaterial
+    args = 'c d'
+    material_property_names = 'elastic_energy(d) local_fracture_energy(d)'
+    function = '(1-c)*elastic_energy + local_fracture_energy'
     derivative_order = 2
     f_name = F
   [../]
@@ -449,6 +454,14 @@
     boundary = left
     value = 0
   [../]
+  [./Pressure]
+    [./coolantPressure]
+      boundary = 'top right'
+      factor = 0
+      function = 1
+      displacements = 'disp_x disp_y'
+    [../]
+  [../]
 []
 
 [Postprocessors]
@@ -467,6 +480,22 @@
     variable = force_y
     boundary = top
   [../]
+  [./ave_stress_right]
+    type = SideAverageValue
+    variable = stress_xx
+    boundary = right
+  [../]
+  [./disp_x_right]
+    type = SideAverageValue
+    variable = disp_x
+    boundary = right
+  [../]
+  [./react_x_top]
+    type = NodalSum
+    variable = force_x
+    boundary = right
+  [../]
+
 []
 
 [Preconditioning]
@@ -480,17 +509,19 @@
 [Executioner]
   type = Transient
   solve_type = PJFNK
-  petsc_options_iname = '-pc_type -pc_factor_mat_solver_type -snes_type'
-  petsc_options_value = 'lu superlu_dist vinewtonrsls'
-  nl_rel_tol = 1e-6  ##nonlinear relative tolerance
-  nl_abs_tol = 1e-6
+  petsc_options_iname = '-pc_type -snes_type -pc_factor_shift_type -pc_factor_shift_amount '
+  petsc_options_value = 'lu vinewtonrsls NONZERO 1e-8'
+#  petsc_options_iname = '-ksp_type -pc_type -sub_pc_type -snes_max_it -sub_pc_factor_shift_type -pc_asm_overlap -snes_type'
+#  petsc_options_value = 'gmres asm lu 100 NONZERO 2 vinewtonrsls'
+  nl_rel_tol = 1e-10  ##nonlinear relative tolerance
+  nl_abs_tol = 1e-10
   l_max_its = 10   ##max linear iterations Previous:200
   nl_max_its = 20  ##max nonlinear iterations Previous:50
   start_time=0
   line_search = 'none'
-  end_time = 2000
+  end_time = 5
   dtmax = 1
-  dtmin = 1e-14
+  dtmin = 1e-10
   automatic_scaling = true
   [./TimeStepper]
     type = IterationAdaptiveDT
@@ -501,9 +532,9 @@
     cutback_factor = 0.5
   [../]
 
-  picard_max_its = 100
+  picard_max_its = 20
   picard_rel_tol = 1e-6
-  picard_abs_tol = 1e-8
+  picard_abs_tol = 1e-6
   accept_on_max_picard_iteration = true
 []
 
@@ -511,6 +542,7 @@
   [exodus]
     type = Exodus
     interval = 1
+    execute_on = 'initial timestep_end'
   []
   csv = true
 #gnuplot = true

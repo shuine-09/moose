@@ -1,0 +1,20 @@
+Lmod has detected the following error: The following module(s) are unknown:
+"pbs"
+
+Please check the spelling or version number. Also try "module spider ..."
+It is also possible your cache file is out-of-date; it may help to try:
+  $ module --ignore-cache load "pbs"
+
+Also make sure that all modulefiles written in TCL start with the string
+#%Module
+
+
+
+
+[31m
+*** ERROR ***
+Failed to convert a delimited data into double when reading line 4 in file /home/jianw/projects/uo2_pf_fracture/uo2_hbs/lemhi/NEAMS/rod196/bubble_pressure_r0.25_gas100_por10_ext0_rod196.
+  LINE 4: *** Warning, This code is deprecated and will be removed in future versions:[39m
+
+[cli_0]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0

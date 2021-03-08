@@ -28,7 +28,7 @@
 [GlobalParams]
   op_num = 9
   var_name_base = gr
-  displacements = 'disp_x disp_y'
+#  displacements = 'disp_x disp_y'
 []
 
 [UserObjects]
@@ -77,14 +77,6 @@
       invalue = 1.0
       outvalue = 0.0
       int_width = 0.05
-#    type = SpecifiedSmoothCircleIC
-#    invalue = 1.0
-#    outvalue = 0
-#    int_width = 0.05
-#    x_positions = '12.5 27.5'
-#    z_positions = '0 0'
-#    y_positions = '27.5 12.5'
-#    radii = '5 5'
     [../]
   [../]
   [./gr0]
@@ -190,7 +182,7 @@
   [../]
  [./pressure]
    type = PiecewiseLinear
-   data_file = 'bubble_pressure_r0.5_gas100_por10_ext0.csv'
+   data_file = 'pressure.csv'
    format = columns
  [../]
   # [./pressure]
@@ -346,12 +338,14 @@
     type = ComputeSmallStrain
     block = 0
     base_name = void
+    displacements = 'disp_x disp_y'
   [../]
 
   [./strain]
     type = ComputeSmallStrain
     block = 0
     base_name = matrix
+    displacements = 'disp_x disp_y'
   [../]
 
   [./damage_stress]
@@ -391,13 +385,22 @@
     function = 'gc_prop/l/3.14159*(2*d-d^2)'
     derivative_order = 2
   [../]
+#  [./fracture_driving_energy]
+#    type = DerivativeSumMaterial
+#    args = d
+#    sum_materials = 'elastic_energy local_fracture_energy'
+#    derivative_order = 2
+#    f_name = F
+#  [../]
   [./fracture_driving_energy]
-    type = DerivativeSumMaterial
-    args = d
-    sum_materials = 'elastic_energy local_fracture_energy'
+    type = DerivativeParsedMaterial
+    args = 'c d'
+    material_property_names = 'elastic_energy(d) local_fracture_energy(d)'
+    function = '(1-c)*elastic_energy + local_fracture_energy'
     derivative_order = 2
     f_name = F
   [../]
+
   [./const_stress]
     type = ComputeExtraStressConstant
     block = 0
@@ -457,8 +460,8 @@
 [Executioner]
   type = Transient
   solve_type = PJFNK
-  petsc_options_iname = '-pc_type -pc_factor_mat_solver_type -snes_type'
-  petsc_options_value = 'lu superlu_dist vinewtonrsls'
+  petsc_options_iname = '-pc_type -sub_pc_type -snes_type'
+  petsc_options_value = 'asm lu vinewtonrsls'
   nl_rel_tol = 1e-6  ##nonlinear relative tolerance
   nl_abs_tol = 1e-6
   l_max_its = 10   ##max linear iterations Previous:200

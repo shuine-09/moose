@@ -7,10 +7,10 @@
   [gen]
     type = GeneratedMeshGenerator
     dim = 2
-    xmax = 950
-    ymax = 950
-    nx = 300
-    ny = 300
+    xmax = 1250
+    ymax = 1250
+    nx = 400
+    ny = 400
   []
 []
 
@@ -23,7 +23,7 @@
 [UserObjects]
   [./soln]
     type = SolutionUserObject
-    mesh = hbs_bub_test.e
+    mesh = 2020_12_07_HBS_bub_vol_test_out.e
     timestep = 'LATEST'
     execute_on = 'initial'
   [../]
@@ -396,7 +396,7 @@
     type = ParsedMaterial
     f_name = gc_prop
     #function = 'if(bnds < 0.75, if(bnds>0.25, 0.5, 2.5), 2.5)'
-    function = 'if(bnds < 0.75 & c < 0.5, 0.0012, 0.012)'
+    function = 'if(bnds < 0.75 & c < 0.5, 0.0012, 1.2)'
     args = 'bnds c'
   [../]
 
@@ -547,9 +547,9 @@
 
 [Executioner]
   type = Transient
-  solve_type = PJFNK
-  petsc_options_iname = '-pc_type -pc_factor_mat_solver_type -snes_type'
-  petsc_options_value = 'lu superlu_dist vinewtonrsls'
+  solve_type = NEWTON
+  petsc_options_iname = '-ksp_type -pc_type -pc_factor_mat_solver_type -snes_type'
+  petsc_options_value = 'preonly lu superlu_dist vinewtonrsls'
   nl_rel_tol = 1e-6  ##nonlinear relative tolerance
   nl_abs_tol = 1e-6
   l_max_its = 10   ##max linear iterations Previous:200
@@ -560,14 +560,14 @@
   dtmax = 1
   dtmin = 1e-14
   automatic_scaling = true
-  [./TimeStepper]
-    type = IterationAdaptiveDT
-    dt = 1
-    optimal_iterations = 10
-    iteration_window = 0
-    growth_factor = 1.2
-    cutback_factor = 0.5
-  [../]
+#  [./TimeStepper]
+#    type = IterationAdaptiveDT
+#    dt = 1
+#    optimal_iterations = 10
+#    iteration_window = 0
+#    growth_factor = 1.2
+#    cutback_factor = 0.5
+#  [../]
 #num_grids = 1
 []
 

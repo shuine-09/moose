@@ -30,6 +30,7 @@ PhaseFieldPressurizedFractureMechanics::PhaseFieldPressurizedFractureMechanics(
   : DerivativeMaterialInterface<Kernel>(parameters),
     _component(getParam<unsigned int>("component")),
     _grad_c(coupledGradient("c")),
+    _c(coupledValue("c")),
     _c_var(coupled("c")),
     _pressure(getDefaultMaterialProperty<Real>("fracture_pressure"))
 {
@@ -38,7 +39,8 @@ PhaseFieldPressurizedFractureMechanics::PhaseFieldPressurizedFractureMechanics(
 Real
 PhaseFieldPressurizedFractureMechanics::computeQpResidual()
 {
-  return _pressure[_qp] * _grad_c[_qp](_component) * _test[_i][_qp];
+  return _pressure[_qp] * _grad_c[_qp](_component) * _test[_i][_qp] * 2.0 * _c[_qp];
+  // return _pressure[_qp] * _grad_c[_qp](_component) * _test[_i][_qp];
 }
 
 Real
@@ -51,7 +53,10 @@ Real
 PhaseFieldPressurizedFractureMechanics::computeQpOffDiagJacobian(unsigned int jvar)
 {
   if (jvar == _c_var)
-    return _pressure[_qp] * _grad_test[_j][_qp](_component) * _test[_i][_qp];
-
+    return _pressure[_qp] * _grad_c[_qp](_component) * _test[_i][_qp] * 2 * _phi[_j][_qp] +
+           _pressure[_qp] * _grad_phi[_j][_qp](_component) * _test[_i][_qp] * 2 * _c[_qp];
   return 0.0;
+  // if (jvar == _c_var)
+  //   return _pressure[_qp] * _grad_phi[_j][_qp](_component) * _test[_i][_qp];
+  // return 0.0;
 }

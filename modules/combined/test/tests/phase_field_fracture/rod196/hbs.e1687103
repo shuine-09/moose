@@ -1,0 +1,75 @@
+Lmod has detected the following error: The following module(s) are unknown:
+"pbs"
+
+Please check the spelling or version number. Also try "module spider ..."
+It is also possible your cache file is out-of-date; it may help to try:
+  $ module --ignore-cache load "pbs"
+
+Also make sure that all modulefiles written in TCL start with the string
+#%Module
+
+
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_43]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 43
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_64]: 
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_67]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 67
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_29]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 29
+[cli_2]: 
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_31]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 31
+[cli_8]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 8
+[cli_10]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 10
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 2
+[cli_78]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 78
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 64

@@ -53,13 +53,18 @@ PhaseFieldPressurizedFractureDamage::computeQpResidual()
   //        _test[_i][_qp];
 
   RealVectorValue u((*_disp[0])[_qp], (*_disp[1])[_qp], (*_disp[2])[_qp]);
-  return _pressure[_qp] * u * _grad_test[_i][_qp] * _L[_qp];
+  return _pressure[_qp] * u * _grad_test[_i][_qp] * _L[_qp] * _u[_qp] * 2.0 +
+         _pressure[_qp] * u * _grad_u[_qp] * _L[_qp] * _test[_i][_qp] * 2.0;
+  // return _pressure[_qp] * u * _grad_test[_i][_qp] * _L[_qp];
 }
 
 Real
 PhaseFieldPressurizedFractureDamage::computeQpJacobian()
 {
-  return 0.0;
+  // return 0.0;
+  RealVectorValue u((*_disp[0])[_qp], (*_disp[1])[_qp], (*_disp[2])[_qp]);
+  return _pressure[_qp] * u * _grad_test[_i][_qp] * _L[_qp] * _phi[_j][_qp] * 2.0 +
+         _pressure[_qp] * u * _grad_phi[_j][_qp] * _L[_qp] * _test[_i][_qp] * 2.0;
 }
 
 Real
@@ -68,7 +73,16 @@ PhaseFieldPressurizedFractureDamage::computeQpOffDiagJacobian(unsigned int jvar)
   for (unsigned int coupled_component = 0; coupled_component < _ndisp; ++coupled_component)
     if (jvar == _disp_var[coupled_component])
       // return -_pressure[_qp] * _grad_test[_j][_qp](coupled_component) * _test[_i][_qp];
-      return _pressure[_qp] * _phi[_j][_qp] * _grad_test[_i][_qp](coupled_component) * _L[_qp];
+      return _pressure[_qp] * _phi[_j][_qp] * _grad_test[_i][_qp](coupled_component) * _L[_qp] *
+                 _u[_qp] * 2.0 +
+             _pressure[_qp] * _phi[_j][_qp] * _grad_u[_qp](coupled_component) * _L[_qp] *
+                 _test[_i][_qp] * 2.0;
 
   return 0.0;
+  // for (unsigned int coupled_component = 0; coupled_component < _ndisp; ++coupled_component)
+  //   if (jvar == _disp_var[coupled_component])
+  //     // return -_pressure[_qp] * _grad_test[_j][_qp](coupled_component) * _test[_i][_qp];
+  //     return _pressure[_qp] * _phi[_j][_qp] * _grad_test[_i][_qp](coupled_component) * _L[_qp];
+  //
+  // return 0.0;
 }

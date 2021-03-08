@@ -1,0 +1,93 @@
+Lmod has detected the following error: The following module(s) are unknown:
+"pbs"
+
+Please check the spelling or version number. Also try "module spider ..."
+It is also possible your cache file is out-of-date; it may help to try:
+  $ module --ignore-cache load "pbs"
+
+Also make sure that all modulefiles written in TCL start with the string
+#%Module
+
+
+
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+Warning: unable to write derivative cache file.
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_64]: 
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_43]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 43
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_2]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 2
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_8]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 8
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_78]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 78
+[cli_10]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 10
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 64
+[cli_29]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 29
+[cli_67]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 67
+[cli_31]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 31

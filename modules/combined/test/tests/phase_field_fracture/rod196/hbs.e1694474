@@ -1,0 +1,19 @@
+Lmod has detected the following error: The following module(s) are unknown:
+"pbs"
+
+Please check the spelling or version number. Also try "module spider ..."
+It is also possible your cache file is out-of-date; it may help to try:
+  $ module --ignore-cache load "pbs"
+
+Also make sure that all modulefiles written in TCL start with the string
+#%Module
+
+
+
+[proxy:0:3@lemhi0368] HYD_pmcd_pmip_control_cmd_cb (../../../../src/pm/hydra/pm/pmiserv/pmip_cb.c:911): assert (!closed) failed
+[proxy:0:3@lemhi0368] HYDT_dmxu_poll_wait_for_event (../../../../src/pm/hydra/tools/demux/demux_poll.c:76): callback returned error status
+[proxy:0:3@lemhi0368] main (../../../../src/pm/hydra/pm/pmiserv/pmip.c:202): demux engine error waiting for event
+[mpiexec@lemhi0096] HYDT_bscu_wait_for_completion (../../../../src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+[mpiexec@lemhi0096] HYDT_bsci_wait_for_completion (../../../../src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+[mpiexec@lemhi0096] HYD_pmci_wait_for_completion (../../../../src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:218): launcher returned error waiting for completion
+[mpiexec@lemhi0096] main (../../../../src/pm/hydra/ui/mpich/mpiexec.c:340): process manager error waiting for completion

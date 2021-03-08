@@ -72,19 +72,49 @@ ax = plt.gca()
 # F = data['resid_x']
 # plt.plot(u,F,label='l = 50mm',linewidth=2.0,markerfacecolor='none',marker='>',markevery=50)
 
+# data = pandas.read_csv('bar_p00_l50.csv')
+# u = data['time']
+# F = data['resid_x']
+# P = data['pressure']
+# plt.plot(u,F,label='0.4 P',linewidth=2.0,markerfacecolor='none',marker='>',markevery=50)
 
-data = pandas.read_csv('bar_p04_l50.csv')
+data = pandas.read_csv('bar_p00_l50.csv')
 u = data['time']
 F = data['resid_x']
-plt.plot(u,F,label='l = 50mm',linewidth=2.0,markerfacecolor='none',marker='>',markevery=50)
+P = data['pressure']
+#plt.plot(u,F+P,label='0.4 F+P',linewidth=2.0,markerfacecolor='none',marker='>',markevery=50)
+
+# data = pandas.read_csv('bar_p00_l50.csv')
+# u = data['time']
+# F = data['resid_x']
+# P = data['pressure']
+# plt.plot(u,F-P,label='0.4 F-P',linewidth=2.0,markerfacecolor='none',marker='>',markevery=50)
+
+data = pandas.read_csv('bar_p00_l50_3.csv')
+u = data['time']
+F = data['resid_x']
+F2= data['resid_x_left']
+P = data['pressure']
+max_d = data['max_d']
+plt.plot(u,-F2,label='1.0 F2',linewidth=2.0,markerfacecolor='none',marker='>',markevery=50)
+plt.plot(u,F,label='1.0 F',linewidth=2.0,markerfacecolor='none',marker='>',markevery=50)
+plt.plot(u,F-max_d/2,label='1.0 F-max_d/2',linewidth=2.0,markerfacecolor='none',marker='>',markevery=50)
+plt.plot(u,max_d,label='1.0 max_d',linewidth=2.0,markerfacecolor='none',marker='>',markevery=50)
+
+
+data = pandas.read_csv('bar_p00_l50_2.csv')
+u = data['time']
+F = data['resid_x']
+P = data['pressure']
+plt.plot(u,F-P,label='0.0 F',linewidth=2.0,markerfacecolor='none',marker='>',markevery=50)
 
 plt.xlabel("u[mm]")
 plt.ylabel("F/A (MPa)")
 
 plt.legend()
 
-plt.xlim(left=0)
-plt.ylim(bottom=0)
+# plt.xlim(left=0)
+# plt.ylim(bottom=0)
 
 ax.legend(loc='best')
 plt.savefig('linear_pressure_l.pdf')

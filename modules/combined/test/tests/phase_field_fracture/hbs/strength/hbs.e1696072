@@ -1,0 +1,117 @@
+Lmod has detected the following error: The following module(s) are unknown:
+"pbs"
+
+Please check the spelling or version number. Also try "module spider ..."
+It is also possible your cache file is out-of-date; it may help to try:
+  $ module --ignore-cache load "pbs"
+
+Also make sure that all modulefiles written in TCL start with the string
+#%Module
+
+
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_43]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 43
+[cli_50]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 50
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_64]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 64
+[cli_53]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 53
+[cli_12]: [cli_74]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 74
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 12
+[cli_75]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 75
+[cli_2]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 2
+[cli_19]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 19
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_0]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_29]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 29
+[cli_8]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 8
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_32]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 32
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_39]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 39
+
+[31m
+*** ERROR ***
+Solve failed and timestep already at dtmin, cannot continue![39m
+
+[cli_38]: aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 38

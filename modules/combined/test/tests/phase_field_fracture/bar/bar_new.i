@@ -131,7 +131,7 @@
   [./pfbulkmat]
     type = GenericConstantMaterial
     prop_names = 'gc_prop l visco'
-    prop_values = '0.12 50 1.0e-5'
+    prop_values = '0.12 50 1.0'
   [../]
   [./define_mobility]
     type = ParsedMaterial
@@ -159,7 +159,7 @@
     decomposition_type = none
     use_snes_vi_solver = true
     use_current_history_variable = true
-    outputs = all
+    #outputs = all
   [../]
   [./degradation]
     type = DerivativeParsedMaterial
@@ -168,7 +168,7 @@
     function = '(1.0-c)^2*(1-eta)/((1.0-c)^2+c*(1-0.5*c)*(4/3.14159/l*E*gc_prop/sigma^2))+eta'
     material_property_names = 'gc_prop l'
     constant_names       = 'E sigma eta'
-    constant_expressions = '30000 3 1e-8'
+    constant_expressions = '30000 3 1e-6'
     derivative_order = 2
   [../]
   [./fracture_energy]
@@ -185,7 +185,7 @@
     sum_materials = 'elastic_energy fracture_energy'
     derivative_order = 2
     f_name = F
-    outputs = all
+    #outputs = all
   [../]
 []
 
@@ -242,6 +242,8 @@
   l_max_its = 10
   nl_max_its = 30
 
+  line_search = 'none'
+
   dt = 1e-4
   end_time = 0.08
   dtmin = 1e-14
@@ -250,6 +252,6 @@
 
 [Outputs]
   file_base = bar_p04_l50
-  exodus = true
+  #exodus = true
   csv = true
 []
