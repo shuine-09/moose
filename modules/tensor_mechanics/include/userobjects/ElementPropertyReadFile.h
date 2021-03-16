@@ -10,17 +10,19 @@
 #pragma once
 
 #include "GeneralUserObject.h"
-#include "MooseEnum.h"
-#include "DelimitedFileReader.h"
 
 /**
- * Read properties from file - grain, element, or block
+ * Read properties from file - grain or element
  * Input file syntax: prop1 prop2 etc. See test.
  * For grain level, voronoi tesellation with random grain centers are generated;
  * Element center points used for assigning properties
  * Usable for generated mesh
- * For block type, elements inside one block are assigned identical material properties;
  */
+
+class ElementPropertyReadFile;
+
+template <>
+InputParameters validParams<ElementPropertyReadFile>();
 
 class ElementPropertyReadFile : public GeneralUserObject
 {
@@ -35,9 +37,14 @@ public:
   virtual void finalize() {}
 
   /**
-   * This function reads data from file
+   * This function  reads element data from file
    */
-  void readData();
+  void readElementData();
+
+  /**
+   * This function Read grain data from file
+   */
+  virtual void readGrainData();
 
   /**
    * This function Read block data from file
@@ -84,16 +91,16 @@ public:
 protected:
   ///Name of file containing property values
   std::string _prop_file_name;
-  ///Use DelimitedFileReader to read and store data from file
-  MooseUtils::DelimitedFileReader _reader;
+  ///Store property values read from file
+  std::vector<Real> _data;
   ///Number of properties in a row
   unsigned int _nprop;
   ///Number of grains (for property read based on grains)
   unsigned int _ngrain;
   ///Number of blocks (for property read based on blocks)
   unsigned int _nblock;
-  ///Type of read - element, grain, or block
-  const enum class ReadType { ELEMENT, GRAIN, BLOCK, VOXEL } _read_type;
+  ///Type of read - element or grain
+  MooseEnum _read_type;
   ///Random seed - used for generating grain centers
   unsigned int _rand_seed;
   ///Type of grain structure - non-periodic default
