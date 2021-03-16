@@ -210,15 +210,30 @@ Real ElementPropertyReadFile::getVoxelData(const Elem * elem, unsigned int prop_
   Point centroid = elem->centroid();
   Real elem_size = cbrt(elem->volume());
   unsigned int nelem_x = _range(0) * 1.001 / elem_size;
-  unsigned int nelem_y = _range(1) * 1.001 / elem_size;
+  unsigned int nelem_y = _range(0) * 1.001 / elem_size;
   unsigned int nelem_z = _range(2) * 1.001 / elem_size;
   unsigned int id_x = centroid(0) / elem_size;
   unsigned int id_y = centroid(1) / elem_size;
   unsigned int id_z = centroid(2) / elem_size;
 
-  unsigned int jelem = id_z * (nelem_x * nelem_y) + id_y * (nelem_x) + id_x;
+  unsigned int jelem = 0;
+  if (id_y < nelem_x)
+    jelem = id_z * (nelem_x * nelem_y) + id_y * (nelem_x) + id_x;
+  else
+    jelem = id_z * (nelem_x * nelem_y) + (id_y - nelem_x) * (nelem_x) + id_x +
+            nelem_x * nelem_x * nelem_x;
 
-  //  std::cout << "elem centroid = " << centroid << ", id_x = " << id_x << ", id_y = " << id_y
+  // unsigned int nelem_x = _range(0) * 1.001 / elem_size;
+  // unsigned int nelem_y = _range(1) * 1.001 / elem_size;
+  // unsigned int nelem_z = _range(2) * 1.001 / elem_size;
+  // unsigned int id_x = centroid(0) / elem_size;
+  // unsigned int id_y = centroid(1) / elem_size;
+  // unsigned int id_z = centroid(2) / elem_size;
+  //
+  // unsigned int jelem = id_z * (nelem_x * nelem_y) + id_y * (nelem_x) + id_x;
+
+  //  std::cout << "elem centroid = " << centroid << ", id_x = " << id_x << ", id_y = " <<
+  //  id_y
   //             << ", id_z = " << id_z << ", nelem_x = " << nelem_x << ", elem_size = " <<
   //             elem_size
   //             << ", elem_vol = " << elem->volume() << "data = " << _data[jelem * _nprop +
